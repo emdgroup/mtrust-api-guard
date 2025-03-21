@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  release_liquid_flutter:
+  release_mtrust_api_guard:
     runs-on: ubuntu-latest
     steps:
       - name: 🔑 Get token for bumper app
