@@ -81,4 +81,3 @@ and compares it with the reference base file:
 ## License
 
 This project is licensed under the Apache-2.0 license. See the [LICENSE](LICENSE) file for details.
-```
