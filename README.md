@@ -77,3 +77,8 @@ and compares it with the reference base file:
       new_doc: "./lib/documentation.dart"
       new_version: {{ steps.version.outputs.version }} # use the version from the semver action
 ```
+
+## License
+
+This project is licensed under the Apache-2.0 license. See the [LICENSE](LICENSE) file for details.
+```
