@@ -18,4 +18,4 @@ dependencies:
   path: ^1.9.1
   collection: ^1.19.1
 executables:
-  mtrust_api_guard: "bin/mtrust_api_guard.dart"
+  mtrust_api_guard:
