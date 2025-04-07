@@ -15,5 +15,7 @@ dependencies:
   dart_style: ^2.3.4
   flutter_lints: ^1.0.0
   args: ^2.4.0
+  path: ^1.9.1
+  collection: ^1.19.1
 executables:
   mtrust_api_guard: "bin/mtrust_api_guard.dart"
