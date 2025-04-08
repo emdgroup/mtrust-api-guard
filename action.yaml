@@ -22,6 +22,10 @@ inputs:
     description: 'Whether to add comments to the PR with API changes'
     required: false
     default: 'true'
+  pr_comment_message:
+    description: 'Custom message template for PR comments. Use {version} and {changelog} as placeholders.'
+    required: false
+    default: "New version {version} 🚀\n\nDetected API changes:\n{changelog}"
   fail_on_error:
     description: 'Whether to fail the workflow on error'
     required: false
@@ -142,12 +146,25 @@ runs:
         comment-tag: api_guard_comment
         mode: delete
 
+    - name: Prepare PR comment content
+      if: ${{ inputs.comment_on_pr == 'true' }}
+      shell: bash
+      run: |
+        # Create the comment by replacing placeholders
+        COMMENT="${{ inputs.pr_comment_message }}"
+        COMMENT="${COMMENT/\{version\}/${{ inputs.new_version }}}"
+        COMMENT="${COMMENT/\{changelog\}/${{ env.API_CHANGELOG }}}"
+        echo "PR_COMMENT<<EOF" >> $GITHUB_ENV
+        echo "$COMMENT" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Comment on PR with new version and API changelog
       if: ${{ inputs.comment_on_pr == 'true' }}
       uses: thollander/actions-comment-pull-request@v3
       with:
         comment-tag: api_guard_comment
-        message: "New version ${{ inputs.new_version }} 🚀\n\nDetected API changes:\n${{ env.API_CHANGELOG }}"
+        message: ${{ env.PR_COMMENT }}
+
 
 branding:
   icon: "shield"
