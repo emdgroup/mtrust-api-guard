@@ -41,13 +41,14 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Install Dart
-      uses: dart-lang/setup-dart@v1
+    - name: Install M-Trust API Guard from Git
+      shell: bash
+      run: dart pub global activate --source git https://github.com/emdgroup/mtrust-api-guard.git
 
     - name: Generate new API docs
       shell: bash
       run: |
-        dart ${{ github.action_path }}/bin/mtrust_api_guard.dart generate \
+        dart run mtrust_api_guard generate \
           --path ${{ inputs.src_path }} \
           --output ${{ inputs.new_doc }} || if [[ "${{ inputs.fail_on_error }}" == "true" ]]; then exit 1; else echo "Ignoring error as fail_on_error is false"; fi
 
@@ -56,7 +57,7 @@ runs:
       shell: bash
       run: |
         set +e  # Don't exit on error
-        API_CHANGELOG=$(dart ${{ github.action_path }}/bin/mtrust_api_guard.dart compare \
+        API_CHANGELOG=$(dart run mtrust_api_guard compare \
           --base ${{ inputs.base_doc }} \
           --new ${{ inputs.new_doc }} \
           --magnitude patch)
