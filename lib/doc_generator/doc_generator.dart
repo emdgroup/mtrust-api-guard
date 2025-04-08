@@ -198,11 +198,86 @@ Future<void> main(List<String> args) async {
   final emitter = DartEmitter.scoped();
   final output = DartFormatter().format('${outputLibrary.accept(emitter)}');
 
-  // Load the type definitions from `doc_items.dart`
-  final file = File('lib/doc_items.dart');
-  final libraryTypes = file.readAsStringSync();
-
   // Write output file
   File(outputPath).writeAsStringSync(libraryTypes + "\n" + output);
   print('Generated documentation file: $outputPath');
 }
+
+/// The types used in the generated library. Same as in `doc_items.dart`.
+/// It might be cleaner to load this from an asset file, but for now we
+/// keep it here to avoid adding more dependencies.
+const libraryTypes = """
+class DocComponent {
+  const DocComponent({
+    required this.name,
+    required this.isNullSafe,
+    required this.description,
+    required this.constructors,
+    required this.properties,
+    required this.methods,
+  });
+
+  final String name;
+
+  final bool isNullSafe;
+
+  final String description;
+
+  final List<DocConstructor> constructors;
+
+  final List<DocProperty> properties;
+
+  final List<String> methods;
+}
+
+class DocProperty {
+  const DocProperty({
+    required this.name,
+    required this.type,
+    required this.description,
+    required this.features,
+  });
+
+  final String name;
+
+  final String type;
+
+  final String description;
+
+  final List<String> features;
+}
+
+class DocConstructor {
+  const DocConstructor({
+    required this.name,
+    required this.signature,
+    required this.features,
+  });
+
+  final String name;
+
+  final List<DocParameter> signature;
+
+  final List<String> features;
+}
+
+class DocParameter {
+  const DocParameter({
+    required this.name,
+    required this.type,
+    required this.description,
+    required this.named,
+    required this.required,
+  });
+
+  final String name;
+
+  final String description;
+
+  final String type;
+
+  final bool named;
+
+  final bool required;
+}
+""";
