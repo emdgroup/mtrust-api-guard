@@ -48,7 +48,7 @@ runs:
     - name: Generate new API docs
       shell: bash
       run: |
-        dart run mtrust_api_guard generate \
+        $HOME/.pub-cache/bin/mtrust_api_guard generate \
           --path ${{ inputs.src_path }} \
           --output ${{ inputs.new_doc }} || if [[ "${{ inputs.fail_on_error }}" == "true" ]]; then exit 1; else echo "Ignoring error as fail_on_error is false"; fi
 
@@ -57,7 +57,7 @@ runs:
       shell: bash
       run: |
         set +e  # Don't exit on error
-        API_CHANGELOG=$(dart run mtrust_api_guard compare \
+        API_CHANGELOG=$($HOME/.pub-cache/bin/mtrust_api_guard compare \
           --base ${{ inputs.base_doc }} \
           --new ${{ inputs.new_doc }} \
           --magnitude patch)
