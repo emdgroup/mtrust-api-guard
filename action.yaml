@@ -41,6 +41,11 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
     - name: Install M-Trust API Guard from Git
       shell: bash
       run: dart pub global activate --source git https://github.com/emdgroup/mtrust-api-guard.git
