@@ -6,11 +6,10 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:args/command_runner.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:mtrust_api_guard/doc_items.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
-
-import '../doc_items.dart';
 
 class DocGeneratorCommand extends Command {
   @override
