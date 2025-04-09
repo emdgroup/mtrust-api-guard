@@ -30,6 +30,10 @@ inputs:
     description: "Whether to fail the workflow on error"
     required: false
     default: "true"
+  mtrust_api_guard_ref:
+    description: "Git reference to use for mtrust-api-guard"
+    required: false
+    default: "main"
 
 outputs:
   api_change_type:
@@ -52,7 +56,7 @@ runs:
 
     - name: Install M-Trust API Guard from Git
       shell: bash
-      run: dart pub global activate --source git https://github.com/emdgroup/mtrust-api-guard.git
+      run: dart pub global activate --source git https://github.com/emdgroup/mtrust-api-guard.git --git-ref ${{ inputs.mtrust_api_guard_ref }}
 
     - name: Generate new API docs
       shell: bash
