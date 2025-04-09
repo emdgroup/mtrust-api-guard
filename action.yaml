@@ -152,11 +152,13 @@ runs:
       id: prepare_comment
       env:
         PR_COMMENT: ${{ steps.prepare_comment.outputs.PR_COMMENT }}
+        PR_COMMENT_MESSAGE: ${{ inputs.pr_comment_message }}
+        NEW_VERSION: ${{ inputs.new_version }}
       with:
         result-encoding: string
         script: |
-          const message = '${{ inputs.pr_comment_message }}'
-            .replace('{version}', '${{ inputs.new_version }}')
+          const message = process.env.PR_COMMENT_MESSAGE
+            .replace('{version}', process.env.NEW_VERSION)
             .replace('{changelog}', process.env.API_CHANGELOG);
           return message;
 
