@@ -6,7 +6,12 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:args/command_runner.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:glob/glob.dart';
+import 'package:glob/list_local_fs.dart';
+import 'package:mtrust_api_guard/doc_generator/detect_exclusions.dart';
+import 'package:mtrust_api_guard/doc_generator/library_types.dart';
 import 'package:mtrust_api_guard/doc_items.dart';
+import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
@@ -20,15 +25,29 @@ class DocGeneratorCommand extends Command {
 
   DocGeneratorCommand() {
     argParser
-      ..addMultiOption('path',
-          abbr: 'p',
-          help: 'Path(s) to scan for Dart files',
-          defaultsTo: ['lib/src'])
+      ..addOption(
+        'path',
+        abbr: 'p',
+        help: 'Dart files to scan. Supports patterns.',
+        defaultsTo: 'lib/**/*.dart',
+      )
       ..addOption(
         'output',
         abbr: 'o',
         help: 'Output file path',
         defaultsTo: 'lib/documentation.g.dart',
+      )
+      ..addFlag(
+        "verbose",
+        help: 'Verbose output.',
+        defaultsTo: false,
+      )
+      ..addOption(
+        'exclude',
+        abbr: 'e',
+        help: 'Path(s) to exclude from the analysis. Defaults to the files '
+            'defined in analysis_options.yaml or no files if it is not present.',
+        defaultsTo: null,
       );
   }
 
@@ -45,56 +64,71 @@ Future<void> main(List<String> args) async {
   final argResults = parser.parse(args);
 
   if (argResults['help'] as bool) {
-    print('Documentation Generator');
-    print('Usage: dart doc_generator.dart [options]');
-    print(parser.usage);
+    logger.info('Documentation Generator');
+    logger.info('Usage: dart doc_generator.dart [options]');
+    logger.info(parser.usage);
     return;
   }
 
-  final paths = argResults['path'] as List<String>;
+  final paths = argResults['path'] as String;
   final outputPath = argResults['output'] as String;
+  final excludePaths = argResults['exclude'] as String?;
+  final verbose = argResults['verbose'] as bool;
 
-  // Collect and analyze Dart files
-  final dartFiles = <File>[];
-  for (final path in paths) {
-    final directory = Directory(path);
-    if (await directory.exists()) {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File && entity.path.endsWith('.dart')) {
-          dartFiles.add(entity);
-        }
-      }
-    } else {
-      print('Warning: Directory does not exist: $path');
+  final dartFiles = Glob(paths)
+      .listSync()
+      .map(
+        (e) => p.normalize(e.absolute.path),
+      )
+      .toList();
+
+  Set<String> exclusions = {};
+
+  if (excludePaths != null) {
+    exclusions = Glob(excludePaths)
+        .listSync()
+        .map((e) => p.normalize(e.absolute.path))
+        .toSet();
+  } else {
+    if (verbose) {
+      logger.detail("Checking for excluded files in analysis_options.yaml...");
     }
+    exclusions = await detectExclusions(Directory.current.path);
   }
 
   if (dartFiles.isEmpty) {
-    print('No Dart files found in the specified paths.');
+    logger.err('No Dart files found in the specified paths. Exiting');
     return;
   }
 
-  print('Found ${dartFiles.length} Dart files to analyze.');
+  if (!verbose) {
+    logger.info('Found ${dartFiles.length} Dart files to analyze.');
+    logger.info('Excluding ${exclusions.length} files.');
+  } else {
+    logger.info("Files to analyze:");
+    for (var e in dartFiles) {
+      logger.detail("\t" + e);
+    }
+    logger.info("Exclusions:");
+    for (var e in exclusions) {
+      logger.detail("\t" + e);
+    }
+  }
 
-  final normalizedPaths = paths.map((path) {
-    final dir = Directory(path);
-    return p.normalize(dir.absolute.path);
-  }).toList();
   final contextCollection = AnalysisContextCollection(
-    includedPaths: normalizedPaths,
+    includedPaths: dartFiles,
+    excludedPaths: exclusions.toList(),
   );
 
   final classes = <DocComponent>[];
 
+  final progress = logger.progress("Analyzing dart files");
+
   // Analyze each file
   for (final file in dartFiles) {
-    final path = p.normalize(file.absolute.path);
-    if (path.endsWith('.g.dart')) {
-      continue; // Skip generated files, as they are not API-related
-    }
     try {
-      final context = contextCollection.contextFor(path);
-      final library = await context.currentSession.getResolvedLibrary(path);
+      final context = contextCollection.contextFor(file);
+      final library = await context.currentSession.getResolvedLibrary(file);
       if (library is! ResolvedLibraryResult) {
         throw StateError('Library not resolved.');
       }
@@ -144,11 +178,17 @@ Future<void> main(List<String> args) async {
         ));
       }
     } catch (e) {
-      print('Error analyzing file ${file.path}: $e');
+      logger.err('Error analyzing file $file: $e');
     }
+    progress.update(
+        "Analyzed $file [${dartFiles.indexOf(file) + 1}/${dartFiles.length}]");
   }
 
-  print('Found ${classes.length} classes.');
+  progress.complete();
+
+  logger.success('Found ${classes.length} classes.');
+
+  final outputProgress = logger.progress("Generating output");
 
   // Generate output
   final outputLibrary = Library((libraryBuilder) {
@@ -198,86 +238,9 @@ Future<void> main(List<String> args) async {
   final emitter = DartEmitter.scoped();
   final output = DartFormatter().format('${outputLibrary.accept(emitter)}');
 
+  outputProgress.complete();
+
   // Write output file
   File(outputPath).writeAsStringSync(libraryTypes + "\n" + output);
-  print('Generated documentation file: $outputPath');
+  logger.success('Generated documentation file: $outputPath');
 }
-
-/// The types used in the generated library. Same as in `doc_items.dart`.
-/// It might be cleaner to load this from an asset file, but for now we
-/// keep it here to avoid adding more dependencies.
-const libraryTypes = """
-class DocComponent {
-  const DocComponent({
-    required this.name,
-    required this.isNullSafe,
-    required this.description,
-    required this.constructors,
-    required this.properties,
-    required this.methods,
-  });
-
-  final String name;
-
-  final bool isNullSafe;
-
-  final String description;
-
-  final List<DocConstructor> constructors;
-
-  final List<DocProperty> properties;
-
-  final List<String> methods;
-}
-
-class DocProperty {
-  const DocProperty({
-    required this.name,
-    required this.type,
-    required this.description,
-    required this.features,
-  });
-
-  final String name;
-
-  final String type;
-
-  final String description;
-
-  final List<String> features;
-}
-
-class DocConstructor {
-  const DocConstructor({
-    required this.name,
-    required this.signature,
-    required this.features,
-  });
-
-  final String name;
-
-  final List<DocParameter> signature;
-
-  final List<String> features;
-}
-
-class DocParameter {
-  const DocParameter({
-    required this.name,
-    required this.type,
-    required this.description,
-    required this.named,
-    required this.required,
-  });
-
-  final String name;
-
-  final String description;
-
-  final String type;
-
-  final bool named;
-
-  final bool required;
-}
-""";
