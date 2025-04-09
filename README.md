@@ -63,19 +63,25 @@ Usage: mtrust_api_guard compare [arguments]
                    [major, minor, patch (default), none]
 ```
 
-## Workflow
+## Use in CI/CD
 
-For convenience, you can use the following workflow, that generates the API documentation
-and compares it with the reference base file:
+For convenience, you can use the [action](action.yaml) of this repository, that generates the API
+documentation and compares it with the reference base file.
 
-```bash
-  validate_api_docs_and_version:
-    uses: emdgroup/mtrust-api-guard/.github/workflows/api_doc_validator.yml@main
+Just add the following step to your workflow:
+
+```yaml
+  - name: Run M-Trust API Guard for dev branch
+    uses: emdgroup/mtrust-api-guard  # Or pin to a commit/tag
     with:
-      src_path: "./lib/src"
-      base_doc: "origin/main:./lib/documentation.dart"
-      new_doc: "./lib/documentation.dart"
-      new_version: {{ steps.version.outputs.version }} # use the version from the semver action
+      src_path: './lib'
+      base_doc: 'origin/dev:./lib/documentation.dart'
+      new_doc: './lib/documentation.dart'
+      # e.g. use the version from the semver action to be validated
+      new_version: '${{ steps.get_new_version.outputs.result }}'
+      comment_on_pr: true  # will post a change log comment on the PR
+      pr_comment_message: "New *DEV* version {version} 🚀\n\nDetected API changes:\n{changelog}"
+      fail_on_error: false
 ```
 
 ## License
