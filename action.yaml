@@ -4,42 +4,42 @@ author: "emdgroup"
 
 inputs:
   src_path:
-    description: 'Source path to generate the documentation'
+    description: "Source path to generate the documentation"
     required: true
     default: "./lib"
   base_doc:
-    description: 'Path / ref to base documentation.dart file'
+    description: "Path / ref to base documentation.dart file"
     required: true
     default: "origin/main:documentation.g.dart"
   new_doc:
-    description: 'Path to new documentation.dart file'
+    description: "Path to new documentation.dart file"
     required: true
     default: "documentation.g.dart"
   new_version:
-    description: 'New version to be validated'
+    description: "New version to be validated"
     required: true
   comment_on_pr:
-    description: 'Whether to add comments to the PR with API changes'
+    description: "Whether to add comments to the PR with API changes"
     required: false
-    default: 'true'
+    default: "true"
   pr_comment_message:
-    description: 'Custom message template for PR comments. Use {version} and {changelog} as placeholders.'
+    description: "Custom message template for PR comments. Use {version} and {changelog} as placeholders."
     required: false
     default: "New version {version} 🚀\n\nDetected API changes:\n{changelog}"
   fail_on_error:
-    description: 'Whether to fail the workflow on error'
+    description: "Whether to fail the workflow on error"
     required: false
-    default: 'true'
+    default: "true"
 
 outputs:
   api_change_type:
-    description: 'Detected API change type (major, minor, patch)'
+    description: "Detected API change type (major, minor, patch)"
     value: ${{ steps.detect_change_type.outputs.api_change_type }}
   api_changelog:
-    description: 'Generated API changelog'
+    description: "Generated API changelog"
     value: ${{ steps.detect_change_type.outputs.api_changelog }}
   validation_passed:
-    description: 'Whether the version validation passed'
+    description: "Whether the version validation passed"
     value: ${{ steps.validate_version.outputs.validation_passed }}
 
 runs:
@@ -72,18 +72,18 @@ runs:
           --magnitude patch)
         COMPARE_EXIT_CODE=$?
         set -e  # Resume exit on error
-        
+
         if [[ $COMPARE_EXIT_CODE -ne 0 && "${{ inputs.fail_on_error }}" == "true" ]]; then
           echo "Error in API comparison and fail_on_error is true"
           exit $COMPARE_EXIT_CODE
         fi
-        
+
         API_CHANGE_TYPE=$(echo "$API_CHANGELOG" | head -n 1 | grep -oE "major|minor|patch" || echo "patch")
         echo "api_change_type=$API_CHANGE_TYPE" >> $GITHUB_OUTPUT
         echo "api_changelog<<EOF" >> $GITHUB_OUTPUT
         echo "$API_CHANGELOG" >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
-        
+
         echo "API_CHANGE_TYPE=$API_CHANGE_TYPE" >> $GITHUB_ENV
         {
           echo 'API_CHANGELOG<<EOF'
@@ -111,7 +111,7 @@ runs:
       run: |
         IFS='.' read -r OLD_MAJOR OLD_MINOR OLD_PATCH <<< "$PREVIOUS_VERSION"
         IFS='.' read -r NEW_MAJOR NEW_MINOR NEW_PATCH <<< "${{ inputs.new_version }}"
-        
+
         if [[ "$NEW_MAJOR" -gt "$OLD_MAJOR" ]]; then
           DETECTED_CHANGE="major"
         elif [[ "$NEW_MINOR" -gt "$OLD_MINOR" ]]; then
@@ -120,7 +120,7 @@ runs:
           DETECTED_CHANGE="patch"
         fi
         echo "Expected: At least $API_CHANGE_TYPE | Detected: $DETECTED_CHANGE"
-        
+
         PRIORITY_MAP=("patch" "minor" "major")
         for i in "${!PRIORITY_MAP[@]}"; do
           [[ "${PRIORITY_MAP[$i]}" == "$API_CHANGE_TYPE" ]] && EXPECTED_INDEX=$i
@@ -148,23 +148,24 @@ runs:
 
     - name: Prepare PR comment content
       if: ${{ inputs.comment_on_pr == 'true' }}
-      shell: bash
-      run: |
-        # Create the comment by replacing placeholders
-        COMMENT="${{ inputs.pr_comment_message }}"
-        COMMENT="${COMMENT/\{version\}/${{ inputs.new_version }}}"
-        COMMENT="${COMMENT/\{changelog\}/${{ env.API_CHANGELOG }}}"
-        echo "PR_COMMENT<<EOF" >> $GITHUB_ENV
-        echo "$COMMENT" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
+      uses: actions/github-script@v7
+      id: prepare_comment
+      env:
+        PR_COMMENT: ${{ steps.prepare_comment.outputs.PR_COMMENT }}
+      with:
+        result-encoding: string
+        script: |
+          const message = '${{ inputs.pr_comment_message }}'
+            .replace('{version}', '${{ inputs.new_version }}')
+            .replace('{changelog}', process.env.API_CHANGELOG);
+          return message;
 
     - name: Comment on PR with new version and API changelog
       if: ${{ inputs.comment_on_pr == 'true' }}
       uses: thollander/actions-comment-pull-request@v3
       with:
         comment-tag: api_guard_comment
-        message: ${{ env.PR_COMMENT }}
-
+        message: ${{ steps.prepare_comment.outputs.result }}
 
 branding:
   icon: "shield"
