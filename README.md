@@ -31,6 +31,17 @@ Available commands:
 Run "mtrust_api_guard help <command>" for more information about a command.
 ```
 
+### Configuration
+
+You can configure the api_guard using the analysis_options.yaml file as we treat api guard as an extension to the linter.
+
+```yaml
+api_guard:
+  include: # defaults to lib/**.dart
+  exclude: # ignore files from being tracked by api_guard. Note that files in analyzer.exclude are always ignored.
+  documentation_file: # defaults to lib/documentation.g.dart
+```
+
 ### Generate
 
 ```bash
@@ -71,17 +82,17 @@ documentation and compares it with the reference base file.
 Just add the following step to your workflow:
 
 ```yaml
-  - name: Run M-Trust API Guard for dev branch
-    uses: emdgroup/mtrust-api-guard  # Or pin to a commit/tag
-    with:
-      src_path: './lib'
-      base_doc: 'origin/dev:./lib/documentation.dart'
-      new_doc: './lib/documentation.dart'
-      # e.g. use the version from the semver action to be validated
-      new_version: '${{ steps.get_new_version.outputs.result }}'
-      comment_on_pr: true  # will post a change log comment on the PR
-      pr_comment_message: "New *DEV* version {version} 🚀\n\nDetected API changes:\n{changelog}"
-      fail_on_error: false
+- name: Run M-Trust API Guard for dev branch
+  uses: emdgroup/mtrust-api-guard # Or pin to a commit/tag
+  with:
+    src_path: "./lib"
+    base_doc: "origin/dev:./lib/documentation.dart"
+    new_doc: "./lib/documentation.dart"
+    # e.g. use the version from the semver action to be validated
+    new_version: "${{ steps.get_new_version.outputs.result }}"
+    comment_on_pr: true # will post a change log comment on the PR
+    pr_comment_message: "New *DEV* version {version} 🚀\n\nDetected API changes:\n{changelog}"
+    fail_on_error: false
 ```
 
 ## License
