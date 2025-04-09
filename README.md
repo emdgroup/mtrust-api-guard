@@ -41,7 +41,7 @@ Usage: mtrust_api_guard generate [arguments]
 -p, --path      Path(s) to scan for Dart files
                 (defaults to "lib/src")
 -o, --output    Output file path
-                (defaults to "lib/documentation.g.dart")
+                (defaults to "documentation.g.dart")
 ```
 
 ### Compare
@@ -52,13 +52,13 @@ Compare two API documentation files
 Usage: mtrust_api_guard compare [arguments]
 -h, --help         Print this usage information.
 -b, --base         Base documentation file
-                   (defaults to "HEAD:./lib/documentation.dart")
+                   (defaults to "origin/main:documentation.g..dart")
 -n, --new          New documentation file
                    Hint: For 'base' and 'new', you can use:
-                   - local file paths (e.g. 'lib/documentation.dart'),
+                   - local file paths (e.g. './documentation.g.dart'),
                    - remote URLs (e.g. 'https://example.com/documentation.dart'),
-                   - or even Git references (e.g. 'HEAD:lib/documentation.dart').
-                   (defaults to "origin/main:./lib/documentation.dart")
+                   - or even Git references (e.g. 'HEAD:./documentation.g.dart').
+                   (defaults to "documentation.g.dart")
 -m, --magnitude    Show only changes up to the specified magnitude
                    [major, minor, patch (default), none]
 ```

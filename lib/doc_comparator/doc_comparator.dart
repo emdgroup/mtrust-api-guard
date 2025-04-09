@@ -29,7 +29,7 @@ class DocComparatorCommand extends Command {
         'base',
         abbr: 'b',
         help: 'Base documentation file',
-        defaultsTo: 'HEAD:./lib/documentation.dart',
+        defaultsTo: 'origin/main:documentation.g.dart',
       )
       ..addOption(
         'new',
@@ -39,7 +39,7 @@ class DocComparatorCommand extends Command {
             "- local file paths (e.g. 'lib/documentation.dart'),\n"
             "- remote URLs (e.g. 'https://example.com/documentation.dart'),\n"
             "- or even Git references (e.g. 'HEAD:lib/documentation.dart').\n",
-        defaultsTo: 'origin/main:./lib/documentation.dart',
+        defaultsTo: 'documentation.g.dart',
       )
       ..addOption(
         'magnitude',
