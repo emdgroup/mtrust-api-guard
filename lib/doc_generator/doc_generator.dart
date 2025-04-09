@@ -3,60 +3,18 @@ import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:args/command_runner.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:glob/glob.dart';
-import 'package:glob/list_local_fs.dart';
+import 'package:mtrust_api_guard/doc_file_path.dart';
 import 'package:mtrust_api_guard/doc_generator/detect_exclusions.dart';
+import 'package:mtrust_api_guard/doc_generator/detect_target_files.dart';
+import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
+import 'package:mtrust_api_guard/doc_generator/find_project_root.dart';
 import 'package:mtrust_api_guard/doc_generator/library_types.dart';
 import 'package:mtrust_api_guard/doc_items.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
-import 'package:path/path.dart' as p;
 import 'package:source_gen/source_gen.dart';
-
-class DocGeneratorCommand extends Command {
-  @override
-  String get description => "Generate API documentation from Dart files";
-
-  @override
-  String get name => "generate";
-
-  DocGeneratorCommand() {
-    argParser
-      ..addOption(
-        'path',
-        abbr: 'p',
-        help: 'Dart files to scan. Supports patterns.',
-        defaultsTo: 'lib/**/*.dart',
-      )
-      ..addOption(
-        'output',
-        abbr: 'o',
-        help: 'Output file path',
-        defaultsTo: 'lib/documentation.g.dart',
-      )
-      ..addFlag(
-        "verbose",
-        help: 'Verbose output.',
-        defaultsTo: false,
-      )
-      ..addOption(
-        'exclude',
-        abbr: 'e',
-        help: 'Path(s) to exclude from the analysis. Defaults to the files '
-            'defined in analysis_options.yaml or no files if it is not present.',
-        defaultsTo: null,
-      );
-  }
-
-  @override
-  FutureOr? run() {
-    final args = argResults!.arguments;
-    main(args);
-  }
-}
 
 Future<void> main(List<String> args) async {
   // Set up command line argument parser
@@ -70,53 +28,48 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final paths = argResults['path'] as String;
-  final outputPath = argResults['output'] as String;
-  final excludePaths = argResults['exclude'] as String?;
-  final verbose = argResults['verbose'] as bool;
+  final root = argResults['root'] as String?;
+  late Directory rootDir;
 
-  final dartFiles = Glob(paths)
-      .listSync()
-      .map(
-        (e) => p.normalize(e.absolute.path),
-      )
-      .toList();
+  // Find the root directory to base the analysis on
+  if (root == null) {
+    rootDir = await findProjectRoot(Directory.current.path);
 
-  Set<String> exclusions = {};
-
-  if (excludePaths != null) {
-    exclusions = Glob(excludePaths)
-        .listSync()
-        .map((e) => p.normalize(e.absolute.path))
-        .toSet();
-  } else {
-    if (verbose) {
-      logger.detail("Checking for excluded files in analysis_options.yaml...");
+    if (rootDir.path != Directory.current.path) {
+      logger.info("Changing root directory to $rootDir");
     }
-    exclusions = await detectExclusions(Directory.current.path);
+  } else {
+    rootDir = Directory(root);
+
+    if (!rootDir.existsSync()) {
+      logger.err('Root directory does not exist: $root');
+      return;
+    }
   }
+
+  // Detect the files to analyze
+
+  final dartFiles = detectTargetFiles(rootDir.path);
 
   if (dartFiles.isEmpty) {
     logger.err('No Dart files found in the specified paths. Exiting');
     return;
   }
 
-  if (!verbose) {
-    logger.info('Found ${dartFiles.length} Dart files to analyze.');
-    logger.info('Excluding ${exclusions.length} files.');
-  } else {
-    logger.info("Files to analyze:");
-    for (var e in dartFiles) {
-      logger.detail("\t" + e);
-    }
-    logger.info("Exclusions:");
-    for (var e in exclusions) {
-      logger.detail("\t" + e);
-    }
-  }
+  final exclusions = detectExclusionsFromAnalyzer(rootDir.path)
+    ..addAll(
+      detectExclusionsFromConfig(rootDir.path),
+    );
+
+  dartFiles.removeAll(exclusions);
+
+  logger.info('Including ${dartFiles.length} files.');
+  logger.info('Excluding ${exclusions.length} files.');
+
+  // Start the analysis
 
   final contextCollection = AnalysisContextCollection(
-    includedPaths: dartFiles,
+    includedPaths: dartFiles.toList(),
     excludedPaths: exclusions.toList(),
   );
 
@@ -181,7 +134,8 @@ Future<void> main(List<String> args) async {
       logger.err('Error analyzing file $file: $e');
     }
     progress.update(
-        "Analyzed $file [${dartFiles.indexOf(file) + 1}/${dartFiles.length}]");
+      "Analyzed $file [${dartFiles.toList().indexOf(file) + 1}/${dartFiles.length}]",
+    );
   }
 
   progress.complete();
@@ -240,7 +194,11 @@ Future<void> main(List<String> args) async {
 
   outputProgress.complete();
 
+  final outputFile = getDocFile(rootDir.path);
+
   // Write output file
-  File(outputPath).writeAsStringSync(libraryTypes + "\n" + output);
-  logger.success('Generated documentation file: $outputPath');
+  outputFile.writeAsStringSync(libraryTypes + "\n" + output);
+  logger.success('Generated documentation file: ${outputFile.path}');
+
+  contextCollection.dispose();
 }
