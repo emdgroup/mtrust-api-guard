@@ -61,6 +61,8 @@ runs:
           --path ${{ inputs.src_path }} \
           --output ${{ inputs.new_doc }} || if [[ "${{ inputs.fail_on_error }}" == "true" ]]; then exit 1; else echo "Ignoring error as fail_on_error is false"; fi
 
+        cat ${{ inputs.new_doc }}
+
     - name: Run API change type detection
       id: detect_change_type
       shell: bash
