@@ -12,7 +12,7 @@ inputs:
     required: true
     default: "origin/main:documentation.g.dart"
   new_doc:
-    description: 'Path to new documentation.dart file'
+    description: 'Path to new documentation.dart file. May not contain a ref, as we use the path for both, generation and comparison.'
     required: true
     default: "documentation.g.dart"
   new_version:
