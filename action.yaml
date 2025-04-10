@@ -30,6 +30,9 @@ inputs:
     description: 'Whether to fail the workflow on error'
     required: false
     default: 'true'
+  ref:
+    description: 'Git ref to know the context of the base documentation. This is used for the comparison.'
+    required: false
 
 outputs:
   api_change_type:
@@ -49,6 +52,7 @@ runs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
+        ref: ${{ inputs.ref }}
 
     - name: Install M-Trust API Guard from Git
       shell: bash
@@ -104,18 +108,6 @@ runs:
           PREVIOUS_VERSION="0.0.0"
         fi
         echo "PREVIOUS_VERSION=$PREVIOUS_VERSION" >> $GITHUB_ENV
-
-    - name: Show Content of Generated doc
-      shell: bash
-      run: |
-        echo "Generated API documentation:"
-        cat ${{ inputs.new_doc }}
-
-    - name: Show Content of Base doc
-      shell: bash
-      run: |
-        echo "Base API documentation:"
-        git show ${{ inputs.base_doc }}
 
     - name: Validate version bump
       id: validate_version
