@@ -30,9 +30,6 @@ inputs:
     description: 'Whether to fail the workflow on error'
     required: false
     default: 'true'
-  ref:
-    description: 'Git ref to know the context of the base documentation. This is used for the comparison.'
-    required: false
 
 outputs:
   api_change_type:
@@ -48,12 +45,9 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        ref: ${{ inputs.ref }}
-        sparse-checkout-cone-mode: false
+    - name: Fetch base branch info
+      run: git fetch --all
+      shell: bash
 
     - name: Install M-Trust API Guard from Git
       shell: bash
