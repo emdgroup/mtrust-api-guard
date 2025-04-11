@@ -147,22 +147,26 @@ runs:
 
     - name: Prepare PR comment content
       if: ${{ inputs.comment_on_pr == 'true' }}
-      shell: bash
-      run: |
-        # Create the comment by replacing placeholders
-        COMMENT="${{ inputs.pr_comment_message }}"
-        COMMENT="${COMMENT/\{version\}/${{ inputs.new_version }}}"
-        COMMENT="${COMMENT/\{changelog\}/${{ env.API_CHANGELOG }}}"
-        echo "PR_COMMENT<<EOF" >> $GITHUB_ENV
-        echo "$COMMENT" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
+      uses: actions/github-script@v7
+      id: prepare_comment
+      env:
+        PR_COMMENT: ${{ steps.prepare_comment.outputs.PR_COMMENT }}
+        PR_COMMENT_MESSAGE: ${{ inputs.pr_comment_message }}
+        NEW_VERSION: ${{ inputs.new_version }}
+      with:
+        result-encoding: string
+        script: |
+          const message = process.env.PR_COMMENT_MESSAGE
+            .replace('{version}', process.env.NEW_VERSION)
+            .replace('{changelog}', process.env.API_CHANGELOG);
+          return message;
 
     - name: Comment on PR with new version and API changelog
       if: ${{ inputs.comment_on_pr == 'true' }}
       uses: thollander/actions-comment-pull-request@v3
       with:
         comment-tag: api_guard_comment
-        message: ${{ env.PR_COMMENT }}
+        message: ${{ steps.prepare_comment.outputs.result }}
 
 
 branding:
