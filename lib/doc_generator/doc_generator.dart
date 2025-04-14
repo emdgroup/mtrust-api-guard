@@ -6,6 +6,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:args/command_runner.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
+import 'package:mtrust_api_guard/doc_comparator/library_types.dart';
 import 'package:mtrust_api_guard/doc_items.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart' as p;
@@ -202,82 +203,3 @@ Future<void> main(List<String> args) async {
   File(outputPath).writeAsStringSync(libraryTypes + "\n" + output);
   print('Generated documentation file: $outputPath');
 }
-
-/// The types used in the generated library. Same as in `doc_items.dart`.
-/// It might be cleaner to load this from an asset file, but for now we
-/// keep it here to avoid adding more dependencies.
-const libraryTypes = """
-class DocComponent {
-  const DocComponent({
-    required this.name,
-    required this.isNullSafe,
-    required this.description,
-    required this.constructors,
-    required this.properties,
-    required this.methods,
-  });
-
-  final String name;
-
-  final bool isNullSafe;
-
-  final String description;
-
-  final List<DocConstructor> constructors;
-
-  final List<DocProperty> properties;
-
-  final List<String> methods;
-}
-
-class DocProperty {
-  const DocProperty({
-    required this.name,
-    required this.type,
-    required this.description,
-    required this.features,
-  });
-
-  final String name;
-
-  final String type;
-
-  final String description;
-
-  final List<String> features;
-}
-
-class DocConstructor {
-  const DocConstructor({
-    required this.name,
-    required this.signature,
-    required this.features,
-  });
-
-  final String name;
-
-  final List<DocParameter> signature;
-
-  final List<String> features;
-}
-
-class DocParameter {
-  const DocParameter({
-    required this.name,
-    required this.type,
-    required this.description,
-    required this.named,
-    required this.required,
-  });
-
-  final String name;
-
-  final String description;
-
-  final String type;
-
-  final bool named;
-
-  final bool required;
-}
-""";

@@ -1,3 +1,7 @@
+/// The types used in the generated library. Same as in `doc_items.dart`.
+/// It might be cleaner to load this from an asset file, but for now we
+/// keep it here to avoid adding more dependencies.
+const libraryTypes = """
 class DocComponent {
   const DocComponent({
     required this.name,
@@ -20,8 +24,7 @@ class DocComponent {
         'name': name,
         'isNullSafe': isNullSafe,
         'description': description,
-        'constructors':
-            constructors.map((constructor) => constructor.toJson()).toList(),
+        'constructors': constructors.map((constructor) => constructor.toJson()).toList(),
         'properties': properties.map((property) => property.toJson()).toList(),
         'methods': methods,
       };
@@ -70,8 +73,7 @@ class DocProperty {
       name: json['name'] as String,
       type: json['type'] as String,
       description: json['description'] as String,
-      features:
-          (json['features'] as List).map((item) => item as String).toList(),
+      features: (json['features'] as List).map((item) => item as String).toList(),
     );
   }
 }
@@ -101,8 +103,7 @@ class DocConstructor {
       signature: (json['signature'] as List)
           .map((item) => DocParameter.fromJson(item as Map<String, dynamic>))
           .toList(),
-      features:
-          (json['features'] as List).map((item) => item as String).toList(),
+      features: (json['features'] as List).map((item) => item as String).toList(),
     );
   }
 }
@@ -142,3 +143,4 @@ class DocParameter {
     );
   }
 }
+""";
