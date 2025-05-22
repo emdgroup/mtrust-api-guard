@@ -148,7 +148,7 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
       if (oldConstructor == null) {
         changes.add(ConstructorApiChange(
           component: componentName,
-          constructor: this[i],
+          constructor: newConstructors[i],
           operation: ApiChangeOperation.added,
         ));
       }
