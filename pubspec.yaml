@@ -4,7 +4,6 @@ homepage: https://github.com/emdgroup/mtrust-api-guard/
 version: 0.0.1
 environment:
   sdk: ">=2.17.0 <4.0.0"
-  flutter: ">=1.17.0"
 dependencies:
   analyzer: ^6.2.0
   build: ^2.4.1
