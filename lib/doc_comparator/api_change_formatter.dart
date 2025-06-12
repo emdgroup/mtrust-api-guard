@@ -16,18 +16,19 @@ class ApiChangeFormatter {
     },
   });
 
+  String get highestMagnitudeText =>
+      _getHighestMagnitudeText(getHighestMagnitude(changes));
+
   String format() {
-    ApiChangeMagnitude? highestMagnitude;
     final changelogBuffer = StringBuffer();
 
     // Group changes by magnitude and process them in order
     final changesByMagnitude = _groupByMagnitude();
 
     for (final magnitude in magnitudes) {
-      changelogBuffer.writeln("\n");
-      changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
-
       if (!changesByMagnitude.containsKey(magnitude)) continue;
+
+      changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
 
       // Group by component and process them in alphabetical order
       final componentChanges = _groupByComponent(
@@ -36,7 +37,8 @@ class ApiChangeFormatter {
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**$component**');
+        changelogBuffer.writeln(
+            '**$component** (${componentChanges[component]!.first.component.filePath})');
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges =
@@ -49,7 +51,7 @@ class ApiChangeFormatter {
       }
     }
 
-    return "${_getHighestMagnitudeText(highestMagnitude)}\n$changelogBuffer";
+    return "$changelogBuffer";
   }
 
   // Group changes by magnitude
@@ -59,7 +61,7 @@ class ApiChangeFormatter {
 
   // Group changes by component
   Map<String, List<ApiChange>> _groupByComponent(List<ApiChange> changes) {
-    return groupBy(changes, (change) => change.component);
+    return groupBy(changes, (change) => change.component.name);
   }
 
   // Group changes by generating a change category that considers the type,
@@ -85,13 +87,13 @@ class ApiChangeFormatter {
   String _getHighestMagnitudeText(ApiChangeMagnitude? highestMagnitude) {
     switch (highestMagnitude) {
       case ApiChangeMagnitude.major:
-        return "> 💣 **Breaking changes detected.** Bump the major version.";
+        return "💣 **Breaking changes detected.** Bump the major version.";
       case ApiChangeMagnitude.minor:
-        return '> ✨ **Minor changes detected.** Increment the minor version.';
+        return '✨ **Minor changes detected.** Increment the minor version.';
       case ApiChangeMagnitude.patch:
-        return '> 👀 **Internal changes detected.** Increment the patch version.';
+        return '👀 **Internal changes detected.** Increment the patch version.';
       default:
-        return '> 🎉 **No API changes detected.** Increment the patch version.';
+        return '🎉 **No API changes detected.** Increment the patch version.';
     }
   }
 
@@ -177,7 +179,7 @@ class ApiChangeFormatter {
       final text = _getOperationText(operation, prefix: 'Class');
       final components =
           changes.map((c) => (c as ComponentApiChange).component).toList();
-      return '$text: `${components.join('`, `')}`';
+      return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }
 
     // This should actually never happen:

@@ -6,8 +6,9 @@ import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator_command.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_ext.dart';
-import 'package:mtrust_api_guard/doc_comparator/doc_parser.dart';
+
 import 'package:mtrust_api_guard/doc_comparator/file_loader.dart';
+import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:mtrust_api_guard/config/config.dart';
@@ -62,8 +63,9 @@ void main(List<String> args) async {
     final apiChanges = parseDocComponentsFile(baseContent).compareTo(
       parseDocComponentsFile(newContent),
     );
-    logger
-        .info(ApiChangeFormatter(apiChanges, magnitudes: magnitudes).format());
+    final formatter = ApiChangeFormatter(apiChanges, magnitudes: magnitudes);
+    logger.info(formatter.highestMagnitudeText);
+    logger.info(formatter.format());
   } catch (e, stack) {
     logger.err('An error occurred: \\n$e');
     logger.err('Stack trace: $stack');

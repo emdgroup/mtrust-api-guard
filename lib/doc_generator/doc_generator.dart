@@ -1,13 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:code_builder/code_builder.dart';
-import 'package:dart_style/dart_style.dart';
 import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
-import 'package:mtrust_api_guard/doc_generator/library_types.dart';
-import 'package:mtrust_api_guard/doc_items.dart';
+
+import 'package:mtrust_api_guard/models/doc_items.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:source_gen/source_gen.dart';
@@ -54,6 +53,7 @@ Future<void> main(List<String> args) async {
       for (final classItem in classesInLibrary) {
         classes.add(DocComponent(
           name: classItem.name,
+          filePath: classItem.location?.components.join('/'),
           isNullSafe: true,
           description:
               classItem.documentationComment?.replaceAll("///", "") ?? "",
@@ -110,61 +110,19 @@ Future<void> main(List<String> args) async {
   final outputProgress = logger.progress("Generating output");
 
   // Generate output
-  final outputLibrary = Library((libraryBuilder) {
-    libraryBuilder.body.add(Field((field) => field
-      ..name = "docComponents"
-      ..modifier = FieldModifier.constant
-      ..assignment = literalList([
-        for (final classItem in classes)
-          refer("DocComponent").newInstance([], {
-            "name": literalString(classItem.name),
-            "isNullSafe": literalBool(classItem.isNullSafe),
-            "description": literalString(classItem.description),
-            "properties": literalList(classItem.properties
-                .map((e) => refer("DocProperty").newInstance([], {
-                      "name": literalString(e.name),
-                      "type": literalString(e.type),
-                      "description": literalString(e.description),
-                      "features": literalList(
-                          e.features.map((e) => literalString(e)).toList()),
-                    }))
-                .toList()),
-            "constructors": literalList(classItem.constructors
-                .map((e) => refer("DocConstructor").newInstance([], {
-                      "name": literalString(e.name),
-                      "signature": literalList(e.signature
-                          .map((e) => refer("DocParameter").newInstance(
-                                [],
-                                {
-                                  "name": literalString(e.name),
-                                  "type": literalString(e.type),
-                                  "description": literalString(e.description),
-                                  "named": literalBool(e.named),
-                                  "required": literalBool(e.required),
-                                },
-                              ))
-                          .toList()),
-                      "features": literalList(
-                          e.features.map((e) => literalString(e)).toList()),
-                    }))
-                .toList()),
-            "methods": literalList(
-                classItem.methods.map((e) => literalString(e)).toList()),
-          })
-      ]).code));
-  });
 
-  final emitter = DartEmitter.scoped();
-  final output = DartFormatter().format('${outputLibrary.accept(emitter)}');
+  final output = jsonEncode(classes);
+
+  if (!outputFile.existsSync()) {
+    outputFile.createSync(recursive: true);
+  }
+  outputFile.writeAsStringSync(output);
 
   outputProgress.complete();
 
   if (!outputFile.existsSync()) {
     outputFile.createSync(recursive: true);
   }
-
-  // Write output file
-  outputFile.writeAsStringSync(libraryTypes + "\n" + output);
   logger.success('Generated documentation file: ${outputFile.path}');
 
   contextCollection.dispose();

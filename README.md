@@ -27,6 +27,8 @@ Global options:
 Available commands:
   compare    Compare two API documentation files
   generate   Generate API documentation from Dart files
+  changelog  Generate a changelog entry based on API changes
+  version    Calculate and output the next version based on API changes
 
 Run "mtrust_api_guard help <command>" for more information about a command.
 ```
@@ -73,6 +75,30 @@ Usage: mtrust_api_guard compare [arguments]
 -m, --magnitude    Show only changes up to the specified magnitude
                    [major, minor, patch (default), none]
 ```
+
+### Version
+
+```bash
+Calculate and output the next version based on API changes
+
+Usage: mtrust_api_guard version [arguments]
+-h, --help         Print this usage information.
+-b, --base         Base documentation file
+                   (defaults to previous version from git history)
+-n, --new          New documentation file
+                   (defaults to "documentation.g.dart")
+-p, --pre-release  Add pre-release suffix (-dev.N)
+                   (defaults to false)
+```
+
+The version command will:
+
+1. Compare the API changes between the base and new documentation files
+2. Determine the highest magnitude of changes (major, minor, or patch)
+3. Get the current version from pubspec.yaml
+4. Calculate the next version based on the magnitude
+5. If --pre-release is set, add -dev.N suffix where N is incremented if the version already exists
+6. Output the new version number
 
 ## Use in CI/CD
 

@@ -1,3 +1,3 @@
 import 'package:mason_logger/mason_logger.dart';
 
-final logger = Logger();
+final logger = Logger(theme: LogTheme());

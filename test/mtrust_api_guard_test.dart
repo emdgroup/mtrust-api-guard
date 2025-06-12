@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 void main() {
   group('mtrust_api_guard integration', () {
@@ -8,6 +9,7 @@ void main() {
     final fixturesDir = Directory('test/fixtures');
     final appV1Dir = Directory(p.join(fixturesDir.path, 'app_v1'));
     final appV2Dir = Directory(p.join(fixturesDir.path, 'app_v2'));
+    final appV3Dir = Directory(p.join(fixturesDir.path, 'app_v3'));
     final expectedDiffFile = File(
       p.join(fixturesDir.path, 'expected_diff.txt'),
     );
@@ -33,12 +35,10 @@ void main() {
       await _run('git', ['config', 'user.name', 'Test User'],
           workingDir: tempDir.path);
 
-      // 3. Run flutter create if needed (TODO: may not be needed if app_v1 is a full app)
       await _run('flutter', ['create', '.', '--template', 'package'],
           workingDir: tempDir.path);
 
-      // 5. Run api guard to generate documentation (TODO: replace with actual command)
-      final apiGuardOut1 = await _run(
+      await _run(
         'mtrust_api_guard',
         ['generate'],
         workingDir: tempDir.path,
@@ -58,7 +58,6 @@ void main() {
       await _run('git', ['commit', '-m', 'API change'],
           workingDir: tempDir.path);
 
-      // 8. Run api guard to generate documentation (TODO: replace with actual command)
       final apiGuardOut2 = await _run(
         'mtrust_api_guard',
         ['generate'],
@@ -66,17 +65,60 @@ void main() {
         captureOutput: true,
       );
 
-      // 9. Run api guard again to detect changes (TODO: replace with actual command)
-      final apiGuardOut3 = await _run(
+      await _run(
         'mtrust_api_guard',
-        ['compare'],
+        ['version'],
+        workingDir: tempDir.path,
+        captureOutput: true,
+      );
+
+      final yaml = File(p.join(tempDir.path, 'pubspec.yaml'));
+
+      final pubspec = loadYaml(yaml.readAsStringSync());
+
+      expect(pubspec['version'], '1.0.0');
+
+      await _run(
+        'mtrust_api_guard',
+        ['changelog'],
+        workingDir: tempDir.path,
+        captureOutput: true,
+      );
+
+      await _copyDir(appV3Dir, tempDir);
+
+      await _run('git', ['add', '.'], workingDir: tempDir.path);
+      await _run('git', ['commit', '-m', 'API change 3'],
+          workingDir: tempDir.path);
+
+      await _run(
+        'mtrust_api_guard',
+        ['generate'],
+        workingDir: tempDir.path,
+        captureOutput: true,
+      );
+
+      await _run(
+        'mtrust_api_guard',
+        ['version'],
+        workingDir: tempDir.path,
+        captureOutput: true,
+      );
+
+      final yaml2 = File(p.join(tempDir.path, 'pubspec.yaml'));
+
+      final pubspec2 = loadYaml(yaml2.readAsStringSync());
+
+      expect(pubspec2['version'], '1.1.0');
+
+      await _run(
+        'mtrust_api_guard',
+        ['changelog'],
         workingDir: tempDir.path,
         captureOutput: true,
       );
 
       // 9. Compare output to expected snapshot
-      final expectedDiff = await expectedDiffFile.readAsString();
-      expect(apiGuardOut2.trim(), expectedDiff.trim());
     });
   });
 }

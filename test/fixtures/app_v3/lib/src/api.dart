@@ -1,0 +1,32 @@
+// Version 3 of the API
+
+// Removed Product class (should be detected as removed)
+
+class User {
+  final String name;
+  final int age;
+  final String
+      _internalId; // new private property (should be detected as added, private)
+  String? email;
+  String? phone; // new property (should be detected as added)
+
+  String? mobilePhone; // new property (should be detected as added)
+
+  // Changed constructor: added required _internalId, phone is now optional named
+  User(
+    this.name,
+    this.age,
+    this._internalId, {
+    this.email,
+    this.phone,
+    this.mobilePhone,
+  });
+}
+
+// Added new class
+class Order {
+  final String orderId;
+  final double total;
+
+  Order(this.orderId, this.total);
+}

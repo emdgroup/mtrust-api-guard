@@ -14,17 +14,36 @@ class ApiGuardConfig {
   /// File to write the API documentation to.
   final String docFile;
 
+  /// Whether to generate a badge for the version.
+  final bool generateBadge;
+
   ApiGuardConfig({
     required this.include,
     required this.exclude,
     required this.docFile,
+    required this.generateBadge,
   });
 
   factory ApiGuardConfig.defaultConfig() {
     return ApiGuardConfig(
       include: {'lib/**.dart'},
-      exclude: {'api_guard/documentation.g.dart'},
-      docFile: 'api_guard/documentation.g.dart',
+      exclude: {},
+      docFile: 'api_guard/api.json',
+      generateBadge: true,
+    );
+  }
+
+  ApiGuardConfig copyWith({
+    bool? generateBadge,
+    String? docFile,
+    Set<String>? include,
+    Set<String>? exclude,
+  }) {
+    return ApiGuardConfig(
+      include: include ?? this.include,
+      exclude: exclude ?? this.exclude,
+      docFile: docFile ?? this.docFile,
+      generateBadge: generateBadge ?? this.generateBadge,
     );
   }
 
@@ -40,41 +59,20 @@ class ApiGuardConfig {
 
     final apiGuard = yaml['api_guard'] as YamlMap?;
 
+    final defaultConfig = ApiGuardConfig.defaultConfig();
+
     if (apiGuard == null) {
       return ApiGuardConfig.defaultConfig();
     }
 
-    Set<String> exclude = {};
-    Set<String> include = {};
-
-    if (yaml["analyzer"] != null) {
-      if (yaml["analyzer"]["exclude"] != null) {
-        exclude = (yaml["analyzer"]["exclude"] as YamlList)
-            .map((e) => e.toString())
-            .toSet();
-      }
-    }
-
-    if (apiGuard["exclude"] != null) {
-      exclude.addAll(
-        (apiGuard["exclude"] as YamlList).map((e) => e.toString()).toSet(),
-      );
-    }
-
-    if (apiGuard["include"] != null) {
-      include = (apiGuard["include"] as YamlList)
-          .map(
-            (e) => e.toString(),
-          )
-          .toSet();
-    } else {
-      include = ApiGuardConfig.defaultConfig().include.toSet();
-    }
-
-    return ApiGuardConfig(
-      include: include,
-      exclude: exclude,
-      docFile: apiGuard['docFile'] ?? ApiGuardConfig.defaultConfig().docFile,
-    );
+    return defaultConfig.copyWith(
+        include: (apiGuard["include"] as YamlList?)
+            ?.map((e) => e.toString())
+            .toSet(),
+        exclude: (apiGuard["exclude"] as YamlList?)
+            ?.map((e) => e.toString())
+            .toSet(),
+        docFile: apiGuard['docFile'],
+        generateBadge: apiGuard['generateBadge']);
   }
 }

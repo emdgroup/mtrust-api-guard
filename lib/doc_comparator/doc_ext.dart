@@ -10,7 +10,7 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
           .firstWhereOrNull((element) => element.name == this[i].name);
       if (newComponent == null) {
         changes.add(ComponentApiChange(
-          component: this[i].name,
+          component: this[i],
           operation: ApiChangeOperation.removed,
         ));
         continue;
@@ -23,7 +23,7 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
           firstWhereOrNull((element) => element.name == newComponents[i].name);
       if (oldComponent == null) {
         changes.add(ComponentApiChange(
-          component: newComponents[i].name,
+          component: newComponents[i],
           operation: ApiChangeOperation.added,
         ));
       }
@@ -40,7 +40,7 @@ extension DocComponentApiChangesExt on DocComponent {
     if (isNullSafe != newComponent.isNullSafe) {
       changes.add(
         ComponentApiChange(
-          component: name,
+          component: this,
           operation: newComponent.isNullSafe
               ? ApiChangeOperation.becameNullSafe
               : ApiChangeOperation.becameNullUnsafe,
@@ -49,10 +49,10 @@ extension DocComponentApiChangesExt on DocComponent {
     }
 
     changes.addAll(
-      constructors.compareTo(newComponent.constructors, componentName: name),
+      constructors.compareTo(newComponent.constructors, component: this),
     );
     changes.addAll(
-      properties.compareTo(newComponent.properties, componentName: name),
+      properties.compareTo(newComponent.properties, component: this),
     );
 
     return changes;
@@ -64,12 +64,12 @@ extension ConstructorApiChangesExt on DocConstructor {
   /// [ApiChange]s that have been detected between the two constructors.
   List<ApiChange> compareTo(
     DocConstructor newConstructor, {
-    required String componentName,
+    required DocComponent component,
   }) {
     final changes = <ApiChange>[];
     _addChange(DocParameter parameter, ApiChangeOperation operation) {
       changes.add(ConstructorParameterApiChange(
-        component: componentName,
+        component: component,
         constructor: this,
         operation: operation,
         parameter: parameter,
@@ -123,7 +123,7 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
   /// list of [ApiChange]s that have been detected between the two lists.
   List<ApiChange> compareTo(
     List<DocConstructor> newConstructors, {
-    required String componentName,
+    required DocComponent component,
   }) {
     final changes = <ApiChange>[];
 
@@ -132,14 +132,13 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
           .firstWhereOrNull((element) => element.name == this[i].name);
       if (newConstructor == null) {
         changes.add(ConstructorApiChange(
-          component: componentName,
+          component: component,
           constructor: this[i],
           operation: ApiChangeOperation.removed,
         ));
         continue;
       }
-      changes.addAll(
-          this[i].compareTo(newConstructor, componentName: componentName));
+      changes.addAll(this[i].compareTo(newConstructor, component: component));
     }
 
     for (var i = 0; i < newConstructors.length; i++) {
@@ -147,7 +146,7 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
           (element) => element.name == newConstructors[i].name);
       if (oldConstructor == null) {
         changes.add(ConstructorApiChange(
-          component: componentName,
+          component: component,
           constructor: this[i],
           operation: ApiChangeOperation.added,
         ));
@@ -163,7 +162,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
   /// of [ApiChange]s that have been detected between the two lists.
   List<ApiChange> compareTo(
     List<DocProperty> newProperties, {
-    required String componentName,
+    required DocComponent component,
   }) {
     final changes = <ApiChange>[];
 
@@ -172,7 +171,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           .firstWhereOrNull((element) => element.name == this[i].name);
       if (newProperty == null) {
         changes.add(PropertyApiChange(
-          component: componentName,
+          component: component,
           property: this[i],
           operation: ApiChangeOperation.removed,
         ));
@@ -180,7 +179,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
       }
       if (this[i].type != newProperty.type) {
         changes.add(PropertyApiChange(
-          component: componentName,
+          component: component,
           property: this[i],
           operation: ApiChangeOperation.typeChanged,
         ));
@@ -192,7 +191,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           firstWhereOrNull((element) => element.name == newProperties[i].name);
       if (oldProperty == null) {
         changes.add(PropertyApiChange(
-          component: componentName,
+          component: component,
           property: newProperties[i],
           operation: ApiChangeOperation.added,
         ));
