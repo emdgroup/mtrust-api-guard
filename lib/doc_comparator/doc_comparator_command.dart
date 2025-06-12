@@ -39,20 +39,18 @@ class DocComparatorCommand extends Command {
         'base',
         abbr: 'b',
         help: 'Base documentation file',
-        defaultsTo: 'origin/main:documentation.g.dart',
       )
       ..addOption(
         'new',
         abbr: 'n',
         help: "New documentation file",
-        defaultsTo: 'documentation.g.dart',
       )
-      ..addOption(
-        'magnitude',
+      ..addMultiOption(
+        'magnitudes',
         abbr: 'm',
-        help: 'Show only changes up to the specified magnitude',
-        defaultsTo: 'patch',
-        allowed: ['major', 'minor', 'patch', 'none'],
+        help: 'Show only changes with the specified magnitudes',
+        defaultsTo: ['major', 'minor', 'patch'],
+        allowed: ['major', 'minor', 'patch'],
       );
   }
 

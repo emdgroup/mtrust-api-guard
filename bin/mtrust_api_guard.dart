@@ -1,8 +1,6 @@
 import 'package:args/command_runner.dart';
-import 'package:mason_logger/mason_logger.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator_command.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
-import 'package:mtrust_api_guard/logger.dart';
 
 main(List<String> args) async {
   final commandRunner = CommandRunner(
@@ -15,7 +13,8 @@ main(List<String> args) async {
   commandRunner.argParser
     ..addOption(
       "root",
-      help: "Root directory of the project. The root of the dart project.",
+      help: "Root directory of the project. The root of the dart project."
+          "If omitted, walks up the directory tree until it finds a pubspec.yaml file.",
       defaultsTo: null,
     )
     ..addFlag(
@@ -27,13 +26,6 @@ main(List<String> args) async {
   if (args.isEmpty) {
     print(commandRunner.usage);
     return;
-  }
-
-  final argResults = commandRunner.parse(args);
-
-  if (argResults.flag("verbose")) {
-    logger.level = Level.verbose;
-    logger.info("Verbose output enabled");
   }
 
   commandRunner.run(args);

@@ -1,15 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:code_builder/code_builder.dart';
 import 'package:dart_style/dart_style.dart';
-import 'package:mtrust_api_guard/doc_file_path.dart';
-import 'package:mtrust_api_guard/doc_generator/detect_exclusions.dart';
-import 'package:mtrust_api_guard/doc_generator/detect_target_files.dart';
+import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
-import 'package:mtrust_api_guard/doc_generator/find_project_root.dart';
 import 'package:mtrust_api_guard/doc_generator/library_types.dart';
 import 'package:mtrust_api_guard/doc_items.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -28,45 +24,12 @@ Future<void> main(List<String> args) async {
     return;
   }
 
-  final root = argResults['root'] as String?;
-  late Directory rootDir;
-
-  // Find the root directory to base the analysis on
-  if (root == null) {
-    rootDir = await findProjectRoot(Directory.current.path);
-
-    if (rootDir.path != Directory.current.path) {
-      logger.info("Changing root directory to $rootDir");
-    }
-  } else {
-    rootDir = Directory(root);
-
-    if (!rootDir.existsSync()) {
-      logger.err('Root directory does not exist: $root');
-      return;
-    }
-  }
-
-  // Detect the files to analyze
-
-  final dartFiles = detectTargetFiles(rootDir.path);
+  final (dartFiles, exclusions, outputFile) = evaluateTargetFiles(argResults);
 
   if (dartFiles.isEmpty) {
     logger.err('No Dart files found in the specified paths. Exiting');
     return;
   }
-
-  final exclusions = detectExclusionsFromAnalyzer(rootDir.path)
-    ..addAll(
-      detectExclusionsFromConfig(rootDir.path),
-    );
-
-  dartFiles.removeAll(exclusions);
-
-  logger.info('Including ${dartFiles.length} files.');
-  logger.info('Excluding ${exclusions.length} files.');
-
-  // Start the analysis
 
   final contextCollection = AnalysisContextCollection(
     includedPaths: dartFiles.toList(),
@@ -140,7 +103,9 @@ Future<void> main(List<String> args) async {
 
   progress.complete();
 
-  logger.success('Found ${classes.length} classes.');
+  logger.success(
+    'Found ${classes.length} classes: ${classes.map((e) => e.name).join(', ')}',
+  );
 
   final outputProgress = logger.progress("Generating output");
 
@@ -194,7 +159,9 @@ Future<void> main(List<String> args) async {
 
   outputProgress.complete();
 
-  final outputFile = getDocFile(rootDir.path);
+  if (!outputFile.existsSync()) {
+    outputFile.createSync(recursive: true);
+  }
 
   // Write output file
   outputFile.writeAsStringSync(libraryTypes + "\n" + output);

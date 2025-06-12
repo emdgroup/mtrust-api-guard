@@ -1,7 +1,5 @@
 // ignore_for_file: avoid_print
 
-import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -9,81 +7,66 @@ import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator_command.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_ext.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_parser.dart';
+import 'package:mtrust_api_guard/doc_comparator/file_loader.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
+import 'package:mtrust_api_guard/config/config.dart';
+import 'package:mtrust_api_guard/find_project_root.dart';
+import 'package:path/path.dart';
 
 void main(List<String> args) async {
   final cmd = DocComparatorCommand();
   final argResults = cmd.argResults ?? cmd.argParser.parse(args);
 
-  final magArg = argResults['magnitude'] as String;
-  final magnitude = ApiChangeMagnitude.values.firstWhereOrNull(
-    (element) => element.toString().contains(magArg),
-  );
+  final magnitudes = (argResults['magnitudes'] as List<String>)
+      .map((e) => ApiChangeMagnitude.values.firstWhereOrNull(
+            (element) => element.toString().contains(e),
+          ))
+      .whereType<ApiChangeMagnitude>()
+      .toSet();
 
-  final baseFile = argResults['base'] as String;
-  final newFile = argResults['new'] as String;
-  final newContent = await _getFileContent(newFile);
-  final baseContent = await _getFileContent(baseFile);
-
-  final apiChanges = parseDocComponentsFile(baseContent).compareTo(
-    parseDocComponentsFile(newContent),
-  );
-  logger.info(
-      ApiChangeFormatter(apiChanges, showUpToMagnitude: magnitude).format());
-}
-
-Future<String> _getFileContent(String path) {
-  if (path.startsWith('https://')) {
-    return _getRemoteContent(Uri.parse(path));
-  } else if (path.contains(':')) {
-    return _getGitFileContent(path);
+  // Load config and determine doc file path
+  final rootDir = findProjectRoot(Directory.current.path);
+  final analysisOptionsFile = File(join(rootDir.path, 'analysis_options.yaml'));
+  ApiGuardConfig config;
+  if (analysisOptionsFile.existsSync()) {
+    logger.info(
+        'Loading config from analysis_options.yaml at ${analysisOptionsFile.path}');
+    config = ApiGuardConfig.fromYaml(analysisOptionsFile);
   } else {
-    return _getLocalFileContent(path);
+    logger.info('No analysis_options.yaml found, using default config.');
+    config = ApiGuardConfig.defaultConfig();
   }
-}
+  final docFilePath = join(rootDir.path, config.docFile);
+  logger.info('Documentation file path resolved to: $docFilePath');
 
-Future<String> _getLocalFileContent(String path) async {
-  final file = File(path);
-  if (!file.existsSync()) {
-    throw ArgumentError('File not found: $path');
+  // Determine base and new file paths
+  final newFile = argResults['new'] as String? ?? docFilePath;
+  final baseFile = argResults['base'] as String?;
+
+  try {
+    logger.info('Reading new documentation file: $newFile');
+    final newContent = await getFileContent(newFile);
+    final baseContent = baseFile != null
+        ? await (() async {
+            logger.info('Reading base documentation file: $baseFile');
+            return await getFileContent(baseFile);
+          })()
+        : await (() async {
+            logger.info(
+                'No base file provided, retrieving previous version of documentation file from git history.');
+            return await getPreviousGitFileContent(docFilePath, rootDir);
+          })();
+
+    logger.info('Comparing documentation files...');
+    final apiChanges = parseDocComponentsFile(baseContent).compareTo(
+      parseDocComponentsFile(newContent),
+    );
+    logger
+        .info(ApiChangeFormatter(apiChanges, magnitudes: magnitudes).format());
+  } catch (e, stack) {
+    logger.err('An error occurred: \\n$e');
+    logger.err('Stack trace: $stack');
+    exit(1);
   }
-  return File(path).readAsStringSync();
-}
-
-Future<String> _getRemoteContent(Uri uri) async {
-  final response = HttpClient().getUrl(uri);
-  return await response.then((value) => value.close()).then((value) {
-    return value.transform(const Utf8Decoder()).join();
-  });
-}
-
-Future<String> _getGitFileContent(String fileIdentifier) async {
-  final parts = fileIdentifier.split(':');
-  if (parts.length < 2) {
-    throw ArgumentError(
-        'Invalid fileIdentifier format. Expected "<tree-ish>:<file-path>".');
-  }
-
-  final treeIsh = parts.first;
-  final path = parts.sublist(1).join(':'); // Handle file paths with colons
-
-  final process = await Process.start(
-    'git',
-    ['show', '$treeIsh:$path'],
-    mode: ProcessStartMode.normal, // Capture output instead of inheriting it
-  );
-
-  final stdoutFuture = process.stdout.transform(utf8.decoder).join();
-  final stderrFuture = process.stderr.transform(utf8.decoder).join();
-
-  final exitCode = await process.exitCode;
-  final stdoutResult = await stdoutFuture;
-  final stderrResult = await stderrFuture;
-
-  if (exitCode != 0) {
-    throw Exception('git show failed: $stderrResult');
-  }
-
-  return stdoutResult;
 }

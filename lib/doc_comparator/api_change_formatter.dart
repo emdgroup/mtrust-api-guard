@@ -4,15 +4,16 @@ import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 /// Formatter to display API changes in a hierarchical format
 class ApiChangeFormatter {
   final List<ApiChange> changes;
-  final ApiChangeMagnitude? showUpToMagnitude;
+
+  final Set<ApiChangeMagnitude> magnitudes;
 
   ApiChangeFormatter(
     this.changes, {
-    /// If set to null, no changelog will be shown.
-    /// If set to [ApiChangeMagnitude.major], only major changes will be shown.
-    /// If set to [ApiChangeMagnitude.minor], major and minor changes will be shown.
-    /// If set to [ApiChangeMagnitude.patch], all changes will be shown.
-    this.showUpToMagnitude = ApiChangeMagnitude.patch,
+    this.magnitudes = const {
+      ApiChangeMagnitude.major,
+      ApiChangeMagnitude.minor,
+      ApiChangeMagnitude.patch,
+    },
   });
 
   String format() {
@@ -21,28 +22,17 @@ class ApiChangeFormatter {
 
     // Group changes by magnitude and process them in order
     final changesByMagnitude = _groupByMagnitude();
-    final magnitudes = [
-      ApiChangeMagnitude.major,
-      ApiChangeMagnitude.minor,
-      ApiChangeMagnitude.patch
-    ];
+
     for (final magnitude in magnitudes) {
-      if (!changesByMagnitude.containsKey(magnitude)) continue;
-      highestMagnitude =
-          (highestMagnitude ?? ApiChangeMagnitude.patch).atLeast(magnitude);
-
-      if (showUpToMagnitude == null ||
-          magnitude.index < showUpToMagnitude!.index) {
-        // We do not want to print this magnitude
-        continue;
-      }
-
-      changelogBuffer.writeln("\n---\n");
+      changelogBuffer.writeln("\n");
       changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
 
+      if (!changesByMagnitude.containsKey(magnitude)) continue;
+
       // Group by component and process them in alphabetical order
-      final componentChanges =
-          _groupByComponent(changesByMagnitude[magnitude]!);
+      final componentChanges = _groupByComponent(
+        changesByMagnitude[magnitude]!,
+      );
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
         changelogBuffer.writeln();
@@ -109,11 +99,11 @@ class ApiChangeFormatter {
   String _getMagnitudeHeader(ApiChangeMagnitude magnitude) {
     switch (magnitude) {
       case ApiChangeMagnitude.major:
-        return '# 💣 Breaking changes (major increment)';
+        return '# 💣 Breaking changes';
       case ApiChangeMagnitude.minor:
-        return '# ✨ Minor changes, public (minor increment)';
+        return '# ✨ Minor changes';
       case ApiChangeMagnitude.patch:
-        return '# 👀 Internal changes (patch increment)';
+        return '# 👀 Patch changes';
     }
   }
 
@@ -169,7 +159,7 @@ class ApiChangeFormatter {
           (changes.first as ConstructorParameterApiChange).constructor.name;
       final constructorLabel =
           "${constructor.startsWith("_") ? "private " : ""}"
-          "constructor '${constructor.isEmpty ? 'default' : constructor}'";
+          "constructor${constructor.isEmpty ? '' : " $constructor"}";
       return '$text in $constructorLabel: `${params.join('`, `')}`';
     }
 

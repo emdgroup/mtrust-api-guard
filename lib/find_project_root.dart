@@ -1,7 +1,6 @@
-import 'dart:async';
 import 'dart:io';
 
-Future<Directory> findProjectRoot(String path) async {
+Directory findProjectRoot(String path) {
   var currentDir = Directory(path);
 
   while (currentDir.path.split("/").length > 1) {
