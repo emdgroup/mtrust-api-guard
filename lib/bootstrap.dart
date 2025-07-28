@@ -47,14 +47,18 @@ import 'package:path/path.dart';
 
   for (final include in config.include) {
     targetFiles.addAll(
-      Glob(include).listSync(root: rootDir.path).map((e) => normalize(e.path)),
+      Glob(include)
+          .listSync(root: rootDir.path)
+          .map((e) => normalize(absolute(e.path))),
     );
   }
 
   final exclusions = <String>{};
   for (final exclude in config.exclude) {
     exclusions.addAll(
-      Glob(exclude).listSync(root: rootDir.path).map((e) => normalize(e.path)),
+      Glob(exclude)
+          .listSync(root: rootDir.path)
+          .map((e) => normalize(absolute(e.path))),
     );
   }
 
