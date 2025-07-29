@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/badges/badge_generator.dart';
 import 'package:mtrust_api_guard/config/config.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
@@ -16,7 +17,8 @@ import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
-class VersionCommand extends Command {
+class VersionCommand extends Command
+    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew {
   @override
   String get description =>
       "Calculate and output the next version based on API changes";
@@ -38,23 +40,6 @@ class VersionCommand extends Command {
 
   VersionCommand._internal() {
     argParser
-      ..addOption(
-        'root',
-        abbr: 'r',
-        help:
-            'Root directory of the dart project. Defaults to auto detect from the current directory.',
-        defaultsTo: null,
-      )
-      ..addOption(
-        'base',
-        abbr: 'b',
-        help: 'Base documentation file',
-      )
-      ..addOption(
-        'new',
-        abbr: 'n',
-        help: "New documentation file",
-      )
       ..addFlag(
         'badge',
         abbr: 'g',

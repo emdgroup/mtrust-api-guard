@@ -1,10 +1,13 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+
 import 'package:args/command_runner.dart';
+import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 
-class DocComparatorCommand extends Command {
+class DocComparatorCommand extends Command
+    with ApiGuardCommandMixinWithBaseNew {
   @override
   String get description => "Compare two API documentation files";
 
@@ -28,23 +31,6 @@ class DocComparatorCommand extends Command {
 
   DocComparatorCommand._internal() {
     argParser
-      ..addOption(
-        'root',
-        abbr: 'r',
-        help:
-            'Root directory of the dart project. Defaults to auto detect from the root directory. Will try walking up the directory tree if no root is found.',
-        defaultsTo: null,
-      )
-      ..addOption(
-        'base',
-        abbr: 'b',
-        help: 'Base documentation file',
-      )
-      ..addOption(
-        'new',
-        abbr: 'n',
-        help: "New documentation file",
-      )
       ..addMultiOption(
         'magnitudes',
         abbr: 'm',

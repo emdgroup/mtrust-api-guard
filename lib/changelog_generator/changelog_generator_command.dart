@@ -4,17 +4,18 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
 import 'package:mtrust_api_guard/config/config.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_ext.dart';
-
 import 'package:mtrust_api_guard/doc_comparator/file_loader.dart';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/find_project_root.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 
-class ChangelogGeneratorCommand extends Command {
+class ChangelogGeneratorCommand extends Command
+    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew {
   @override
   String get description => "Generate a changelog entry based on API changes";
 
@@ -36,23 +37,6 @@ class ChangelogGeneratorCommand extends Command {
 
   ChangelogGeneratorCommand._internal() {
     argParser
-      ..addOption(
-        'root',
-        abbr: 'r',
-        help:
-            'Root directory of the dart project. Defaults to auto detect from the current directory.',
-        defaultsTo: null,
-      )
-      ..addOption(
-        'base',
-        abbr: 'b',
-        help: 'Base documentation file',
-      )
-      ..addOption(
-        'new',
-        abbr: 'n',
-        help: "New documentation file",
-      )
       ..addFlag(
         'update',
         abbr: 'u',
