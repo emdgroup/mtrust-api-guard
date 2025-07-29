@@ -15,12 +15,6 @@ main(List<String> args) async {
     ..addCommand(VersionCommand());
 
   commandRunner.argParser
-    ..addOption(
-      "root",
-      help: "Root directory of the project. The root of the dart project."
-          "If omitted, walks up the directory tree until it finds a pubspec.yaml file.",
-      defaultsTo: null,
-    )
     ..addFlag(
       "verbose",
       help: "Verbose output.",

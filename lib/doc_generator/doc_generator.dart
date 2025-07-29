@@ -5,11 +5,10 @@ import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
-
-import 'package:mtrust_api_guard/models/doc_items.dart';
 import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/models/doc_items.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
-import 'package:source_gen/source_gen.dart';
+import 'package:path/path.dart';
 
 Future<void> main(List<String> args) async {
   // Set up command line argument parser
@@ -36,7 +35,6 @@ Future<void> main(List<String> args) async {
   );
 
   final classes = <DocComponent>[];
-
   final progress = logger.progress("Analyzing dart files");
 
   // Analyze each file
@@ -48,22 +46,25 @@ Future<void> main(List<String> args) async {
         throw StateError('Library not resolved.');
       }
 
-      final classesInLibrary = LibraryReader(library.element).classes;
+      final classesInLibrary = library.element2.classes;
 
       for (final classItem in classesInLibrary) {
         classes.add(DocComponent(
-          name: classItem.name,
-          filePath: classItem.location?.components.join('/'),
+          name: classItem.name3.toString(),
+          filePath: relative(
+            file,
+            from: contextCollection.contextFor(file).contextRoot.root.path,
+          ),
           isNullSafe: true,
           description:
               classItem.documentationComment?.replaceAll("///", "") ?? "",
-          constructors: classItem.constructors
+          constructors: classItem.constructors2
               .map((e) => DocConstructor(
-                    name: e.name.toString(),
-                    signature: e.parameters
+                    name: e.name3.toString(),
+                    signature: e.formalParameters
                         .map((param) => DocParameter(
                               description: param.documentationComment ?? "",
-                              name: param.name.toString(),
+                              name: param.name3.toString(),
                               type: param.type.toString(),
                               named: param.isNamed,
                               required: param.isRequired,
@@ -76,9 +77,9 @@ Future<void> main(List<String> args) async {
                     ],
                   ))
               .toList(),
-          properties: classItem.fields
+          properties: classItem.fields2
               .map((e) => DocProperty(
-                    name: e.name.toString(),
+                    name: e.name3.toString(),
                     type: e.type.toString(),
                     description: e.documentationComment ?? "",
                     features: [
@@ -90,7 +91,7 @@ Future<void> main(List<String> args) async {
                     ],
                   ))
               .toList(),
-          methods: classItem.methods.map((e) => e.name.toString()).toList(),
+          methods: classItem.methods2.map((e) => e.name3.toString()).toList(),
         ));
       }
     } catch (e) {
