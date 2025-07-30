@@ -85,7 +85,7 @@ class VersionCommand extends Command
       '-m',
       'chore: bump version to $version [skip ci]',
     ]);
-    await Process.run('git', ['tag', version]);
+    await Process.run('git', ['tag', 'v$version']);
   }
 
   Future<void> _writeNewVersion(String filePath, String newVersion) async {
