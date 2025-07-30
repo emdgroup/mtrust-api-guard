@@ -7,8 +7,11 @@ class ApiChangeFormatter {
 
   final Set<ApiChangeMagnitude> magnitudes;
 
+  final int markdownHeaderLevel;
+
   ApiChangeFormatter(
     this.changes, {
+    this.markdownHeaderLevel = 1,
     this.magnitudes = const {
       ApiChangeMagnitude.major,
       ApiChangeMagnitude.minor,
@@ -101,11 +104,11 @@ class ApiChangeFormatter {
   String _getMagnitudeHeader(ApiChangeMagnitude magnitude) {
     switch (magnitude) {
       case ApiChangeMagnitude.major:
-        return '# 💣 Breaking changes';
+        return '${'#' * markdownHeaderLevel} 💣 Breaking changes';
       case ApiChangeMagnitude.minor:
-        return '# ✨ Minor changes';
+        return '${'#' * markdownHeaderLevel} ✨ Minor changes';
       case ApiChangeMagnitude.patch:
-        return '# 👀 Patch changes';
+        return '${'#' * markdownHeaderLevel} 👀 Patch changes';
     }
   }
 

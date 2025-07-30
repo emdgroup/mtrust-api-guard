@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
@@ -120,7 +120,10 @@ class ChangelogGenerator {
   /// and the formatted API changes
   Future<String> generateChangelogEntry() async {
     final version = await _getPackageVersion();
-    final apiChangesFormatter = ApiChangeFormatter(apiChanges);
+    final apiChangesFormatter = ApiChangeFormatter(
+      apiChanges,
+      markdownHeaderLevel: 4,
+    );
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();
 
@@ -133,7 +136,7 @@ class ChangelogGenerator {
     );
 
     if (commits.isNotEmpty) {
-      buffer.writeln('\n### Commits');
+      buffer.writeln('\n### Commits\n');
       for (final commit in commits) {
         buffer.writeln(commit.toString());
       }
@@ -141,7 +144,7 @@ class ChangelogGenerator {
     }
 
     if (formattedChanges.isNotEmpty) {
-      buffer.writeln('### API Changes');
+      buffer.writeln('\n### API Changes\n');
       buffer.writeln(formattedChanges);
     }
 
