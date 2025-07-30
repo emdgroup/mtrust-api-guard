@@ -131,10 +131,18 @@ class ConstructorParameterApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
-    if (constructor.name.startsWith('_') || parameter.name.startsWith('_')) {
-      // if the constructor or parameter is private, it's a patch change
+    if (constructor.name.startsWith('_')) {
+      // if the constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.becameRequired ||
+        operation == ApiChangeOperation.becamePositional ||
+        operation == ApiChangeOperation.becameNullUnsafe ||
+        (operation == ApiChangeOperation.removed && parameter.required)) {
+      return ApiChangeMagnitude.major;
+    }
+
     if (operation == ApiChangeOperation.becameNullSafe ||
         operation == ApiChangeOperation.becameOptional ||
         (operation == ApiChangeOperation.removed && !parameter.required)) {
