@@ -1,33 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
 
+import 'package:conventional/conventional.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
-
-/// Represents a single commit's information
-class CommitInfo {
-  final String hash;
-  final String author;
-  final String message;
-  final DateTime date;
-
-  CommitInfo({
-    required this.hash,
-    required this.author,
-    required this.message,
-    required this.date,
-  });
-
-  @override
-  String toString() {
-    final shortHash = hash.substring(0, 7);
-    final formattedDate = '${date.month}/${date.day}/${date.year}';
-    return '- **$shortHash** ($formattedDate) by $author: $message';
-  }
-}
 
 /// Generates a changelog entry based on the API changes and the current version from pubspec.yaml
 class ChangelogGenerator {
@@ -40,7 +18,7 @@ class ChangelogGenerator {
   });
 
   /// Gets the commits since the last version tag
-  Future<List<CommitInfo>> _getCommitsSinceLastVersion() async {
+  Future<List<Commit>> _getCommitsSinceLastVersion() async {
     try {
       // Get the last version tag
       final lastTagResult = await Process.run(
@@ -49,20 +27,17 @@ class ChangelogGenerator {
         workingDirectory: projectRoot.path,
       );
 
-      final commits = <CommitInfo>[];
-      final gitLogFormat =
-          '%H%n%an%n%at%n%s'; // hash, author name, author date (unix timestamp), subject
-
+      final commits = <Commit>[];
       if (lastTagResult.exitCode == 0) {
         final lastTag = lastTagResult.stdout.toString().trim();
         // Get commits since the last tag
         final commitResult = await Process.run(
           'git',
           [
+            '--no-pager',
             'log',
+            '--no-decorate',
             '$lastTag..HEAD',
-            '--pretty=format:$gitLogFormat',
-            '--no-merges'
           ],
           workingDirectory: projectRoot.path,
         );
@@ -74,7 +49,7 @@ class ChangelogGenerator {
         // If no tags exist, get all commits
         final commitResult = await Process.run(
           'git',
-          ['log', '--pretty=format:$gitLogFormat', '--no-merges'],
+          ['--no-pager', 'log', '--no-decorate'],
           workingDirectory: projectRoot.path,
         );
         if (commitResult.exitCode == 0) {
@@ -91,29 +66,8 @@ class ChangelogGenerator {
   }
 
   /// Parses the git log output into CommitInfo objects
-  List<CommitInfo> _parseCommitLog(String log) {
-    if (log.isEmpty) return [];
-
-    final commits = <CommitInfo>[];
-    final lines = LineSplitter.split(log).toList();
-
-    for (var i = 0; i < lines.length; i += 4) {
-      if (i + 3 >= lines.length) break;
-
-      final hash = lines[i];
-      final author = lines[i + 1];
-      final timestamp = int.parse(lines[i + 2]);
-      final message = lines[i + 3];
-
-      commits.add(CommitInfo(
-        hash: hash,
-        author: author,
-        message: message,
-        date: DateTime.fromMillisecondsSinceEpoch(timestamp * 1000),
-      ));
-    }
-
-    return commits;
+  List<Commit> _parseCommitLog(String log) {
+    return Commit.parseCommits(log);
   }
 
   /// Generates a changelog entry, including the version from pubspec.yaml
@@ -135,12 +89,16 @@ class ChangelogGenerator {
       'Released on: ${time.month}/${time.day}/${time.year}, changelog automatically generated.',
     );
 
-    if (commits.isNotEmpty) {
-      buffer.writeln('\n### Commits\n');
-      for (final commit in commits) {
-        buffer.writeln(commit.toString());
+    if (hasReleasableCommits(commits)) {
+      final summary =
+          await changelogSummary(commits: commits, version: version);
+      if (summary is ChangeSummary) {
+        final summaryWithoutHeader = summary.toMarkdown().replaceFirst(
+              '# (.*?)\n',
+              '',
+            );
+        buffer.writeln(summaryWithoutHeader);
       }
-      buffer.writeln();
     }
 
     if (formattedChanges.isNotEmpty) {
