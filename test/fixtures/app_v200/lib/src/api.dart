@@ -9,7 +9,6 @@ class User {
       _internalId; // new private property (should be detected as added, private)
   String? email;
   String? phone; // new property (should be detected as added)
-
   String? mobilePhone; // new property (should be detected as added)
 
   // Changed constructor: added required _internalId, phone is now optional named

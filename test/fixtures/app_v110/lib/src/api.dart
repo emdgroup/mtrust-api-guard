@@ -11,7 +11,15 @@ class User {
   String? phone; // new property (should be detected as added)
 
   // Changed constructor: added required _internalId, phone is now optional named
-  User(this.name, this.age, this._internalId, {this.email, this.phone});
+  User(this.name, this.age, {this._internalId, this.email, this.phone});
+}
+
+// Keep the Product class for compatibility with previous versions
+class Product {
+  final String id;
+  final double price;
+
+  Product(this.id, this.price);
 }
 
 // Added new class

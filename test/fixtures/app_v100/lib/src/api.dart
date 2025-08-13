@@ -14,3 +14,9 @@ class Product {
 
   Product(this.id, this.price);
 }
+
+class _PrivateClass {
+  final String secret;
+
+  _PrivateClass(this.secret);
+}
