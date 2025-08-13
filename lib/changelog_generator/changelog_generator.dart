@@ -20,27 +20,40 @@ class ChangelogGenerator {
   /// Gets the commits since the last version tag
   Future<List<Commit>> _getCommitsSinceLastVersion() async {
     try {
-      // Get the last version tag
-      final lastTagResult = await Process.run(
+      // Get all tags sorted by creation date (newest first)
+      final tagsResult = await Process.run(
         'git',
-        ['describe', '--tags', '--abbrev=0'],
+        ['tag', '--sort=-creatordate'],
         workingDirectory: projectRoot.path,
       );
 
       final commits = <Commit>[];
-      if (lastTagResult.exitCode == 0) {
-        final lastTag = lastTagResult.stdout.toString().trim();
-        // Get commits since the last tag
+      if (tagsResult.exitCode == 0) {
+        final tags = tagsResult.stdout
+            .toString()
+            .trim()
+            .split('\n')
+            .where((tag) => tag.isNotEmpty)
+            .toList();
+
+        String? previousTag;
+        if (tags.length > 1) {
+          // Get the second tag (previous version)
+          previousTag = tags[1];
+        }
+
+        // Get commits since the previous tag (or all commits if no previous tag)
+        final gitArgs = ['--no-pager', 'log', '--no-decorate'];
+        if (previousTag != null) {
+          gitArgs.add('$previousTag..HEAD');
+        }
+
         final commitResult = await Process.run(
           'git',
-          [
-            '--no-pager',
-            'log',
-            '--no-decorate',
-            '$lastTag..HEAD',
-          ],
+          gitArgs,
           workingDirectory: projectRoot.path,
         );
+
         if (commitResult.exitCode == 0) {
           commits
               .addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
@@ -93,16 +106,13 @@ class ChangelogGenerator {
       final summary =
           await changelogSummary(commits: commits, version: version);
       if (summary is ChangeSummary) {
-        final summaryWithoutHeader = summary.toMarkdown().replaceFirst(
-              '# (.*?)\n',
-              '',
-            );
-        buffer.writeln(summaryWithoutHeader);
+        buffer.writeln('\n');
+        buffer.writeln(_filtersectionsFromMarkdown(summary.toMarkdown()));
       }
     }
 
     if (formattedChanges.isNotEmpty) {
-      buffer.writeln('\n### API Changes\n');
+      buffer.writeln('\n### API Changes');
       buffer.writeln(formattedChanges);
     }
 
@@ -155,5 +165,40 @@ class ChangelogGenerator {
       logger.err('Error retrieving package version: $e');
       rethrow;
     }
+  }
+
+  String _filtersectionsFromMarkdown(
+    String markdown, {
+    List<String> sections = const ["Features", "Bug Fixes"],
+    int headerLevel = 3,
+  }) {
+    final sectionHeader = '${'#' * headerLevel} ';
+    final filteredLines = <String>[];
+
+    bool inSection = false;
+    for (final line in markdown.split('\n')) {
+      if (line.trim().isEmpty) {
+        continue;
+      }
+
+      if (line.startsWith("#")) {
+        for (String section in sections) {
+          if (line.endsWith(section)) {
+            filteredLines.add('$sectionHeader$section');
+            filteredLines.add(''); // Add a blank line after the header
+            inSection = true;
+            continue;
+          }
+        }
+      } else if (line.startsWith("- ")) {
+        if (inSection) {
+          filteredLines.add(line);
+        }
+      } else {
+        inSection = false;
+      }
+    }
+
+    return filteredLines.join('\n');
   }
 }

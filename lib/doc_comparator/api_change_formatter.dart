@@ -31,6 +31,7 @@ class ApiChangeFormatter {
     for (final magnitude in magnitudes) {
       if (!changesByMagnitude.containsKey(magnitude)) continue;
 
+      changelogBuffer.writeln();
       changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
 
       // Group by component and process them in alphabetical order
