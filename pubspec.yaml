@@ -25,4 +25,4 @@ dev_dependencies:
   test: any
   json_serializable: ^6.10.0
   build_runner: ^2.6.0
-  #flutter_lints: ^1.0.0
+  flutter_lints: ^1.0.0

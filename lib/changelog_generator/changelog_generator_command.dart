@@ -14,16 +14,14 @@ import 'package:mtrust_api_guard/find_project_root.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 
-class ChangelogGeneratorCommand extends Command
-    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew {
+class ChangelogGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew {
   @override
   String get description => "Generate a changelog entry based on API changes";
 
   @override
   String get name => "changelog";
 
-  static final ChangelogGeneratorCommand _instance =
-      ChangelogGeneratorCommand._internal();
+  static final ChangelogGeneratorCommand _instance = ChangelogGeneratorCommand._internal();
 
   factory ChangelogGeneratorCommand() => _instance;
 
@@ -36,13 +34,12 @@ class ChangelogGeneratorCommand extends Command
   }
 
   ChangelogGeneratorCommand._internal() {
-    argParser
-      ..addFlag(
-        'update',
-        abbr: 'u',
-        help: 'Update the CHANGELOG.md file',
-        defaultsTo: true,
-      );
+    argParser.addFlag(
+      'update',
+      abbr: 'u',
+      help: 'Update the CHANGELOG.md file',
+      defaultsTo: true,
+    );
   }
 
   @override
@@ -51,18 +48,14 @@ class ChangelogGeneratorCommand extends Command
 
     // Find the project root
     final rootPath = argResults['root'] as String?;
-    final rootDir = rootPath != null
-        ? Directory(rootPath)
-        : findProjectRoot(Directory.current.path);
+    final rootDir = rootPath != null ? Directory(rootPath) : findProjectRoot(Directory.current.path);
 
     // Load config and determine doc file path
-    final analysisOptionsFile =
-        File(join(rootDir.path, 'analysis_options.yaml'));
+    final analysisOptionsFile = File(join(rootDir.path, 'analysis_options.yaml'));
     ApiGuardConfig config;
 
     if (analysisOptionsFile.existsSync()) {
-      logger.info(
-          'Loading config from analysis_options.yaml at ${analysisOptionsFile.path}');
+      logger.info('Loading config from analysis_options.yaml at ${analysisOptionsFile.path}');
       config = ApiGuardConfig.fromYaml(analysisOptionsFile);
     } else {
       logger.info('No analysis_options.yaml found, using default config.');
@@ -85,8 +78,7 @@ class ChangelogGeneratorCommand extends Command
               return await getFileContent(baseFile);
             })()
           : await (() async {
-              logger.info(
-                  'No base file provided, retrieving previous version of documentation file from git history.');
+              logger.info('No base file provided, retrieving previous version of documentation file from git history.');
               return await getPreviousGitFileContent(docFilePath, rootDir);
             })();
 
@@ -104,8 +96,7 @@ class ChangelogGeneratorCommand extends Command
       if (argResults['update'] as bool) {
         await changelogGenerator.updateChangelogFile();
       } else {
-        final changelogEntry =
-            await changelogGenerator.generateChangelogEntry();
+        final changelogEntry = await changelogGenerator.generateChangelogEntry();
         print('\n$changelogEntry');
       }
     } catch (e, stack) {

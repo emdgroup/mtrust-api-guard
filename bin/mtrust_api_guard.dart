@@ -14,12 +14,11 @@ main(List<String> args) async {
     ..addCommand(ChangelogGeneratorCommand())
     ..addCommand(VersionCommand());
 
-  commandRunner.argParser
-    ..addFlag(
-      "verbose",
-      help: "Verbose output.",
-      defaultsTo: false,
-    );
+  commandRunner.argParser.addFlag(
+    "verbose",
+    help: "Verbose output.",
+    defaultsTo: false,
+  );
 
   if (args.isEmpty) {
     print(commandRunner.usage);

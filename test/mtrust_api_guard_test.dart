@@ -42,18 +42,15 @@ void main() {
       /// Helper method to setup git repository with user config
       Future<void> _setupGitRepo() async {
         await _run('git', ['init'], workingDir: tempDir.path);
-        await _run('git', ['config', 'user.email', testEmail],
-            workingDir: tempDir.path);
-        await _run('git', ['config', 'user.name', testUser],
-            workingDir: tempDir.path);
+        await _run('git', ['config', 'user.email', testEmail], workingDir: tempDir.path);
+        await _run('git', ['config', 'user.name', testUser], workingDir: tempDir.path);
       }
 
       /// Helper method to set version in pubspec.yaml
       void _setVersion(String version) {
         final yaml = File(p.join(tempDir.path, 'pubspec.yaml'));
         yaml.writeAsStringSync(
-          yaml.readAsStringSync().replaceFirst(
-              RegExp(r'version: \d+\.\d+\.\d+'), 'version: $version'),
+          yaml.readAsStringSync().replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: $version'),
         );
       }
 
@@ -71,10 +68,8 @@ void main() {
       }
 
       Future<void> _runApiGuard(String command, List<String> args) async {
-        print(
-            'Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
-        print(
-            "dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
+        print('Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
+        print("dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
         final result = await Process.run(
           'dart',
           ["${rootDir.path}/bin/mtrust_api_guard.dart", command, ...args],
@@ -85,8 +80,7 @@ void main() {
 
         if (result.exitCode != 0) {
           print('Command failed: $command ${args.join(' ')}');
-          fail(
-              'API Guard command "$command ${args.join(' ')}" failed with exit code ${result.exitCode}\n'
+          fail('API Guard command "$command ${args.join(' ')}" failed with exit code ${result.exitCode}\n'
               'stdout: ${result.stdout}\n'
               'stderr: ${result.stderr}');
         }
@@ -99,8 +93,7 @@ void main() {
         // 2. Initialize git
         await _setupGitRepo();
 
-        await _run('flutter', ['create', '.', '--template', 'package'],
-            workingDir: tempDir.path);
+        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
 
         // Set the initial version in pubspec.yaml
         _setVersion(initialVersion);
@@ -116,8 +109,7 @@ void main() {
 
         // 4. Commit initial state
         await _commitChanges('chore!: Initial release v$initialVersion');
-        await _run('git', ['tag', 'v$initialVersion'],
-            workingDir: tempDir.path);
+        await _run('git', ['tag', 'v$initialVersion'], workingDir: tempDir.path);
 
         expect(_getCurrentVersion(), initialVersion);
 
@@ -147,8 +139,7 @@ void main() {
 
         // 8. Copy app_v3 over tempDir
         await _copyDir(appV200Dir, tempDir);
-        await _commitChanges(
-            'feat: implement compatibility with v$majorVersion');
+        await _commitChanges('feat: implement compatibility with v$majorVersion');
 
         await _runApiGuard('generate', []);
         await _runApiGuard('version', []);
@@ -179,10 +170,8 @@ void main() {
         expect(changelogContent, equalsIgnoringWhitespace(expectedChangelog));
       });
 
-      test('version command fails gracefully when no api.json is present',
-          () async {
-        await _run('flutter', ['create', '.', '--template', 'package'],
-            workingDir: tempDir.path);
+      test('version command fails gracefully when no api.json is present', () async {
+        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
         await _copyDir(appV100Dir, tempDir);
         print('Initialized Flutter project in ${tempDir.path}');
         expect(
@@ -191,7 +180,7 @@ void main() {
         );
       });
     },
-    timeout: Timeout(Duration(minutes: 3)),
+    timeout: const Timeout(Duration(minutes: 3)),
   );
 }
 
@@ -210,8 +199,7 @@ Future<void> _copyDir(Directory src, Directory dst) async {
 }
 
 /// Run a process and optionally capture stdout.
-Future<String> _run(String cmd, List<String> args,
-    {String? workingDir, bool captureOutput = false}) async {
+Future<String> _run(String cmd, List<String> args, {String? workingDir, bool captureOutput = false}) async {
   final result = await Process.run(cmd, args, workingDirectory: workingDir);
 
   final stdout = result.stdout.toString();
@@ -232,11 +220,7 @@ Future<String> _run(String cmd, List<String> args,
 }
 
 String _stripChangelog(String changelog) {
-  final commitLinkRegexp =
-      RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
-  final releasedOnLineRegexp = RegExp(
-      r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
-  return changelog
-      .replaceAll(commitLinkRegexp, '')
-      .replaceAll(releasedOnLineRegexp, '');
+  final commitLinkRegexp = RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
+  final releasedOnLineRegexp = RegExp(r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
+  return changelog.replaceAll(commitLinkRegexp, '').replaceAll(releasedOnLineRegexp, '');
 }

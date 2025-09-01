@@ -1,4 +1,6 @@
 import 'package:args/command_runner.dart';
+
+// ignore: implementation_imports
 import 'package:args/src/arg_parser.dart';
 
 extension ArgParserExt on ArgParser {
@@ -16,8 +18,8 @@ mixin ApiGuardCommandMixinWithRoot on Command {
       argParser.addOption(
         'root',
         abbr: 'r',
-        help:
-            'Root directory of the Dart project. Defaults to auto-detect from the current directory.',
+        help: 'Root directory of the Dart project.'
+            ' Defaults to auto-detect from the current directory.',
         defaultsTo: null,
       );
     }
