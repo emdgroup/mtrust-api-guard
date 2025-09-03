@@ -6,15 +6,14 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
-import 'package:mtrust_api_guard/config/config.dart';
-import 'package:mtrust_api_guard/doc_comparator/doc_ext.dart';
-import 'package:mtrust_api_guard/doc_comparator/file_loader.dart';
-import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
-import 'package:mtrust_api_guard/find_project_root.dart';
-import 'package:mtrust_api_guard/logger.dart';
-import 'package:path/path.dart';
+import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
+import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 
-class ChangelogGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew {
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/logger.dart';
+
+class ChangelogGeneratorCommand extends Command
+    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithCache {
   @override
   String get description => "Generate a changelog entry based on API changes";
 
@@ -42,67 +41,33 @@ class ChangelogGeneratorCommand extends Command with ApiGuardCommandMixinWithRoo
     );
   }
 
+  bool get update {
+    return argResults?['update'] as bool;
+  }
+
   @override
   FutureOr? run() async {
-    final argResults = this.argResults!;
+    final changes = await compare(
+      magnitudes: {ApiChangeMagnitude.major, ApiChangeMagnitude.minor, ApiChangeMagnitude.patch},
+      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      newRef: newRef,
+      dartRoot: root,
+      gitRoot: Directory.current,
+      cache: cache,
+    );
 
-    // Find the project root
-    final rootPath = argResults['root'] as String?;
-    final rootDir = rootPath != null ? Directory(rootPath) : findProjectRoot(Directory.current.path);
+    // Generate changelog
+    final changelogGenerator = ChangelogGenerator(
+      apiChanges: changes,
+      projectRoot: root,
+    );
 
-    // Load config and determine doc file path
-    final analysisOptionsFile = File(join(rootDir.path, 'analysis_options.yaml'));
-    ApiGuardConfig config;
-
-    if (analysisOptionsFile.existsSync()) {
-      logger.info('Loading config from analysis_options.yaml at ${analysisOptionsFile.path}');
-      config = ApiGuardConfig.fromYaml(analysisOptionsFile);
+    if (update) {
+      logger.info('Updating CHANGELOG.md file');
+      await changelogGenerator.updateChangelogFile();
     } else {
-      logger.info('No analysis_options.yaml found, using default config.');
-      config = ApiGuardConfig.defaultConfig();
-    }
-
-    final docFilePath = join(rootDir.path, config.docFile);
-    logger.info('Documentation file path resolved to: $docFilePath');
-
-    // Determine base and new file paths
-    final newFile = argResults['new'] as String? ?? docFilePath;
-    final baseFile = argResults['base'] as String?;
-
-    try {
-      logger.info('Reading new documentation file: $newFile');
-      final newContent = await getFileContent(newFile);
-      final baseContent = baseFile != null
-          ? await (() async {
-              logger.info('Reading base documentation file: $baseFile');
-              return await getFileContent(baseFile);
-            })()
-          : await (() async {
-              logger.info('No base file provided, retrieving previous version of documentation file from git history.');
-              return await getPreviousGitFileContent(docFilePath, rootDir);
-            })();
-
-      logger.info('Comparing documentation files to generate changelog...');
-      final apiChanges = parseDocComponentsFile(baseContent).compareTo(
-        parseDocComponentsFile(newContent),
-      );
-
-      // Generate changelog
-      final changelogGenerator = ChangelogGenerator(
-        apiChanges: apiChanges,
-        projectRoot: rootDir,
-      );
-
-      if (argResults['update'] as bool) {
-        await changelogGenerator.updateChangelogFile();
-      } else {
-        final changelogEntry = await changelogGenerator.generateChangelogEntry();
-        print('\n$changelogEntry');
-      }
-    } catch (e, stack) {
-      logger.err('An error occurred: \n$e');
-      logger.err('Stack trace: $stack');
-      exit(1);
+      final changelogEntry = await changelogGenerator.generateChangelogEntry();
+      print('\n$changelogEntry');
     }
   }
 }

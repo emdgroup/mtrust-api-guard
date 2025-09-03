@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:args/args.dart';
 import 'package:glob/glob.dart';
 import 'package:glob/list_local_fs.dart';
 import 'package:mtrust_api_guard/config/config.dart';
@@ -8,9 +7,7 @@ import 'package:mtrust_api_guard/find_project_root.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 
-(Set<String> files, Set<String> exclusions, File outputFile)
-    evaluateTargetFiles(ArgResults argResults) {
-  final root = argResults['root'] as String?;
+(Set<String> files, Set<String> exclusions) evaluateTargetFiles(String? root) {
   late Directory rootDir;
 
   // Find the root directory to base the analysis on
@@ -47,22 +44,16 @@ import 'package:path/path.dart';
 
   for (final include in config.include) {
     targetFiles.addAll(
-      Glob(include)
-          .listSync(root: rootDir.path)
-          .map((e) => normalize(absolute(e.path))),
+      Glob(include).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))),
     );
   }
 
   final exclusions = <String>{};
   for (final exclude in config.exclude) {
     exclusions.addAll(
-      Glob(exclude)
-          .listSync(root: rootDir.path)
-          .map((e) => normalize(absolute(e.path))),
+      Glob(exclude).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))),
     );
   }
 
-  final outputFile = File(join(rootDir.path, config.docFile));
-
-  return (targetFiles.difference(exclusions), exclusions, outputFile);
+  return (targetFiles.difference(exclusions), exclusions);
 }

@@ -1,12 +1,17 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
+import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 
-class DocComparatorCommand extends Command with ApiGuardCommandMixinWithBaseNew {
+class DocComparatorCommand extends Command
+    with ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithCache {
   @override
   String get description => "Compare two API documentation files";
 
@@ -16,16 +21,6 @@ class DocComparatorCommand extends Command with ApiGuardCommandMixinWithBaseNew 
   static final DocComparatorCommand _instance = DocComparatorCommand._internal();
 
   factory DocComparatorCommand() => _instance;
-
-  @override
-  String get usage {
-    return super.usage +
-        "\n\n"
-            "Hint: For 'base' and 'new', you can use:\n"
-            "- local file paths (e.g. 'lib/documentation.dart'),\n"
-            "- remote URLs (e.g. 'https://example.com/documentation.dart'),\n"
-            "- or even Git references (e.g. 'HEAD:lib/documentation.dart').\n";
-  }
 
   DocComparatorCommand._internal() {
     argParser.addMultiOption(
@@ -37,9 +32,25 @@ class DocComparatorCommand extends Command with ApiGuardCommandMixinWithBaseNew 
     );
   }
 
+  Set<ApiChangeMagnitude> get magnitudes {
+    final magnitudes = argResults?['magnitudes'] as List<String>;
+    return magnitudes
+        .map((e) => ApiChangeMagnitude.values.firstWhereOrNull(
+              (element) => element.toString().contains(e),
+            ))
+        .whereType<ApiChangeMagnitude>()
+        .toSet();
+  }
+
   @override
-  FutureOr? run() {
-    final args = argResults!.arguments;
-    main(args);
+  FutureOr? run() async {
+    compare(
+      magnitudes: magnitudes,
+      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      newRef: newRef,
+      dartRoot: root,
+      gitRoot: Directory.current,
+      cache: cache,
+    );
   }
 }

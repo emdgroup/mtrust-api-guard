@@ -1,9 +1,10 @@
-## 2.0.0
-Released on: 8/13/2025, changelog automatically generated.
+## 1.0.0
+
+
 
 ### Features
 
-- implement compatibility with v2.0.0
+- implement compatibility with v1.0.0 
 
 ### API Changes
 
@@ -23,8 +24,8 @@ Released on: 8/13/2025, changelog automatically generated.
 - ❇️ Property added: `mobilePhone`
 
 
-## 1.1.0
-Released on: 8/13/2025, changelog automatically generated.
+## 0.1.0
+
 
 ### API Changes
 
@@ -46,8 +47,8 @@ Released on: 8/13/2025, changelog automatically generated.
 - ❇️ Property added: `_internalId`
 
 
-## 1.0.1
-Released on: 8/13/2025, changelog automatically generated.
+## 0.0.2
+
 
 ### API Changes
 
@@ -60,5 +61,6 @@ Released on: 8/13/2025, changelog automatically generated.
 - ❌ Class removed: `_PrivateClass`
 
 
-## 1.0.0
-Initial release.
+## 0.0.1
+
+* TODO: Describe initial release.

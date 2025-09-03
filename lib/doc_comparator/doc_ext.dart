@@ -6,8 +6,7 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
     final changes = <ApiChange>[];
 
     for (var i = 0; i < length; i++) {
-      final newComponent = newComponents
-          .firstWhereOrNull((element) => element.name == this[i].name);
+      final newComponent = newComponents.firstWhereOrNull((element) => element.name == this[i].name);
       if (newComponent == null) {
         changes.add(ComponentApiChange(
           component: this[i],
@@ -19,8 +18,7 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
     }
 
     for (var i = 0; i < newComponents.length; i++) {
-      final oldComponent =
-          firstWhereOrNull((element) => element.name == newComponents[i].name);
+      final oldComponent = firstWhereOrNull((element) => element.name == newComponents[i].name);
       if (oldComponent == null) {
         changes.add(ComponentApiChange(
           component: newComponents[i],
@@ -41,9 +39,7 @@ extension DocComponentApiChangesExt on DocComponent {
       changes.add(
         ComponentApiChange(
           component: this,
-          operation: newComponent.isNullSafe
-              ? ApiChangeOperation.becameNullSafe
-              : ApiChangeOperation.becameNullUnsafe,
+          operation: newComponent.isNullSafe ? ApiChangeOperation.becameNullSafe : ApiChangeOperation.becameNullUnsafe,
         ),
       );
     }
@@ -78,8 +74,7 @@ extension ConstructorApiChangesExt on DocConstructor {
 
     for (var i = 0; i < signature.length; i++) {
       final oldParam = signature[i];
-      final newParam = newConstructor.signature
-          .firstWhereOrNull((element) => element.name == oldParam.name);
+      final newParam = newConstructor.signature.firstWhereOrNull((element) => element.name == oldParam.name);
       if (newParam == null) {
         _addChange(oldParam, ApiChangeOperation.removed);
         continue;
@@ -87,17 +82,13 @@ extension ConstructorApiChangesExt on DocConstructor {
       if (oldParam.required != newParam.required) {
         _addChange(
           oldParam,
-          oldParam.required
-              ? ApiChangeOperation.becameOptional
-              : ApiChangeOperation.becameRequired,
+          oldParam.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
         );
       }
       if (oldParam.named != newParam.named) {
         _addChange(
           oldParam,
-          oldParam.named
-              ? ApiChangeOperation.becamePositional
-              : ApiChangeOperation.becameNamed,
+          oldParam.named ? ApiChangeOperation.becamePositional : ApiChangeOperation.becameNamed,
         );
       }
       if (oldParam.type != newParam.type) {
@@ -107,8 +98,7 @@ extension ConstructorApiChangesExt on DocConstructor {
 
     for (var i = 0; i < newConstructor.signature.length; i++) {
       final newParam = newConstructor.signature[i];
-      final oldParam = signature
-          .firstWhereOrNull((element) => element.name == newParam.name);
+      final oldParam = signature.firstWhereOrNull((element) => element.name == newParam.name);
       if (oldParam == null) {
         _addChange(newParam, ApiChangeOperation.added);
       }
@@ -128,8 +118,7 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
     final changes = <ApiChange>[];
 
     for (var i = 0; i < length; i++) {
-      final newConstructor = newConstructors
-          .firstWhereOrNull((element) => element.name == this[i].name);
+      final newConstructor = newConstructors.firstWhereOrNull((element) => element.name == this[i].name);
       if (newConstructor == null) {
         changes.add(ConstructorApiChange(
           component: component,
@@ -142,12 +131,11 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
     }
 
     for (var i = 0; i < newConstructors.length; i++) {
-      final oldConstructor = firstWhereOrNull(
-          (element) => element.name == newConstructors[i].name);
+      final oldConstructor = firstWhereOrNull((element) => element.name == newConstructors[i].name);
       if (oldConstructor == null) {
         changes.add(ConstructorApiChange(
           component: component,
-          constructor: this[i],
+          constructor: newConstructors[i],
           operation: ApiChangeOperation.added,
         ));
       }
@@ -167,8 +155,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
     final changes = <ApiChange>[];
 
     for (var i = 0; i < length; i++) {
-      final newProperty = newProperties
-          .firstWhereOrNull((element) => element.name == this[i].name);
+      final newProperty = newProperties.firstWhereOrNull((element) => element.name == this[i].name);
       if (newProperty == null) {
         changes.add(PropertyApiChange(
           component: component,
@@ -187,8 +174,7 @@ extension PropertyListApiChangesExt on List<DocProperty> {
     }
 
     for (var i = 0; i < newProperties.length; i++) {
-      final oldProperty =
-          firstWhereOrNull((element) => element.name == newProperties[i].name);
+      final oldProperty = firstWhereOrNull((element) => element.name == newProperties[i].name);
       if (oldProperty == null) {
         changes.add(PropertyApiChange(
           component: component,

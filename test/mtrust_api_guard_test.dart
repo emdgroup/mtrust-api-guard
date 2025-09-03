@@ -13,10 +13,10 @@ void main() {
       final fixturesDir = Directory('test/fixtures');
 
       // Constants for better maintainability
-      const String initialVersion = '1.0.0';
-      const String patchVersion = '1.0.1';
-      const String minorVersion = '1.1.0';
-      const String majorVersion = '2.0.0';
+      const String initialVersion = '0.0.1';
+      const String patchVersion = '0.0.2';
+      const String minorVersion = '0.1.0';
+      const String majorVersion = '1.0.0';
       const String testEmail = 'test@example.com';
       const String testUser = 'Test User';
 
@@ -32,7 +32,6 @@ void main() {
         tempDir = await Directory.systemTemp.createTemp('api_guard_test_');
         tempDir = Directory(p.join(tempDir.path, 'api_guard_test'));
         await tempDir.create();
-        print(tempDir.path);
       });
 
       tearDown(() async {
@@ -75,8 +74,15 @@ void main() {
           ["${rootDir.path}/bin/mtrust_api_guard.dart", command, ...args],
           workingDirectory: tempDir.path,
         );
-        print('stdout: ${result.stdout}');
-        print('stderr: ${result.stderr}');
+        final stdout = result.stdout.toString().trim();
+        final stderr = result.stderr.toString().trim();
+
+        if (stdout.isNotEmpty) {
+          result.stdout.toString().trim().split('\n').forEach((line) => print('\t$line'));
+        }
+        if (stderr.isNotEmpty) {
+          result.stderr.toString().trim().split('\n').forEach((line) => print('\t$line'));
+        }
 
         if (result.exitCode != 0) {
           print('Command failed: $command ${args.join(' ')}');
@@ -95,20 +101,11 @@ void main() {
 
         await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
 
-        // Set the initial version in pubspec.yaml
-        _setVersion(initialVersion);
-
-        // Write the initial CHANGELOG.md
-        final changelog = File(p.join(tempDir.path, 'CHANGELOG.md'));
-        changelog.writeAsStringSync(
-          '## $initialVersion\n'
-          'Initial release.\n',
-        );
-
-        await _runApiGuard('generate', []);
-
         // 4. Commit initial state
         await _commitChanges('chore!: Initial release v$initialVersion');
+
+        print('Initial version: ${_getCurrentVersion()}');
+
         await _run('git', ['tag', 'v$initialVersion'], workingDir: tempDir.path);
 
         expect(_getCurrentVersion(), initialVersion);
@@ -119,9 +116,7 @@ void main() {
         // 6. Commit changes
         await _commitChanges('API change to v$patchVersion');
 
-        await _runApiGuard('generate', []);
         await _runApiGuard('version', []);
-        await _runApiGuard('changelog', []);
 
         expect(_getCurrentVersion(), patchVersion);
 
@@ -131,9 +126,7 @@ void main() {
         // 7. Commit changes
         await _commitChanges('API change to v$minorVersion');
 
-        await _runApiGuard('generate', []);
         await _runApiGuard('version', []);
-        await _runApiGuard('changelog', []);
 
         expect(_getCurrentVersion(), minorVersion);
 
@@ -141,9 +134,7 @@ void main() {
         await _copyDir(appV200Dir, tempDir);
         await _commitChanges('feat: implement compatibility with v$majorVersion');
 
-        await _runApiGuard('generate', []);
         await _runApiGuard('version', []);
-        await _runApiGuard('changelog', []);
 
         expect(_getCurrentVersion(), majorVersion);
 
@@ -164,20 +155,73 @@ void main() {
         final changelogContent = _stripChangelog(
           await changelogFile.readAsString(),
         );
+
+        if (!expectedChangelogFile.existsSync()) {
+          expectedChangelogFile.createSync();
+          expectedChangelogFile.writeAsStringSync(changelogContent);
+        }
+
         final expectedChangelog = _stripChangelog(
           await expectedChangelogFile.readAsString(),
         );
+
         expect(changelogContent, equalsIgnoringWhitespace(expectedChangelog));
       });
 
-      test('version command fails gracefully when no api.json is present', () async {
-        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
+      test('version command fails  when no previous version is found', () async {
+        // 1. Copy app_v1 to tempDir
         await _copyDir(appV100Dir, tempDir);
-        print('Initialized Flutter project in ${tempDir.path}');
-        expect(
-          () async => await _runApiGuard('version', ['--root', tempDir.path]),
-          throwsA(isA<Exception>()),
-        );
+
+        // 2. Initialize git
+        await _setupGitRepo();
+
+        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
+
+        // 4. Commit initial state
+        await _commitChanges('chore!: Initial release v$initialVersion');
+
+        expect(_getCurrentVersion(), initialVersion);
+
+        // 5. Copy app_v1_0_1 over tempDir
+        await _copyDir(appV101Dir, tempDir);
+
+        expect(() async => await _runApiGuard('version', []), throwsA(isA<Exception>()));
+
+        expect(_getCurrentVersion(), initialVersion);
+      });
+
+      test('version command fails when uncommited changes are detected', () async {
+        await _setupGitRepo();
+        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
+        expect(() async => await _runApiGuard('version', []), throwsA(isA<Exception>()));
+      });
+
+      test('pre-relese flag on version command works as expected', () async {
+        await _setupGitRepo();
+        await _run('flutter', ['create', '.', '--template', 'package'], workingDir: tempDir.path);
+        await _commitChanges('chore!: Initial release v$initialVersion');
+        await _run('git', ['tag', 'v$initialVersion'], workingDir: tempDir.path);
+
+        expect(_getCurrentVersion(), initialVersion);
+
+        await _copyDir(appV110Dir, tempDir);
+
+        // 7. Commit changes
+        await _commitChanges('API change to v$minorVersion');
+
+        await _runApiGuard('version', ['--pre-release']);
+        expect(_getCurrentVersion(), '0.1.0-dev.1');
+
+        // 8. Copy app_v3 over tempDir
+        await _copyDir(appV200Dir, tempDir);
+        await _commitChanges('feat: implement compatibility with v$majorVersion');
+
+        await _runApiGuard('version', ['--pre-release']);
+        expect(_getCurrentVersion(), '1.0.0-dev.1');
+
+        await _runApiGuard('version', []);
+
+        expect(_getCurrentVersion(), '1.0.0');
       });
     },
     timeout: const Timeout(Duration(minutes: 3)),
@@ -200,16 +244,17 @@ Future<void> _copyDir(Directory src, Directory dst) async {
 
 /// Run a process and optionally capture stdout.
 Future<String> _run(String cmd, List<String> args, {String? workingDir, bool captureOutput = false}) async {
+  print('Running: $cmd ${args.join(' ')} in $workingDir');
   final result = await Process.run(cmd, args, workingDirectory: workingDir);
 
   final stdout = result.stdout.toString();
   final stderr = result.stderr.toString();
 
-  if (stdout.isNotEmpty) {
-    print('stdout: $stdout');
+  if (stdout.trim().isNotEmpty) {
+    stdout.trim().split('\n').forEach((line) => print('\t$line'));
   }
-  if (stderr.isNotEmpty) {
-    print('stderr: $stderr');
+  if (stderr.trim().isNotEmpty) {
+    stderr.trim().split('\n').forEach((line) => print('\t$line'));
   }
 
   if (result.exitCode != 0) {

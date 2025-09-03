@@ -41,7 +41,7 @@ You can configure the api_guard using the analysis_options.yaml file as we treat
 api_guard:
   include: # defaults to lib/**.dart
   exclude: # ignore files from being tracked by api_guard. Note that files in analyzer.exclude are always ignored.
-  documentation_file: # defaults to lib/documentation.g.dart
+  docFile: # defaults to api_guard/generated_api.json
 ```
 
 ### Generate
@@ -54,8 +54,19 @@ Usage: mtrust_api_guard generate [arguments]
 -p, --path      Path(s) to scan for Dart files
                 (defaults to "lib/src")
 -o, --output    Output file path
-                (defaults to "documentation.g.dart")
+                (defaults to "api_guard/generated_api.json")
+--ref           Git reference (commit hash, branch, or tag) to generate documentation for.
+                If not provided, uses current HEAD.
+--cache         Cache the generated documentation for the specified ref
+                (defaults to true)
 ```
+
+**Important**: When using the `--ref` option, the tool will:
+1. Check for uncommitted changes and error if any exist (to prevent data loss)
+2. Checkout the specified git reference
+3. Generate API documentation
+4. Cache the result for future use
+5. Restore the original git state
 
 ### Compare
 
@@ -65,16 +76,27 @@ Compare two API documentation files
 Usage: mtrust_api_guard compare [arguments]
 -h, --help         Print this usage information.
 -b, --base         Base documentation file
-                   (defaults to "origin/main:documentation.g..dart")
+                   (defaults to previous version from git history)
 -n, --new          New documentation file
                    Hint: For 'base' and 'new', you can use:
-                   - local file paths (e.g. './documentation.g.dart'),
+                   - local file paths (e.g. './api_guard/generated_api.json'),
                    - remote URLs (e.g. 'https://example.com/documentation.dart'),
-                   - or even Git references (e.g. 'HEAD:./documentation.g.dart').
-                   (defaults to "documentation.g.dart")
+                   - Git references (e.g. 'main', 'v1.0.0', 'abc1234'),
+                   - or even Git references with paths (e.g. 'HEAD:./api_guard/generated_api.json').
+                   (defaults to "api_guard/generated_api.json")
 -m, --magnitude    Show only changes up to the specified magnitude
                    [major, minor, patch (default), none]
+--auto-generate    Automatically generate missing API documentation for git refs
+                   (defaults to true)
 ```
+
+**New Feature**: The compare command now supports git references directly! When you specify a git ref (like `main`, `v1.0.0`, or a commit hash), the tool will:
+
+1. First check the cache for existing API documentation
+2. If not found and `--auto-generate` is enabled, automatically generate and cache the documentation
+3. Use the cached/generated documentation for comparison
+
+This eliminates the need to check in `api.json` files and prevents merge conflicts.
 
 ### Version
 
@@ -86,7 +108,7 @@ Usage: mtrust_api_guard version [arguments]
 -b, --base         Base documentation file
                    (defaults to previous version from git history)
 -n, --new          New documentation file
-                   (defaults to "documentation.g.dart")
+                   (defaults to "api_guard/generated_api.json")
 -p, --pre-release  Add pre-release suffix (-dev.N)
                    (defaults to false)
 ```
@@ -99,6 +121,21 @@ The version command will:
 4. Calculate the next version based on the magnitude
 5. If --pre-release is set, add -dev.N suffix where N is incremented if the version already exists
 6. Output the new version number
+
+## Caching
+
+The tool now uses a local cache to store generated API documentation for different git references. This cache is located at `~/.mtrust_api_guard/cache/` and is organized by repository name and git reference.
+
+**Benefits of caching:**
+- Faster comparisons between known references
+- No need to check in generated API files
+- Prevents merge conflicts
+- Automatic generation of missing documentation
+
+**Cache management:**
+- Cache is automatically populated when using `generate --ref`
+- Cache is automatically used when comparing git references
+- Cache can be manually cleared by deleting the cache directory
 
 ## Use in CI/CD
 

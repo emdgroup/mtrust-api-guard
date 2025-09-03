@@ -11,16 +11,12 @@ class ApiGuardConfig {
   /// Files to exclude from the API documentation.
   final Set<String> exclude;
 
-  /// File to write the API documentation to.
-  final String docFile;
-
   /// Whether to generate a badge for the version.
   final bool generateBadge;
 
   ApiGuardConfig({
     required this.include,
     required this.exclude,
-    required this.docFile,
     required this.generateBadge,
   });
 
@@ -28,21 +24,18 @@ class ApiGuardConfig {
     return ApiGuardConfig(
       include: {'lib/**.dart'},
       exclude: {},
-      docFile: 'api_guard/api.json',
       generateBadge: true,
     );
   }
 
   ApiGuardConfig copyWith({
     bool? generateBadge,
-    String? docFile,
     Set<String>? include,
     Set<String>? exclude,
   }) {
     return ApiGuardConfig(
       include: include ?? this.include,
       exclude: exclude ?? this.exclude,
-      docFile: docFile ?? this.docFile,
       generateBadge: generateBadge ?? this.generateBadge,
     );
   }
@@ -66,13 +59,9 @@ class ApiGuardConfig {
     }
 
     return defaultConfig.copyWith(
-        include: (apiGuard["include"] as YamlList?)
-            ?.map((e) => e.toString())
-            .toSet(),
-        exclude: (apiGuard["exclude"] as YamlList?)
-            ?.map((e) => e.toString())
-            .toSet(),
-        docFile: apiGuard['docFile'],
-        generateBadge: apiGuard['generateBadge']);
+      include: (apiGuard["include"] as YamlList?)?.map((e) => e.toString()).toSet(),
+      exclude: (apiGuard["exclude"] as YamlList?)?.map((e) => e.toString()).toSet(),
+      generateBadge: apiGuard['generateBadge'],
+    );
   }
 }

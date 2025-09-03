@@ -20,6 +20,7 @@ class ChangelogGenerator {
   /// Gets the commits since the last version tag
   Future<List<Commit>> _getCommitsSinceLastVersion() async {
     try {
+      logger.detail("Getting commits since last version");
       // Get all tags sorted by creation date (newest first)
       final tagsResult = await Process.run(
         'git',
@@ -29,12 +30,7 @@ class ChangelogGenerator {
 
       final commits = <Commit>[];
       if (tagsResult.exitCode == 0) {
-        final tags = tagsResult.stdout
-            .toString()
-            .trim()
-            .split('\n')
-            .where((tag) => tag.isNotEmpty)
-            .toList();
+        final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
 
         String? previousTag;
         if (tags.length > 1) {
@@ -55,10 +51,13 @@ class ChangelogGenerator {
         );
 
         if (commitResult.exitCode == 0) {
-          commits
-              .addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
+          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
         }
       } else {
+        logger.detail(
+          "No tags exist, this is treated as first release. "
+          "Changelog will contain all commits.",
+        );
         // If no tags exist, get all commits
         final commitResult = await Process.run(
           'git',
@@ -66,8 +65,7 @@ class ChangelogGenerator {
           workingDirectory: projectRoot.path,
         );
         if (commitResult.exitCode == 0) {
-          commits
-              .addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
+          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
         }
       }
 
@@ -83,6 +81,14 @@ class ChangelogGenerator {
     return Commit.parseCommits(log);
   }
 
+  /// These are the commit types that should trigger a release.
+  final releasableCommitTypes = <String>{'feat', 'fix', 'perf'};
+
+  /// Checks whether a list of commits has commits that can be released.
+  bool _hasReleasableCommits(List<Commit> commits) {
+    return commits.any((commit) => releasableCommitTypes.contains(commit.type));
+  }
+
   /// Generates a changelog entry, including the version from pubspec.yaml
   /// and the formatted API changes
   Future<String> generateChangelogEntry() async {
@@ -94,6 +100,8 @@ class ChangelogGenerator {
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();
 
+    logger.detail("Commits since last version: ${commits.length}");
+
     final buffer = StringBuffer();
     final time = DateTime.now();
 
@@ -102,12 +110,12 @@ class ChangelogGenerator {
       'Released on: ${time.month}/${time.day}/${time.year}, changelog automatically generated.',
     );
 
-    if (hasReleasableCommits(commits)) {
-      final summary =
-          await changelogSummary(commits: commits, version: version);
+    if (_hasReleasableCommits(commits)) {
+      logger.detail("Has releasable commits, generating changelog summary");
+      final summary = await changelogSummary(commits: commits, version: version);
       if (summary is ChangeSummary) {
         buffer.writeln('\n');
-        buffer.writeln(_filtersectionsFromMarkdown(summary.toMarkdown()));
+        buffer.writeln(_filterSectionsFromMarkdown(summary.toMarkdown()));
       }
     }
 
@@ -167,7 +175,7 @@ class ChangelogGenerator {
     }
   }
 
-  String _filtersectionsFromMarkdown(
+  String _filterSectionsFromMarkdown(
     String markdown, {
     List<String> sections = const ["Features", "Bug Fixes"],
     int headerLevel = 3,
