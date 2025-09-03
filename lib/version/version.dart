@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:mtrust_api_guard/badges/badge_generator.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
@@ -18,6 +19,7 @@ Future<Version> version({
   String? newRef,
   required bool isPreRelease,
   required bool commit,
+  required bool badge,
   required bool generateChangelog,
   required bool cache,
 }) async {
@@ -31,7 +33,6 @@ Future<Version> version({
   final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path);
 
   final changes = await compare(
-    magnitudes: {ApiChangeMagnitude.major, ApiChangeMagnitude.minor, ApiChangeMagnitude.patch},
     baseRef: effectiveBaseRef,
     newRef: "HEAD",
     dartRoot: dartRoot,
@@ -59,6 +60,11 @@ Future<Version> version({
 
   if (generateChangelog) {
     await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).updateChangelogFile();
+  }
+
+  if (badge) {
+    final badgeContent = await generateVersionBadge(nextVersion);
+    await File(join(dartRoot.path, 'version_badge.svg')).writeAsString(badgeContent);
   }
 
   if (commit) {

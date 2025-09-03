@@ -86,6 +86,7 @@ class VersionCommand extends Command
     await version(
       gitRoot: Directory.current,
       dartRoot: Directory.current,
+      badge: badge,
       baseRef: baseRef,
       tag: tag,
       commit: commit,

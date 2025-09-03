@@ -178,6 +178,9 @@ Future<List<DocComponent>> generateDocs({
 
     // Write the generated documentation to a file if requested
     if (out != null) {
+      if (!File(out).existsSync()) {
+        File(out).createSync();
+      }
       await File(out).writeAsString(output);
       logger.success('Wrote generated documentation to $out');
     }

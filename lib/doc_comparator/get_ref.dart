@@ -12,6 +12,15 @@ Future<List<DocComponent>> getRef({
   required Directory gitRoot,
   required bool cache,
 }) async {
+  // Check if ref is a local file path
+  final file = File(ref);
+  if (file.existsSync()) {
+    logger.info('Reading API documentation from local file: $ref');
+    final content = await file.readAsString();
+    return parseDocComponentsFile(content);
+  }
+
+  // Handle git refs
   if (cache) {
     final cache = Cache();
 
@@ -29,7 +38,6 @@ Future<List<DocComponent>> getRef({
   }
 
   // Generate the API documentation for the ref
-
   return generateDocs(
     gitRef: ref,
     out: null,

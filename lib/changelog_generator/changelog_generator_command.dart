@@ -6,7 +6,6 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
-import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
@@ -48,7 +47,6 @@ class ChangelogGeneratorCommand extends Command
   @override
   FutureOr? run() async {
     final changes = await compare(
-      magnitudes: {ApiChangeMagnitude.major, ApiChangeMagnitude.minor, ApiChangeMagnitude.patch},
       baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
       newRef: newRef,
       dartRoot: root,
