@@ -1,4 +1,14 @@
-# mtrust_api_guard
+# 🔢  M-Trust API Guard 
+
+<img src="version_badge.svg" />
+
+Automated semantic versioning for dart 🎯 packages. 
+
+
+This CLI tool allows you to maintain correct versioning, changelog for your dart / flutter packages. It automatically asseses your source code to detect changes in the API signatures exposed by your code. 
+
+You can use API Guard to completely manage versioning of packages, it will bump the version number, generate a changelog and commit tagged releases automatically.
+
 
 ## Installation
 
@@ -13,27 +23,27 @@ dart pub global activate mtrust_api_guard
 After activating the package, you can run the following command to generate the files:
 
 ```bash
-mtrust_api_guard
-```
+$ mtrust_api_guard 
 
-```
 A documentation generator and comparator for Dart APIs
 
 Usage: mtrust_api_guard <command> [arguments]
 
 Global options:
--h, --help    Print this usage information.
+-h, --help            Print this usage information.
+    --[no-]verbose    Verbose output.
 
 Available commands:
-  compare    Compare two API documentation files
-  generate   Generate API documentation from Dart files
-  changelog  Generate a changelog entry based on API changes
-  version    Calculate and output the next version based on API changes
+  badge       Generate version badge from current pubspec version
+  changelog   Generate a changelog entry based on API changes
+  compare     Compare two API documentation files
+  generate    Generate API documentation from Dart files
+  version     Calculate and output the next version based on API changes
 
 Run "mtrust_api_guard help <command>" for more information about a command.
 ```
 
-### Configuration
+## Configuration
 
 You can configure the api_guard using the analysis_options.yaml file as we treat api guard as an extension to the linter.
 
@@ -41,123 +51,114 @@ You can configure the api_guard using the analysis_options.yaml file as we treat
 api_guard:
   include: # defaults to lib/**.dart
   exclude: # ignore files from being tracked by api_guard. Note that files in analyzer.exclude are always ignored.
-  docFile: # defaults to api_guard/generated_api.json
 ```
 
-### Generate
 
-```bash
-Generate API documentation from Dart files
 
+## Generate 
+
+Generates the api description of a specific `--ref` the output is a json file based on analyzer. See an example [here](./test/fixtures/apiV100.json). 
+
+```sh
+mtrust_api_guard generate
+```
+
+```
 Usage: mtrust_api_guard generate [arguments]
--h, --help      Print this usage information.
--p, --path      Path(s) to scan for Dart files
-                (defaults to "lib/src")
--o, --output    Output file path
-                (defaults to "api_guard/generated_api.json")
---ref           Git reference (commit hash, branch, or tag) to generate documentation for.
-                If not provided, uses current HEAD.
---cache         Cache the generated documentation for the specified ref
-                (defaults to true)
+-r, --root          Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-c, --[no-]cache    Cache the generated documentation for the specified ref
+                    (defaults to on)
+    --ref           Git reference (commit hash, branch, or tag) to generate documentation for. If not provided, uses current HEAD.
+                    (defaults to "HEAD")
+    --out           Write the generated documentation to a file
+-h, --help          Print this usage information.
 ```
 
-**Important**: When using the `--ref` option, the tool will:
-1. Check for uncommitted changes and error if any exist (to prevent data loss)
-2. Checkout the specified git reference
-3. Generate API documentation
-4. Cache the result for future use
-5. Restore the original git state
 
-### Compare
 
-```bash
-Compare two API documentation files
 
+## Compare 
+
+Compare the APIs of two git refs (`--base-ref` and `--new-ref`) and outputs the API changes that occured. 
+
+```sh 
+mtrust_api_guard compare
+```
+
+
+
+```
 Usage: mtrust_api_guard compare [arguments]
--h, --help         Print this usage information.
--b, --base         Base documentation file
-                   (defaults to previous version from git history)
--n, --new          New documentation file
-                   Hint: For 'base' and 'new', you can use:
-                   - local file paths (e.g. './api_guard/generated_api.json'),
-                   - remote URLs (e.g. 'https://example.com/documentation.dart'),
-                   - Git references (e.g. 'main', 'v1.0.0', 'abc1234'),
-                   - or even Git references with paths (e.g. 'HEAD:./api_guard/generated_api.json').
-                   (defaults to "api_guard/generated_api.json")
--m, --magnitude    Show only changes up to the specified magnitude
-                   [major, minor, patch (default), none]
---auto-generate    Automatically generate missing API documentation for git refs
-                   (defaults to true)
+-b, --base-ref      The previous version to compare against.Defaults to previous version from git history.
+-n, --new-ref       The new version to compare against defaulting to HEAD
+                    (defaults to "HEAD")
+-r, --root          Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-c, --[no-]cache    Cache the generated documentation for the specified ref
+                    (defaults to on)
+-h, --help          Print this usage information.
+-m, --magnitudes    Show only changes with the specified magnitudes
+                    [major (default), minor (default), patch (default)]
+    --out           Write the comparison results to a file
 ```
 
-**New Feature**: The compare command now supports git references directly! When you specify a git ref (like `main`, `v1.0.0`, or a commit hash), the tool will:
+See an example output [here](./test/fixtures/expected_compare_v100_v101.txt)
 
-1. First check the cache for existing API documentation
-2. If not found and `--auto-generate` is enabled, automatically generate and cache the documentation
-3. Use the cached/generated documentation for comparison
+## Changelog
 
-This eliminates the need to check in `api.json` files and prevents merge conflicts.
+Generate a changelog for the specified interval. Defaults to generating a changelog for everything since the last tagged release and the current head.
 
-### Version
 
-```bash
-Calculate and output the next version based on API changes
-
-Usage: mtrust_api_guard version [arguments]
--h, --help         Print this usage information.
--b, --base         Base documentation file
-                   (defaults to previous version from git history)
--n, --new          New documentation file
-                   (defaults to "api_guard/generated_api.json")
--p, --pre-release  Add pre-release suffix (-dev.N)
-                   (defaults to false)
+```sh 
+mtrust_api_guard changelog
 ```
 
-The version command will:
-
-1. Compare the API changes between the base and new documentation files
-2. Determine the highest magnitude of changes (major, minor, or patch)
-3. Get the current version from pubspec.yaml
-4. Calculate the next version based on the magnitude
-5. If --pre-release is set, add -dev.N suffix where N is incremented if the version already exists
-6. Output the new version number
-
-## Caching
-
-The tool now uses a local cache to store generated API documentation for different git references. This cache is located at `~/.mtrust_api_guard/cache/` and is organized by repository name and git reference.
-
-**Benefits of caching:**
-- Faster comparisons between known references
-- No need to check in generated API files
-- Prevents merge conflicts
-- Automatic generation of missing documentation
-
-**Cache management:**
-- Cache is automatically populated when using `generate --ref`
-- Cache is automatically used when comparing git references
-- Cache can be manually cleared by deleting the cache directory
-
-## Use in CI/CD
-
-For convenience, you can use the [action](action.yaml) of this repository, that generates the API
-documentation and compares it with the reference base file.
-
-Just add the following step to your workflow:
-
-```yaml
-- name: Run M-Trust API Guard for dev branch
-  uses: emdgroup/mtrust-api-guard # Or pin to a commit/tag
-  with:
-    src_path: "./lib"
-    base_doc: "origin/dev:./lib/documentation.dart"
-    new_doc: "./lib/documentation.dart"
-    # e.g. use the version from the semver action to be validated
-    new_version: "${{ steps.get_new_version.outputs.result }}"
-    comment_on_pr: true # will post a change log comment on the PR
-    pr_comment_message: "New *DEV* version {version} 🚀\n\nDetected API changes:\n{changelog}"
-    fail_on_error: false
 ```
+-r, --root           Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-b, --base-ref       The previous version to compare against. Defaults to previous version from git history.
+-n, --new-ref        The new version to compare against defaulting to HEAD
+                     (defaults to "HEAD")
+-c, --[no-]cache     Cache the generated documentation for the specified ref
+                     (defaults to on)
+-h, --help           Print this usage information.
+-u, --[no-]update    Update the CHANGELOG.md file
+                     (defaults to on)
+```
+
+
+## Version 
+
+Detects the API changes that occured and creates a changelog, version bump, version badge and tag automatically. 
+
+```sh
+mtrust_api_guard version
+```
+
+
+```
+-r, --root                       Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-b, --base-ref                   The previous version to compare against.Defaults to previous version from git history.
+-n, --new-ref                    The new version to compare against defaulting to HEAD
+                                 (defaults to "HEAD")
+-c, --[no-]cache                 Cache the generated documentation for the specified ref
+                                 (defaults to on)
+-h, --help                       Print this usage information.
+-g, --[no-]badge                 Generate a badge for the version
+    --[no-]commit                Commit the version to git
+                                 (defaults to on)
+-t, --[no-]tag                   Tag the version
+                                 (defaults to on)
+    --[no-]generate-changelog    Generate a changelog entry based on API changes
+                                 (defaults to on)
+-p, --[no-]pre-release           Add pre-release suffix (-dev.N)
+```
+
+## Usage in CI
+
+* It is reccommended to version on the target branch you release from (e.g. main). 
+* To facilitate branch protection we recommend setting up a GitHub App and using its token to push to main. (https://github.com/orgs/community/discussions/25305#discussioncomment-8256560)
+* You can run the `compare` command in your PR workflow and comment the API changes to the Pull request to increase transparency of the effects a PR has. 
+
+
 
 ## License
-
 This project is licensed under the Apache-2.0 license. See the [LICENSE](LICENSE) file for details.

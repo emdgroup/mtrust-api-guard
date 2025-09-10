@@ -24,13 +24,23 @@ main(List<String> args) async {
     defaultsTo: false,
   );
 
+  commandRunner.argParser.addFlag(
+    "silent",
+    help: "Dont print logs to the console.",
+    defaultsTo: false,
+  );
+
   if (args.isEmpty) {
+    // ignore: avoid_print
     print(commandRunner.usage);
     return;
   }
 
   if (args.contains('--verbose')) {
     logger.level = Level.verbose;
+  }
+  if (args.contains('--silent')) {
+    logger.level = Level.error;
   }
   commandRunner.run(args);
 }

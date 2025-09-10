@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:async';
 import 'dart:io';
 
@@ -10,6 +8,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/logger.dart';
 
 class DocComparatorCommand extends Command
     with ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithCache {
@@ -66,6 +65,11 @@ class DocComparatorCommand extends Command
       magnitudes: magnitudes,
     );
 
+    if (!formatter.hasRelevantChanges) {
+      logger.info('No relevant changes detected');
+      exit(0);
+    }
+
     final formattedOutput = formatter.format();
 
     if (out != null) {
@@ -73,7 +77,9 @@ class DocComparatorCommand extends Command
         File(out!).createSync();
       }
       await File(out!).writeAsString(formattedOutput);
+      logger.success('Wrote comparison results to $out');
     } else {
+      // ignore: avoid_print
       print(formattedOutput);
     }
   }

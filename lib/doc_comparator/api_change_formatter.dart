@@ -19,8 +19,11 @@ class ApiChangeFormatter {
     },
   });
 
-  String get highestMagnitudeText =>
-      _getHighestMagnitudeText(getHighestMagnitude(changes));
+  bool get hasRelevantChanges => changes.any(
+        (changes) => magnitudes.contains(changes.getMagnitude()),
+      );
+
+  String get highestMagnitudeText => _getHighestMagnitudeText(getHighestMagnitude(changes));
 
   String format() {
     final changelogBuffer = StringBuffer();
@@ -41,12 +44,10 @@ class ApiChangeFormatter {
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
         changelogBuffer.writeln();
-        changelogBuffer.writeln(
-            '**$component** (${componentChanges[component]!.first.component.filePath})');
+        changelogBuffer.writeln('**$component** (${componentChanges[component]!.first.component.filePath})');
 
         // Group by category (i.e. type, operation, etc.) and process them
-        final categorizedChanges =
-            _groupByChangeCategory(componentChanges[component]!);
+        final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
         final categories = categorizedChanges.keys.toList();
         for (final category in categories) {
           final changes = categorizedChanges[category]!;
@@ -79,10 +80,7 @@ class ApiChangeFormatter {
           change.runtimeType.hashCode ^
           change.operation.hashCode ^
           (this is ConstructorParameterApiChange
-              ? (this as ConstructorParameterApiChange)
-                  .constructor
-                  .name
-                  .hashCode
+              ? (this as ConstructorParameterApiChange).constructor.name.hashCode
               : 0),
     );
   }
@@ -150,21 +148,16 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is PropertyApiChange)) {
       final prefix = changes.length > 1 ? 'Properties' : 'Property';
       final text = _getOperationText(operation, prefix: prefix);
-      final props =
-          changes.map((c) => (c as PropertyApiChange).property.name).toList();
+      final props = changes.map((c) => (c as PropertyApiChange).property.name).toList();
       return '$text: `${props.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ConstructorParameterApiChange)) {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
-      final params = changes
-          .map((c) => (c as ConstructorParameterApiChange).parameter.name)
-          .toList();
-      final constructor =
-          (changes.first as ConstructorParameterApiChange).constructor.name;
-      final constructorLabel =
-          "${constructor.startsWith("_") ? "private " : ""}"
+      final params = changes.map((c) => (c as ConstructorParameterApiChange).parameter.name).toList();
+      final constructor = (changes.first as ConstructorParameterApiChange).constructor.name;
+      final constructorLabel = "${constructor.startsWith("_") ? "private " : ""}"
           "constructor${constructor.isEmpty ? '' : " $constructor"}";
       return '$text in $constructorLabel: `${params.join('`, `')}`';
     }
@@ -172,17 +165,14 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ConstructorApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Constructor');
-      final constructors = changes
-          .map((c) => (c as ConstructorApiChange).constructor.name)
-          .toList();
+      final constructors = changes.map((c) => (c as ConstructorApiChange).constructor.name).toList();
       return '$text: `${constructors.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Class');
-      final components =
-          changes.map((c) => (c as ComponentApiChange).component).toList();
+      final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }
 
