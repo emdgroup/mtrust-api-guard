@@ -17,19 +17,25 @@ jobs:
         uses: actions/checkout@v2
         with:
           token: ${{ steps.app-token.outputs.token }}
-      - name: Install Flutter
-        uses: subosito/flutter-action@v2
+
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
 
       - name: Install dependencies
-        run: flutter pub get
+        run: dart pub get
+
       - name: Configure git
         run: |
           git fetch --prune --unshallow
           git config --global user.name "GitHub Actions"
           git config --global user.email "gh-actions@emdgroup.com"
+
       - name: 🔂 Run standard-version
         run: |
           npx standard-version --skip.tag
+
       - name: ⏎ Get new version
         uses: actions/github-script@v7
         id: get_new_version
@@ -39,7 +45,9 @@ jobs:
             const fs = require('fs');
             const package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
             return package.version;
+
       - run: npm install yaml
+
       - name: Update version in pubspec
         uses: actions/github-script@v7
         with:
@@ -50,21 +58,20 @@ jobs:
             const pubspec = yaml.parse(fs.readFileSync('pubspec.yaml', 'utf8'));
             pubspec.version = version;
             fs.writeFileSync('pubspec.yaml', yaml.stringify(pubspec));
-      - name: Run build runner
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-      - name: Generate l10n
-        run: flutter gen-l10n
+
       - name: Run tests
-        run: flutter test
+        run: dart test
 
       - name: Run linter
-        run: flutter analyze
+        run: dart analyze
+
       - name: Add changed source files
         run: |
           git add pubspec.yaml lib/ package.json
           git commit -m "chore(release): ${{ steps.get_new_version.outputs.result }} [skip ci]"
+
       - name: Dry run publish
-        run: flutter pub publish --dry-run
+        run: dart pub publish --dry-run
 
       - run: |
           git push origin main

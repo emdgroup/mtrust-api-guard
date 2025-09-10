@@ -22,8 +22,7 @@ class DocComponent {
   final List<DocProperty> properties;
   final List<String> methods;
 
-  factory DocComponent.fromJson(Map<String, dynamic> json) =>
-      _$DocComponentFromJson(json);
+  factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
   Map<String, dynamic> toJson() => _$DocComponentToJson(this);
 }
@@ -42,8 +41,7 @@ class DocProperty {
   final String description;
   final List<String> features;
 
-  factory DocProperty.fromJson(Map<String, dynamic> json) =>
-      _$DocPropertyFromJson(json);
+  factory DocProperty.fromJson(Map<String, dynamic> json) => _$DocPropertyFromJson(json);
 
   Map<String, dynamic> toJson() => _$DocPropertyToJson(this);
 }
@@ -60,8 +58,7 @@ class DocConstructor {
   final List<DocParameter> signature;
   final List<String> features;
 
-  factory DocConstructor.fromJson(Map<String, dynamic> json) =>
-      _$DocConstructorFromJson(json);
+  factory DocConstructor.fromJson(Map<String, dynamic> json) => _$DocConstructorFromJson(json);
 
   Map<String, dynamic> toJson() => _$DocConstructorToJson(this);
 }
@@ -82,8 +79,7 @@ class DocParameter {
   final bool named;
   final bool required;
 
-  factory DocParameter.fromJson(Map<String, dynamic> json) =>
-      _$DocParameterFromJson(json);
+  factory DocParameter.fromJson(Map<String, dynamic> json) => _$DocParameterFromJson(json);
 
   Map<String, dynamic> toJson() => _$DocParameterToJson(this);
 }
