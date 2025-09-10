@@ -1,0 +1,32 @@
+name: M-Trust API Guard PR
+on:
+  workflow_call:
+    inputs: 
+        pre_release:
+            type: boolean
+            description: "Whether to run the version command with the pre-release flag"
+            default: false
+        
+        
+jobs:
+  compare_api_changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Fetch all tags
+        run: git fetch --tags
+      - name: Configure git 
+        run: |
+          git fetch --prune --unshallow || true
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "gh-actions@emdgroup.com"
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Install mtrust_api_guard
+        run: dart pub global activate mtrust_api_guard
+      - name: Compare API changes
+        run: mtrust_api_guard version --no-cache --badge --commit --tag --generate-changelog  ${{ inputs.pre_release && '--pre-release' || '' }} 
+        
