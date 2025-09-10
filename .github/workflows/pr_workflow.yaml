@@ -28,5 +28,5 @@ jobs:
       - name: Install mtrust_api_guard
         run: dart pub global activate mtrust_api_guard
       - name: Compare API changes
-        run: mtrust_api_guard version --no-cache --badge --commit --tag --generate-changelog  ${{ inputs.pre_release && '--pre-release' || '' }} 
+        run: mtrust_api_guard version --badge --commit --tag --generate-changelog  ${{ inputs.pre_release && '--pre-release' || '' }} 
         
