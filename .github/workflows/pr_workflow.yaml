@@ -36,5 +36,54 @@ jobs:
         if: inputs.use_local_version
         run: dart pub global activate --source path .
       - name: Compare API changes
-        run: mtrust_api_guard version --badge --commit --tag --generate-changelog  ${{ inputs.pre_release && '--pre-release' || '' }} 
-        
+        id: version
+        run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
+
+      - name: Comment version output on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              const versionOutput = fs.readFileSync('version_output.json', 'utf8');
+              
+              
+              const versionData = JSON.parse(versionOutput);
+              
+              
+              const comment = `## Version Analysis
+              
+              **Next Version:** \`${versionData.version}\`
+              
+              ${versionData.changelog ? `**Changelog:**\n\`\`\`\n${versionData.changelog}\n\`\`\`` : ''}
+              
+              ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
+              `;
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              
+              console.log('Successfully posted version analysis comment');
+            } catch (error) {
+              console.error('Error parsing version output or posting comment:', error);
+              
+              // Fallback comment with raw output
+              const fallbackComment = `## Version Analysis (Raw Output)
+              
+              \`\`\`json
+              ${{ steps.version.outputs.version_output }}
+              \`\`\`
+              `;
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: fallbackComment
+              });
+            }
+    

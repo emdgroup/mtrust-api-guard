@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
@@ -51,6 +52,11 @@ class VersionCommand extends Command
         help: 'Generate a changelog entry based on API changes',
         defaultsTo: true,
       )
+      ..addOption(
+        'json',
+        help: 'Output the result as JSON to the specified file',
+        valueHelp: 'file',
+      )
       ..addFlag(
         'pre-release',
         abbr: 'p',
@@ -79,11 +85,15 @@ class VersionCommand extends Command
     return argResults?['generate-changelog'] as bool;
   }
 
+  String? get json {
+    return argResults?['json'] as String?;
+  }
+
   @override
   FutureOr? run() async {
     // Load config and determine doc file path
 
-    await version(
+    final result = await version(
       gitRoot: Directory.current,
       dartRoot: Directory.current,
       badge: badge,
@@ -94,5 +104,13 @@ class VersionCommand extends Command
       cache: cache,
       isPreRelease: preRelease,
     );
+
+    if (json != null) {
+      final jsonFile = File(json!);
+      if (!jsonFile.existsSync()) {
+        jsonFile.createSync(recursive: true);
+      }
+      await jsonFile.writeAsString(jsonEncode(result.toJson()));
+    }
   }
 }

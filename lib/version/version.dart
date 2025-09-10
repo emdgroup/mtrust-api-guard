@@ -11,7 +11,29 @@ import 'package:mtrust_api_guard/version/calculate_next_version.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 
-Future<Version> version({
+class VersionResult {
+  final Version version;
+  final List<ApiChange> apiChanges;
+  final String? changelog;
+  final String? badge;
+
+  VersionResult({
+    required this.version,
+    required this.apiChanges,
+    required this.changelog,
+    required this.badge,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'version': version.toString(),
+      'changelog': changelog,
+      'badge': badge,
+    };
+  }
+}
+
+Future<VersionResult> version({
   required Directory gitRoot,
   required Directory dartRoot,
   String? baseRef,
@@ -58,8 +80,11 @@ Future<Version> version({
 
   await PubspecUtils.setVersion(File(join(dartRoot.path, 'pubspec.yaml')), Version.parse(nextVersion));
 
+  String? changelog;
+  String? badgeContent;
   if (generateChangelog) {
     await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).updateChangelogFile();
+    changelog = await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).generateChangelogEntry();
   }
 
   if (badge) {
@@ -75,5 +100,10 @@ Future<Version> version({
     await GitUtils.gitTag("v$nextVersion", gitRoot.path);
   }
 
-  return Version.parse(nextVersion);
+  return VersionResult(
+    version: Version.parse(nextVersion),
+    apiChanges: changes,
+    changelog: changelog,
+    badge: badgeContent ?? '',
+  );
 }
