@@ -56,8 +56,13 @@ jobs:
               
               **Next Version:** \`${versionData.version}\`
               
-              ${versionData.changelog ? `**Changelog:**\n\`\`\`\n${versionData.changelog}\n\`\`\`` : ''}
               
+              <details>
+                <summary><strong>Changelog</strong></summary>
+              
+              ${versionData.changelog ? `${versionData.changelog}\n` : 'No changelog available.'}
+              
+              </details>
               ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
               `;
               
