@@ -15,6 +15,7 @@ jobs:
   version:
     uses: ./.github/workflows/pr_workflow.yaml
     with:
+      use_local_version: true
       pre_release: ${{ github.ref_name == 'dev' }}
 
 
