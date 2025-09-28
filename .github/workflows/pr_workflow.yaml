@@ -60,8 +60,7 @@ jobs:
               ${versionData.changelog || 'No changelog available.'}
               `;
               
-              // Write to step summary using @actions/core
-              const core = require('@actions/core');
+
               const jobSummary = core.summary;
               
               jobSummary
