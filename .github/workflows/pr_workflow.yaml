@@ -65,9 +65,10 @@ jobs:
               
               jobSummary
                 .addHeading('Version Analysis')
-                .addRaw(`**Next Version:** \`${versionData.version}\``)
+                .addRaw(`\n\n**Next Version:** \`${versionData.version}\`\n\n`)
                 .addRaw(versionData.badge ? `\n\n**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : '')
                 .addHeading('Changelog', 3)
+                .addRaw('\n\n')
                 .addRaw(versionData.changelog || 'No changelog available.');
               
               await jobSummary.write();
