@@ -1,17 +1,16 @@
 name: M-Trust API Guard PR
 on:
   workflow_call:
-    inputs: 
-        pre_release:
-            type: boolean
-            description: "Whether to run the version command with the pre-release flag"
-            default: false
-        use_local_version: 
-            type: boolean
-            description: "Whether to use the local version of mtrust_api_guard"
-            default: false
-        
-        
+    inputs:
+      pre_release:
+        type: boolean
+        description: "Whether to run the version command with the pre-release flag"
+        default: false
+      use_local_version:
+        type: boolean
+        description: "Whether to use the local version of mtrust_api_guard"
+        default: false
+
 jobs:
   compare_api_changes:
     runs-on: ubuntu-latest
@@ -20,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Fetch all tags
         run: git fetch --tags
-      - name: Configure git 
+      - name: Configure git
         run: |
           git fetch --prune --unshallow || true
           git config --global user.name "GitHub Actions"
@@ -39,7 +38,7 @@ jobs:
         id: version
         run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
 
-      - name: Comment version output on PR
+      - name: Comment version output on PR and upload changelog
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
@@ -47,22 +46,27 @@ jobs:
             const fs = require('fs');
             try {
               const versionOutput = fs.readFileSync('version_output.json', 'utf8');
-              
-              
               const versionData = JSON.parse(versionOutput);
               
+              // Write changelog to file
+              const changelog = versionData.changelog || 'No changelog available';
+              fs.writeFileSync('changelog.md', changelog);
+              console.log('Changelog written to changelog.md');
+              
+              // Upload artifact
+              const artifact = require('@actions/artifact');
+              const artifactClient = artifact.create();
+              await artifactClient.uploadArtifact(`changelog-${context.runNumber}`, ['changelog.md'], '.', {
+                retentionDays: 30
+              });
+              console.log('Changelog artifact uploaded');
               
               const comment = `## Version Analysis
               
               **Next Version:** \`${versionData.version}\`
               
+              **Changelog:** 📄 [View changelog artifact](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts)
               
-              <details>
-                <summary><strong>Changelog</strong></summary>
-              
-              ${versionData.changelog ? `${versionData.changelog}\n` : 'No changelog available.'}
-              
-              </details>
               ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
               `;
               
@@ -92,4 +96,3 @@ jobs:
                 body: fallbackComment
               });
             }
-    
