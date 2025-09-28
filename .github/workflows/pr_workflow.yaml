@@ -38,7 +38,7 @@ jobs:
         id: version
         run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
 
-      - name: Comment version output on PR and upload changelog
+      - name: Write changelog and comment on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
@@ -52,14 +52,6 @@ jobs:
               const changelog = versionData.changelog || 'No changelog available';
               fs.writeFileSync('changelog.md', changelog);
               console.log('Changelog written to changelog.md');
-              
-              // Upload artifact
-              const artifact = require('@actions/artifact');
-              const artifactClient = artifact.create();
-              await artifactClient.uploadArtifact(`changelog-${context.runNumber}`, ['changelog.md'], '.', {
-                retentionDays: 30
-              });
-              console.log('Changelog artifact uploaded');
               
               const comment = `## Version Analysis
               
@@ -96,3 +88,11 @@ jobs:
                 body: fallbackComment
               });
             }
+
+      - name: Upload changelog artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog-${{ github.run_number }}
+          path: changelog.md
+          retention-days: 30
