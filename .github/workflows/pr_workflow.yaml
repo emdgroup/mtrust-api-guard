@@ -93,6 +93,6 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: changelog-${{ github.run_number }}
+          name: changelog-${{ github.run_number }}.md
           path: changelog.md
           retention-days: 30
