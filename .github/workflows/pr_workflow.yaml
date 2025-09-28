@@ -62,13 +62,16 @@ jobs:
               
               // Write to step summary using @actions/core
               const core = require('@actions/core');
-              await core.summary
+              const summary = core.summary;
+              
+              summary
                 .addHeading('Version Analysis')
                 .addRaw(`**Next Version:** \`${versionData.version}\``)
                 .addRaw(versionData.badge ? `\n\n**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : '')
                 .addHeading('Changelog', 3)
-                .addRaw(versionData.changelog || 'No changelog available.')
-                .write();
+                .addRaw(versionData.changelog || 'No changelog available.');
+              
+              await summary.write();
               console.log('Job summary written');
               
               const comment = `## Version Analysis
