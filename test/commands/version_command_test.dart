@@ -30,11 +30,13 @@ void main() {
       await testSetup.setupFlutterPackage();
 
       // 4. Commit initial state
-      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await testSetup.commitChanges(
+          'chore!: Initial release v${TestConstants.initialVersion}');
 
-      print('Initial version: ${testSetup.getCurrentVersion()}');
+      printOnFailure('Initial version: ${testSetup.getCurrentVersion()}');
 
-      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'],
+          workingDir: testSetup.tempDir.path);
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
 
@@ -42,7 +44,8 @@ void main() {
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
       // 6. Commit changes
-      await testSetup.commitChanges('API change to v${TestConstants.patchVersion}');
+      await testSetup
+          .commitChanges('API change to v${TestConstants.patchVersion}');
 
       await testSetup.runApiGuard('version', []);
 
@@ -52,7 +55,8 @@ void main() {
       await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
 
       // 7. Commit changes
-      await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
+      await testSetup
+          .commitChanges('API change to v${TestConstants.minorVersion}');
 
       await testSetup.runApiGuard('version', []);
 
@@ -60,7 +64,8 @@ void main() {
 
       // 8. Copy app_v3 over tempDir
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
-      await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
+      await testSetup.commitChanges(
+          'feat: implement compatibility with v${TestConstants.majorVersion}');
 
       await testSetup.runApiGuard('version', []);
 
@@ -79,14 +84,16 @@ void main() {
       expect(tags, contains('v${TestConstants.majorVersion}'));
 
       // 9. Compare output to expected snapshot
-      final changelogFile = File(p.join(testSetup.tempDir.path, 'CHANGELOG.md'));
+      final changelogFile =
+          File(p.join(testSetup.tempDir.path, 'CHANGELOG.md'));
       final changelogContent = stripChangelog(
         await changelogFile.readAsString(),
       );
 
       if (!testSetup.fixtures.expectedChangelogFile.existsSync()) {
         testSetup.fixtures.expectedChangelogFile.createSync();
-        testSetup.fixtures.expectedChangelogFile.writeAsStringSync(changelogContent);
+        testSetup.fixtures.expectedChangelogFile
+            .writeAsStringSync(changelogContent);
       }
 
       final expectedChangelog = stripChangelog(
@@ -105,43 +112,51 @@ void main() {
       await testSetup.setupFlutterPackage();
 
       // 4. Commit initial state
-      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await testSetup.commitChanges(
+          'chore!: Initial release v${TestConstants.initialVersion}');
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
 
       // 5. Copy app_v1_0_1 over tempDir
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
-      expect(() async => await testSetup.runApiGuard('version', []), throwsA(isA<Exception>()));
+      expect(() async => await testSetup.runApiGuard('version', []),
+          throwsA(isA<Exception>()));
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
     });
 
-    test('version command fails when uncommitted changes are detected', () async {
+    test('version command fails when uncommitted changes are detected',
+        () async {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
-      expect(() async => await testSetup.runApiGuard('version', []), throwsA(isA<Exception>()));
+      expect(() async => await testSetup.runApiGuard('version', []),
+          throwsA(isA<Exception>()));
     });
 
     test('pre-release flag on version command works as expected', () async {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
-      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
-      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+      await testSetup.commitChanges(
+          'chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'],
+          workingDir: testSetup.tempDir.path);
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
 
       await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
 
       // 7. Commit changes
-      await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
+      await testSetup
+          .commitChanges('API change to v${TestConstants.minorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release']);
       expect(testSetup.getCurrentVersion(), '0.1.0-dev.1');
 
       // 8. Copy app_v3 over tempDir
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
-      await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
+      await testSetup.commitChanges(
+          'feat: implement compatibility with v${TestConstants.majorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release']);
       expect(testSetup.getCurrentVersion(), '1.0.0-dev.1');

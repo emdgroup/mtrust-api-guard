@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 
 /// Recursively copy [src] directory to [dst].
 Future<void> copyDir(Directory src, Directory dst) async {
@@ -19,18 +20,19 @@ Future<void> copyDir(Directory src, Directory dst) async {
 }
 
 /// Run a process and optionally capture stdout.
-Future<String> runProcess(String cmd, List<String> args, {String? workingDir, bool captureOutput = false}) async {
-  print('Running: $cmd ${args.join(' ')} in $workingDir');
+Future<String> runProcess(String cmd, List<String> args,
+    {String? workingDir, bool captureOutput = false}) async {
+  printOnFailure('Running: $cmd ${args.join(' ')} in $workingDir');
   final result = await Process.run(cmd, args, workingDirectory: workingDir);
 
   final stdout = result.stdout.toString();
   final stderr = result.stderr.toString();
 
   if (stdout.trim().isNotEmpty) {
-    stdout.trim().split('\n').forEach((line) => print('\t$line'));
+    stdout.trim().split('\n').forEach((line) => printOnFailure('\t$line'));
   }
   if (stderr.trim().isNotEmpty) {
-    stderr.trim().split('\n').forEach((line) => print('\t$line'));
+    stderr.trim().split('\n').forEach((line) => printOnFailure('\t$line'));
   }
 
   if (result.exitCode != 0) {
@@ -42,9 +44,13 @@ Future<String> runProcess(String cmd, List<String> args, {String? workingDir, bo
 
 /// Strip changelog content for comparison by removing dynamic content like commit hashes and dates.
 String stripChangelog(String changelog) {
-  final commitLinkRegexp = RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
-  final releasedOnLineRegexp = RegExp(r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
-  return changelog.replaceAll(commitLinkRegexp, '').replaceAll(releasedOnLineRegexp, '');
+  final commitLinkRegexp =
+      RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
+  final releasedOnLineRegexp = RegExp(
+      r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
+  return changelog
+      .replaceAll(commitLinkRegexp, '')
+      .replaceAll(releasedOnLineRegexp, '');
 }
 
 /// Test constants for better maintainability.

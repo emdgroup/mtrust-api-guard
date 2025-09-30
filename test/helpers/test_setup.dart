@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
 import 'test_helpers.dart';
@@ -61,13 +62,16 @@ class TestSetup {
   /// Commit all changes with a message.
   Future<void> commitChanges(String message) async {
     await runProcess('git', ['add', '.'], workingDir: tempDir.path);
-    await runProcess('git', ['commit', '-m', message], workingDir: tempDir.path);
+    await runProcess('git', ['commit', '-m', message],
+        workingDir: tempDir.path);
   }
 
   /// Run the API Guard command and handle output.
   Future<void> runApiGuard(String command, List<String> args) async {
-    print('Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
-    print("dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
+    printOnFailure(
+        'Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
+    printOnFailure(
+        "dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
 
     final result = await Process.run(
       'dart',
@@ -79,14 +83,22 @@ class TestSetup {
     final stderr = result.stderr.toString().trim();
 
     if (stdout.isNotEmpty) {
-      result.stdout.toString().trim().split('\n').forEach((line) => print('\t$line'));
+      result.stdout
+          .toString()
+          .trim()
+          .split('\n')
+          .forEach((line) => printOnFailure('\t$line'));
     }
     if (stderr.isNotEmpty) {
-      result.stderr.toString().trim().split('\n').forEach((line) => print('\t$line'));
+      result.stderr
+          .toString()
+          .trim()
+          .split('\n')
+          .forEach((line) => printOnFailure('\t$line'));
     }
 
     if (result.exitCode != 0) {
-      print('Command failed: $command ${args.join(' ')}');
+      printOnFailure('Command failed: $command ${args.join(' ')}');
       throw Exception(
         'API Guard command "$command ${args.join(' ')}" failed with exit code ${result.exitCode}\n'
         'stdout: ${result.stdout}\n'
