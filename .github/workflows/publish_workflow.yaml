@@ -1,0 +1,90 @@
+name: M-Trust API Guard PR
+on:
+  workflow_call:
+    inputs:
+      pre_release:
+        type: boolean
+        description: "Whether to run the version command with the pre-release flag"
+        default: false
+      use_local_version:
+        type: boolean
+        description: "Whether to use the local version of mtrust_api_guard. (dont use this if you are not developing api guard)"
+        default: false
+
+      commit_name:
+        type: string
+        description: "Name to use for the commit"
+        default: "GitHub Actions"
+
+      commit_email:
+        type: string
+        description: "Email to use for the commit"
+        default: "gh-actions@emdgroup.com"
+
+      git_push:
+        type: boolean
+        description: "Whether to push the changes to the remote repository"
+        default: true
+
+      git_push_branch:
+        type: string
+        description: "The branch to push the changes to"
+        default: "main"
+
+      app_id:
+        type: string
+        description: "The app id to use for cloning and pushing"
+
+      app_private_key:
+        type: string
+        description: "The private key to use for cloning and pushing"
+
+jobs:
+  compare_api_changes:
+    runs-on: ubuntu-latest
+    steps:
+      # Authenticate and clone as github app
+      - name: 🔑 Get token for bumper app
+        if: ${{ inputs.app_id != '' && inputs.app_private_key != '' }}
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ inputs.app_id }}
+          private-key: ${{ inputs.app_private_key }}
+      - name: Checkout code using app token
+        if: ${{ inputs.app_id != '' && inputs.app_private_key != '' }}
+        uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      # Authenticate and clone as github user
+      - name: Checkout code using github token
+        if: ${{ inputs.app_id == '' || inputs.app_private_key == '' }}
+        uses: actions/checkout@v4
+      # Fetch tags and configure git
+      - name: Fetch all tags
+        run: git fetch --tags
+      - name: Configure git
+        run: |
+          git fetch --prune --unshallow || true
+          git config --global user.name "${{ inputs.commit_name }}"
+          git config --global user.email "${{ inputs.commit_email }}"
+      # Install Flutter and dependencies
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Install mtrust_api_guard from pub.dev
+        if: inputs.use_local_version == false
+        run: dart pub global activate mtrust_api_guard
+      # Install mtrust_api_guard from local path
+      - name: Install mtrust_api_guard from local path
+        if: inputs.use_local_version
+        run: dart pub global activate --source path .
+      # Compare API changes
+      - name: Compare API changes
+        id: version
+        run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
+      # Generate version summary and comment on PR
+      - name: Push changes to remote repository
+        if: inputs.git_push
+        run: git push origin ${{ inputs.git_push_branch }}

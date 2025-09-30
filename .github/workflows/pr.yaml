@@ -12,28 +12,19 @@ jobs:
       pull-requests: write
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v1
 
+  # Version the package
   version:
     uses: ./.github/workflows/pr_workflow.yaml
     with:
       use_local_version: true
       pre_release: ${{ github.ref_name == 'dev' }}
 
-
+  # Validate the Dart code
   validate_dart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Flutter
-        uses: subosito/flutter-action@v2
-
-      - name: Install dependencies
-        run: flutter pub get
-      - name: Run build runner
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-      - name: Run tests
-        run: flutter test
-      - name: Run linter
-        run: flutter analyze
-  
+      - name: Validate Dart code
+        uses: ./.github/actions/validate-dart
