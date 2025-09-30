@@ -21,3 +21,12 @@ runs:
     - name: Run linter
       shell: bash
       run: flutter analyze
+    - name: Run tests
+      shell: bash
+      run: flutter test --coverage
+    - name: Report test results
+      shell: bash
+      uses: dorny/test-reporter@v2
+      with:
+        path: coverage/lcov.info
+        reporter: flutter-json
