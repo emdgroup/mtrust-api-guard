@@ -43,22 +43,31 @@ jobs:
   compare_api_changes:
     runs-on: ubuntu-latest
     steps:
+      # Check if app secrets are provided
+      - name: Check if app secrets are provided
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.app_id }}" ] && [ -n "${{ secrets.app_private_key }}" ]; then
+            echo "has_secrets=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_secrets=false" >> $GITHUB_OUTPUT
+          fi
       # Authenticate and clone as github app
       - name: 🔑 Get token for bumper app
-        if: ${{ secrets.app_id && secrets.app_private_key }}
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ secrets.app_id }}
           private-key: ${{ secrets.app_private_key }}
       - name: Checkout code using app token
-        if: ${{ secrets.app_id && secrets.app_private_key }}
+        if: steps.check-secrets.outputs.has_secrets == 'true'
         uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
       # Authenticate and clone as github user
       - name: Checkout code using github token
-        if: ${{ !secrets.app_id || !secrets.app_private_key }}
+        if: steps.check-secrets.outputs.has_secrets == 'false'
         uses: actions/checkout@v4
       # Fetch tags and configure git
       - name: Fetch all tags
