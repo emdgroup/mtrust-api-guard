@@ -26,4 +26,4 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Validate Dart code
-        uses: ./.github/actions/validate-dart.yaml
+        uses: ./.github/actions/validate-dart
