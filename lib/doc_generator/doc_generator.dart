@@ -1,205 +1,192 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:args/command_runner.dart';
-import 'package:code_builder/code_builder.dart';
-import 'package:dart_style/dart_style.dart';
-import 'package:mtrust_api_guard/doc_comparator/library_types.dart';
-import 'package:mtrust_api_guard/doc_items.dart';
+import 'package:mtrust_api_guard/bootstrap.dart';
+import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
+import 'package:mtrust_api_guard/doc_generator/cache.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/models/doc_items.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
-import 'package:path/path.dart' as p;
-import 'package:source_gen/source_gen.dart';
+import 'package:path/path.dart';
 
-class DocGeneratorCommand extends Command {
-  @override
-  String get description => "Generate API documentation from Dart files";
-
-  @override
-  String get name => "generate";
-
-  DocGeneratorCommand() {
-    argParser
-      ..addMultiOption('path',
-          abbr: 'p',
-          help: 'Path(s) to scan for Dart files',
-          defaultsTo: ['lib/src'])
-      ..addOption(
-        'output',
-        abbr: 'o',
-        help: 'Output file path',
-        defaultsTo: 'lib/documentation.g.dart',
-      );
+Future<List<DocComponent>> generateDocs({
+  required String gitRef,
+  required String? out,
+  required Directory dartRoot,
+  required Directory gitRoot,
+  required bool shouldCache,
+}) async {
+  final cache = Cache();
+  // Check if we're in a git repository
+  if (!await GitUtils.isGitRepository(gitRoot.path)) {
+    logger.err('Not in a git repository. Cannot proceed with ref-based generation.');
+    exit(1);
   }
 
-  @override
-  FutureOr? run() {
-    final args = argResults!.arguments;
-    main(args);
-  }
-}
-
-Future<void> main(List<String> args) async {
-  // Set up command line argument parser
-  final parser = DocGeneratorCommand().argParser;
-  final argResults = parser.parse(args);
-
-  if (argResults['help'] as bool) {
-    print('Documentation Generator');
-    print('Usage: dart doc_generator.dart [options]');
-    print(parser.usage);
-    return;
+  // Check for uncommitted changes if we're going to checkout a ref
+  if (gitRef != 'HEAD' && GitUtils.hasUncommittedChanges(gitRoot.path)) {
+    logger.err('Repository has uncommitted changes. Please commit or stash them before proceeding.');
+    logger.err('This prevents potential data loss during ref checkout.');
+    exit(1);
   }
 
-  final paths = argResults['path'] as List<String>;
-  final outputPath = argResults['output'] as String;
+  final originalRef = await GitUtils.getCurrentRef(gitRoot.path);
+  final originalBranch = await GitUtils.getCurrentBranch(gitRoot.path);
 
-  // Collect and analyze Dart files
-  final dartFiles = <File>[];
-  for (final path in paths) {
-    final directory = Directory(path);
-    if (await directory.exists()) {
-      await for (final entity in directory.list(recursive: true)) {
-        if (entity is File && entity.path.endsWith('.dart')) {
-          dartFiles.add(entity);
-        }
-      }
-    } else {
-      print('Warning: Directory does not exist: $path');
-    }
+  // If the ref is HEAD, get the current ref (commit hash)
+  if (gitRef == 'HEAD') {
+    gitRef = await GitUtils.getCurrentRef(gitRoot.path);
   }
 
-  if (dartFiles.isEmpty) {
-    print('No Dart files found in the specified paths.');
-    return;
-  }
+  logger.info('Checking out ref: $gitRef');
+  await GitUtils.checkoutRef(gitRef, gitRoot.path);
+  logger.info('Successfully checked out ref: $gitRef');
+  final effectiveRef = await GitUtils.getCurrentRef(gitRoot.path);
 
-  print('Found ${dartFiles.length} Dart files to analyze.');
-
-  final normalizedPaths = paths.map((path) {
-    final dir = Directory(path);
-    return p.normalize(dir.absolute.path);
-  }).toList();
-  final contextCollection = AnalysisContextCollection(
-    includedPaths: normalizedPaths,
-  );
-
+  final repoPath = GitUtils.getRepositoryRoot(gitRoot.path);
   final classes = <DocComponent>[];
 
-  // Analyze each file
-  for (final file in dartFiles) {
-    final path = p.normalize(file.absolute.path);
-    if (path.endsWith('.g.dart')) {
-      continue; // Skip generated files, as they are not API-related
-    }
+  Future<void> restoreOriginalState() async {
     try {
-      final context = contextCollection.contextFor(path);
-      final library = await context.currentSession.getResolvedLibrary(path);
-      if (library is! ResolvedLibraryResult) {
-        throw StateError('Library not resolved.');
+      logger.info('Restoring original state...');
+      if (originalBranch != null) {
+        await GitUtils.checkoutRef(originalBranch, gitRoot.path);
+      } else {
+        await GitUtils.checkoutRef(originalRef, gitRoot.path);
       }
-
-      final classesInLibrary = LibraryReader(library.element).classes;
-
-      for (final classItem in classesInLibrary) {
-        classes.add(DocComponent(
-          name: classItem.name,
-          isNullSafe: true,
-          description:
-              classItem.documentationComment?.replaceAll("///", "") ?? "",
-          constructors: classItem.constructors
-              .map((e) => DocConstructor(
-                    name: e.name.toString(),
-                    signature: e.parameters
-                        .map((param) => DocParameter(
-                              description: param.documentationComment ?? "",
-                              name: param.name.toString(),
-                              type: param.type.toString(),
-                              named: param.isNamed,
-                              required: param.isRequired,
-                            ))
-                        .toList(),
-                    features: [
-                      if (e.isConst) "const",
-                      if (e.isFactory) "factory",
-                      if (e.isExternal) "external",
-                    ],
-                  ))
-              .toList(),
-          properties: classItem.fields
-              .map((e) => DocProperty(
-                    name: e.name.toString(),
-                    type: e.type.toString(),
-                    description: e.documentationComment ?? "",
-                    features: [
-                      if (e.isStatic) "static",
-                      if (e.isCovariant) "covariant",
-                      if (e.isFinal) "final",
-                      if (e.isConst) "const",
-                      if (e.isLate) "late",
-                    ],
-                  ))
-              .toList(),
-          methods: classItem.methods.map((e) => e.name.toString()).toList(),
-        ));
-      }
+      logger.info('Successfully restored original state');
     } catch (e) {
-      print('Error analyzing file ${file.path}: $e');
+      logger.err('Warning: Failed to restore original state: $e');
+      logger.err('Please manually checkout your original branch/ref');
     }
   }
 
-  print('Found ${classes.length} classes.');
+  if (shouldCache) {
+    if (cache.hasApiFile(repoPath, effectiveRef)) {
+      logger.success('Using cached API documentation for $effectiveRef');
+      final cachedContent = await cache.retrieveApiFile(repoPath, effectiveRef);
+      if (cachedContent != null) {
+        logger.success('Using cached API documentation for $effectiveRef');
+        await restoreOriginalState();
+        return parseDocComponentsFile(cachedContent);
+      }
+    }
+  }
 
-  // Generate output
-  final outputLibrary = Library((libraryBuilder) {
-    libraryBuilder.body.add(Field((field) => field
-      ..name = "docComponents"
-      ..modifier = FieldModifier.constant
-      ..assignment = literalList([
-        for (final classItem in classes)
-          refer("DocComponent").newInstance([], {
-            "name": literalString(classItem.name),
-            "isNullSafe": literalBool(classItem.isNullSafe),
-            "description": literalString(classItem.description),
-            "properties": literalList(classItem.properties
-                .map((e) => refer("DocProperty").newInstance([], {
-                      "name": literalString(e.name),
-                      "type": literalString(e.type),
-                      "description": literalString(e.description),
-                      "features": literalList(
-                          e.features.map((e) => literalString(e)).toList()),
-                    }))
-                .toList()),
-            "constructors": literalList(classItem.constructors
-                .map((e) => refer("DocConstructor").newInstance([], {
-                      "name": literalString(e.name),
-                      "signature": literalList(e.signature
-                          .map((e) => refer("DocParameter").newInstance(
-                                [],
-                                {
-                                  "name": literalString(e.name),
-                                  "type": literalString(e.type),
-                                  "description": literalString(e.description),
-                                  "named": literalBool(e.named),
-                                  "required": literalBool(e.required),
-                                },
+  try {
+    final (dartFiles, exclusions) = evaluateTargetFiles(dartRoot.path);
+
+    if (dartFiles.isEmpty) {
+      logger.err('No Dart files found in the specified paths. Exiting');
+      exit(1);
+    }
+
+    final contextCollection = AnalysisContextCollection(
+      includedPaths: dartFiles.toList(),
+      excludedPaths: exclusions.toList(),
+    );
+
+    final progress = logger.progress("Analyzing dart files");
+
+    // Analyze each file
+    for (final file in dartFiles) {
+      try {
+        final context = contextCollection.contextFor(file);
+        final library = await context.currentSession.getResolvedLibrary(file);
+        if (library is! ResolvedLibraryResult) {
+          throw StateError('Library not resolved.');
+        }
+
+        final classesInLibrary = library.element2.classes;
+
+        for (final classItem in classesInLibrary) {
+          classes.add(DocComponent(
+            name: classItem.name3.toString(),
+            filePath: relative(
+              file,
+              from: contextCollection.contextFor(file).contextRoot.root.path,
+            ),
+            isNullSafe: true,
+            description: classItem.documentationComment?.replaceAll("///", "") ?? "",
+            constructors: classItem.constructors2
+                .map((e) => DocConstructor(
+                      name: e.name3.toString(),
+                      signature: e.formalParameters
+                          .map((param) => DocParameter(
+                                description: param.documentationComment ?? "",
+                                name: param.name3.toString(),
+                                type: param.type.toString(),
+                                named: param.isNamed,
+                                required: param.isRequired,
                               ))
-                          .toList()),
-                      "features": literalList(
-                          e.features.map((e) => literalString(e)).toList()),
-                    }))
-                .toList()),
-            "methods": literalList(
-                classItem.methods.map((e) => literalString(e)).toList()),
-          })
-      ]).code));
-  });
+                          .toList(),
+                      features: [
+                        if (e.isConst) "const",
+                        if (e.isFactory) "factory",
+                        if (e.isExternal) "external",
+                      ],
+                    ))
+                .toList(),
+            properties: classItem.fields2
+                .map((e) => DocProperty(
+                      name: e.name3.toString(),
+                      type: e.type.toString(),
+                      description: e.documentationComment ?? "",
+                      features: [
+                        if (e.isStatic) "static",
+                        if (e.isCovariant) "covariant",
+                        if (e.isFinal) "final",
+                        if (e.isConst) "const",
+                        if (e.isLate) "late",
+                      ],
+                    ))
+                .toList(),
+            methods: classItem.methods2.map((e) => e.name3.toString()).toList(),
+          ));
+        }
+      } catch (e) {
+        logger.err('Error analyzing file $file: $e');
+      }
+      progress.update(
+        "Analyzed $file [${dartFiles.toList().indexOf(file) + 1}/${dartFiles.length}]",
+      );
+    }
 
-  final emitter = DartEmitter.scoped();
-  final output = DartFormatter().format('${outputLibrary.accept(emitter)}');
+    progress.complete();
 
-  // Write output file
-  File(outputPath).writeAsStringSync(libraryTypes + "\n" + output);
-  print('Generated documentation file: $outputPath');
+    logger.success(
+      'Found ${classes.length} classes: ${classes.map((e) => e.name).join(', ')}',
+    );
+    contextCollection.dispose();
+
+    final outputProgress = logger.progress("Generating output");
+
+    // Generate output
+    final output = jsonEncode(classes);
+
+    outputProgress.complete();
+
+    // Cache the generated documentation if requested
+    if (shouldCache) {
+      await cache.storeApiFile(repoPath, effectiveRef, output);
+      logger.success('Cached documentation for ref: $effectiveRef');
+    }
+
+    // Write the generated documentation to a file if requested
+    if (out != null) {
+      if (!File(out).existsSync()) {
+        File(out).createSync();
+      }
+      await File(out).writeAsString(output);
+      logger.success('Wrote generated documentation to $out');
+    }
+  } finally {
+    restoreOriginalState();
+  }
+
+  return classes;
 }

@@ -4,6 +4,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - main
+      - dev
 
 jobs:
   validate_pr:
@@ -11,55 +12,18 @@ jobs:
       pull-requests: write
     uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@v1
 
+  # Version the package
+  version:
+    uses: ./.github/workflows/pr_workflow.yaml
+    with:
+      use_local_version: true
+      pre_release: ${{ github.ref_name == 'dev' }}
+
+  # Validate the Dart code
   validate_dart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
-        with:
-          sdk: stable
-
-      - name: Install dependencies
-        run: dart pub get
-
-      - name: Run tests
-        run: dart test
-
-      - name: Upload test failures
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: test-failures
-          path: test/failures/
-          if-no-files-found: ignore
-
-      - name: Run linter
-        run: dart analyze
-
-      - name: Configure git
-        run: |
-          git fetch --prune
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "gh-actions@emdgroup.com"
-
-      - name: 🔂 Run standard-version
-        run: |
-          npx standard-version --skip.tag --skip.commit
-
-      - name: ⏎ Get new version
-        uses: actions/github-script@v7
-        id: get_new_version
-        with:
-          result-encoding: string
-          script: |
-            const fs = require('fs');
-            const package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            return package.version;
-
-      - name: 💬 Comment on PR with new version
-        uses: thollander/actions-comment-pull-request@v2
-        with:
-          message: "New version ${{ steps.get_new_version.outputs.result }} 🚀"
+      - name: Validate Dart code
+        uses: ./.github/actions/validate-dart

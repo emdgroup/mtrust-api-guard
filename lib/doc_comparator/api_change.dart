@@ -19,6 +19,20 @@ enum ApiChangeMagnitude {
   }
 }
 
+ApiChangeMagnitude getHighestMagnitude(List<ApiChange> changes) {
+  var highestMagnitude = ApiChangeMagnitude.patch;
+  for (final change in changes) {
+    if (change.getMagnitude() == ApiChangeMagnitude.major) {
+      return ApiChangeMagnitude.major;
+    }
+    if (change.getMagnitude() == ApiChangeMagnitude.minor) {
+      highestMagnitude = ApiChangeMagnitude.minor;
+    }
+  }
+
+  return highestMagnitude;
+}
+
 enum ApiChangeOperation {
   added,
   removed,
@@ -36,7 +50,7 @@ enum ApiChangeOperation {
 
 /// A change description in the API that belongs to a specific component.
 class ApiChange {
-  final String component;
+  final DocComponent component;
   final ApiChangeOperation operation;
 
   ApiChange._({
@@ -45,7 +59,7 @@ class ApiChange {
   });
 
   ApiChangeMagnitude getMagnitude() {
-    if (component.startsWith('_')) {
+    if (component.name.startsWith('_')) {
       // if the component is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
@@ -117,10 +131,18 @@ class ConstructorParameterApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
-    if (constructor.name.startsWith('_') || parameter.name.startsWith('_')) {
-      // if the constructor or parameter is private, it's a patch change
+    if (constructor.name.startsWith('_')) {
+      // if the constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.becameRequired ||
+        operation == ApiChangeOperation.becamePositional ||
+        operation == ApiChangeOperation.becameNullUnsafe ||
+        (operation == ApiChangeOperation.removed && parameter.required)) {
+      return ApiChangeMagnitude.major;
+    }
+
     if (operation == ApiChangeOperation.becameNullSafe ||
         operation == ApiChangeOperation.becameOptional ||
         (operation == ApiChangeOperation.removed && !parameter.required)) {

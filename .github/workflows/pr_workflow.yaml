@@ -1,0 +1,111 @@
+name: M-Trust API Guard PR
+on:
+  workflow_call:
+    inputs:
+      pre_release:
+        type: boolean
+        description: "Whether to run the version command with the pre-release flag"
+        default: false
+      use_local_version:
+        type: boolean
+        description: "Whether to use the local version of mtrust_api_guard"
+        default: false
+
+jobs:
+  compare_api_changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Fetch all tags
+        run: git fetch --tags
+      - name: Configure git
+        run: |
+          git fetch --prune --unshallow || true
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "gh-actions@emdgroup.com"
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Install mtrust_api_guard
+        if: inputs.use_local_version == false
+        run: dart pub global activate mtrust_api_guard
+      - name: Install mtrust_api_guard locally
+        if: inputs.use_local_version
+        run: dart pub global activate --source path .
+      - name: Compare API changes
+        id: version
+        run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
+
+      - name: Generate version summary and comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const versionOutput = fs.readFileSync('version_output.json', 'utf8');
+              const versionData = JSON.parse(versionOutput);
+              
+              // Generate job summary
+              const summary = `## Version Analysis
+              
+              **Next Version:** \`${versionData.version}\`
+              
+              ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
+              
+              ### Changelog
+              
+              ${versionData.changelog || 'No changelog available.'}
+              `;
+              
+
+              const jobSummary = core.summary;
+              
+              jobSummary
+                .addHeading('Version Analysis')
+                .addRaw(`\n\n**Next Version:** \`${versionData.version}\`\n\n`)
+                .addRaw(versionData.badge ? `\n\n**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : '')
+                .addHeading('Changelog', 3)
+                .addRaw('\n\n')
+                .addRaw(versionData.changelog || 'No changelog available.');
+              
+              await jobSummary.write();
+              console.log('Job summary written');
+              
+              const comment = `## Version Analysis
+              
+              **Next Version:** \`${versionData.version}\`
+              
+              **Changelog:** 📄 [View detailed changelog in job summary](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              
+              ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
+              `;
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+              
+              console.log('Successfully posted version analysis comment');
+            } catch (error) {
+              console.error('Error parsing version output or posting comment:', error);
+              
+              // Fallback comment with raw output
+              const fallbackComment = `## Version Analysis (Raw Output)
+              
+              \`\`\`json
+              ${{ steps.version.outputs.version_output }}
+              \`\`\`
+              `;
+              
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: fallbackComment
+              });
+            }

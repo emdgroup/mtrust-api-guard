@@ -4,53 +4,50 @@ import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 /// Formatter to display API changes in a hierarchical format
 class ApiChangeFormatter {
   final List<ApiChange> changes;
-  final ApiChangeMagnitude? showUpToMagnitude;
+
+  final Set<ApiChangeMagnitude> magnitudes;
+
+  final int markdownHeaderLevel;
 
   ApiChangeFormatter(
     this.changes, {
-    /// If set to null, no changelog will be shown.
-    /// If set to [ApiChangeMagnitude.major], only major changes will be shown.
-    /// If set to [ApiChangeMagnitude.minor], major and minor changes will be shown.
-    /// If set to [ApiChangeMagnitude.patch], all changes will be shown.
-    this.showUpToMagnitude = ApiChangeMagnitude.patch,
+    this.markdownHeaderLevel = 1,
+    this.magnitudes = const {
+      ApiChangeMagnitude.major,
+      ApiChangeMagnitude.minor,
+      ApiChangeMagnitude.patch,
+    },
   });
 
+  bool get hasRelevantChanges => changes.any(
+        (changes) => magnitudes.contains(changes.getMagnitude()),
+      );
+
+  String get highestMagnitudeText => _getHighestMagnitudeText(getHighestMagnitude(changes));
+
   String format() {
-    ApiChangeMagnitude? highestMagnitude;
     final changelogBuffer = StringBuffer();
 
     // Group changes by magnitude and process them in order
     final changesByMagnitude = _groupByMagnitude();
-    final magnitudes = [
-      ApiChangeMagnitude.major,
-      ApiChangeMagnitude.minor,
-      ApiChangeMagnitude.patch
-    ];
+
     for (final magnitude in magnitudes) {
       if (!changesByMagnitude.containsKey(magnitude)) continue;
-      highestMagnitude =
-          (highestMagnitude ?? ApiChangeMagnitude.patch).atLeast(magnitude);
 
-      if (showUpToMagnitude == null ||
-          magnitude.index < showUpToMagnitude!.index) {
-        // We do not want to print this magnitude
-        continue;
-      }
-
-      changelogBuffer.writeln("\n---\n");
+      changelogBuffer.writeln();
       changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
 
       // Group by component and process them in alphabetical order
-      final componentChanges =
-          _groupByComponent(changesByMagnitude[magnitude]!);
+      final componentChanges = _groupByComponent(
+        changesByMagnitude[magnitude]!,
+      );
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**$component**');
+        changelogBuffer.writeln('**$component** (${componentChanges[component]!.first.component.filePath})');
 
         // Group by category (i.e. type, operation, etc.) and process them
-        final categorizedChanges =
-            _groupByChangeCategory(componentChanges[component]!);
+        final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
         final categories = categorizedChanges.keys.toList();
         for (final category in categories) {
           final changes = categorizedChanges[category]!;
@@ -59,7 +56,7 @@ class ApiChangeFormatter {
       }
     }
 
-    return "${_getHighestMagnitudeText(highestMagnitude)}\n$changelogBuffer";
+    return "$changelogBuffer";
   }
 
   // Group changes by magnitude
@@ -69,7 +66,7 @@ class ApiChangeFormatter {
 
   // Group changes by component
   Map<String, List<ApiChange>> _groupByComponent(List<ApiChange> changes) {
-    return groupBy(changes, (change) => change.component);
+    return groupBy(changes, (change) => change.component.name);
   }
 
   // Group changes by generating a change category that considers the type,
@@ -83,10 +80,7 @@ class ApiChangeFormatter {
           change.runtimeType.hashCode ^
           change.operation.hashCode ^
           (this is ConstructorParameterApiChange
-              ? (this as ConstructorParameterApiChange)
-                  .constructor
-                  .name
-                  .hashCode
+              ? (this as ConstructorParameterApiChange).constructor.name.hashCode
               : 0),
     );
   }
@@ -95,13 +89,13 @@ class ApiChangeFormatter {
   String _getHighestMagnitudeText(ApiChangeMagnitude? highestMagnitude) {
     switch (highestMagnitude) {
       case ApiChangeMagnitude.major:
-        return "> 💣 **Breaking changes detected.** Bump the major version.";
+        return "💣 **Breaking changes detected.** Bump the major version.";
       case ApiChangeMagnitude.minor:
-        return '> ✨ **Minor changes detected.** Increment the minor version.';
+        return '✨ **Minor changes detected.** Increment the minor version.';
       case ApiChangeMagnitude.patch:
-        return '> 👀 **Internal changes detected.** Increment the patch version.';
+        return '👀 **Internal changes detected.** Increment the patch version.';
       default:
-        return '> 🎉 **No API changes detected.** Increment the patch version.';
+        return '🎉 **No API changes detected.** Increment the patch version.';
     }
   }
 
@@ -109,11 +103,11 @@ class ApiChangeFormatter {
   String _getMagnitudeHeader(ApiChangeMagnitude magnitude) {
     switch (magnitude) {
       case ApiChangeMagnitude.major:
-        return '# 💣 Breaking changes (major increment)';
+        return '${'#' * markdownHeaderLevel} 💣 Breaking changes';
       case ApiChangeMagnitude.minor:
-        return '# ✨ Minor changes, public (minor increment)';
+        return '${'#' * markdownHeaderLevel} ✨ Minor changes';
       case ApiChangeMagnitude.patch:
-        return '# 👀 Internal changes (patch increment)';
+        return '${'#' * markdownHeaderLevel} 👀 Patch changes';
     }
   }
 
@@ -154,40 +148,32 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is PropertyApiChange)) {
       final prefix = changes.length > 1 ? 'Properties' : 'Property';
       final text = _getOperationText(operation, prefix: prefix);
-      final props =
-          changes.map((c) => (c as PropertyApiChange).property.name).toList();
+      final props = changes.map((c) => (c as PropertyApiChange).property.name).toList();
       return '$text: `${props.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ConstructorParameterApiChange)) {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
-      final params = changes
-          .map((c) => (c as ConstructorParameterApiChange).parameter.name)
-          .toList();
-      final constructor =
-          (changes.first as ConstructorParameterApiChange).constructor.name;
-      final constructorLabel =
-          "${constructor.startsWith("_") ? "private " : ""}"
-          "constructor '${constructor.isEmpty ? 'default' : constructor}'";
+      final params = changes.map((c) => (c as ConstructorParameterApiChange).parameter.name).toList();
+      final constructor = (changes.first as ConstructorParameterApiChange).constructor.name;
+      final constructorLabel = "${constructor.startsWith("_") ? "private " : ""}"
+          "constructor${constructor.isEmpty ? '' : " $constructor"}";
       return '$text in $constructorLabel: `${params.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ConstructorApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Constructor');
-      final constructors = changes
-          .map((c) => (c as ConstructorApiChange).constructor.name)
-          .toList();
+      final constructors = changes.map((c) => (c as ConstructorApiChange).constructor.name).toList();
       return '$text: `${constructors.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Class');
-      final components =
-          changes.map((c) => (c as ComponentApiChange).component).toList();
-      return '$text: `${components.join('`, `')}`';
+      final components = changes.map((c) => (c as ComponentApiChange).component).toList();
+      return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }
 
     // This should actually never happen:

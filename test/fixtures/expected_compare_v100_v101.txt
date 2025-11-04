@@ -1,0 +1,8 @@
+
+# 👀 Patch changes
+
+**Product** (lib/src/api.dart)
+- ❇️ Property added: `_internalId`
+
+**_PrivateClass** (lib/src/api.dart)
+- ❌ Class removed: `_PrivateClass`
