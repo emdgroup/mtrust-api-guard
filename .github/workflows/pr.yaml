@@ -21,10 +21,4 @@ jobs:
 
   # Validate the Dart code
   validate_dart:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate Dart code
-        uses: ./.github/actions/validate-dart
+    uses: ./.github/actions/validate-dart.yaml
