@@ -31,34 +31,34 @@ on:
         description: "The branch to push the changes to"
         default: "main"
 
+    secrets:
       app_id:
-        type: string
         description: "The app id to use for cloning and pushing"
-
+        required: false
       app_private_key:
-        type: string
         description: "The private key to use for cloning and pushing"
+        required: false
 
 jobs:
   compare_api_changes:
     runs-on: ubuntu-latest
     steps:
-      # Authenticate and clone as github app
+      # Authenticate and clone as github app
       - name: 🔑 Get token for bumper app
-        if: ${{ inputs.app_id != '' && inputs.app_private_key != '' }}
+        if: ${{ secrets.app_id != '' && secrets.app_private_key != '' }}
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
-          app-id: ${{ inputs.app_id }}
-          private-key: ${{ inputs.app_private_key }}
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.app_private_key }}
       - name: Checkout code using app token
-        if: ${{ inputs.app_id != '' && inputs.app_private_key != '' }}
+        if: ${{ secrets.app_id != '' && secrets.app_private_key != '' }}
         uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
-      # Authenticate and clone as github user
+      # Authenticate and clone as github user
       - name: Checkout code using github token
-        if: ${{ inputs.app_id == '' || inputs.app_private_key == '' }}
+        if: ${{ secrets.app_id == '' || secrets.app_private_key == '' }}
         uses: actions/checkout@v4
       # Fetch tags and configure git
       - name: Fetch all tags

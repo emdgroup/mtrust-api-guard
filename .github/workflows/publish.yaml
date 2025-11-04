@@ -16,8 +16,9 @@ jobs:
 
   version:
     uses: ./.github/workflows/publish_workflow.yaml
-    with:
+    secrets:
       app_id: ${{ secrets.BUMPER_APP_ID }}
       app_private_key: ${{ secrets.BUMPER_APP_PRIVATE_KEY }}
+    with:
       git_push_branch: main
       git_push: true
