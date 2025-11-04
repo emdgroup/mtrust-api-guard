@@ -23,5 +23,6 @@ runs:
     - name: Report test results
       uses: dorny/test-reporter@v2
       with:
+        name: Flutter Tests
         path: reports/test-results.json
         reporter: flutter-json
