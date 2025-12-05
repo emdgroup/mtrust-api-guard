@@ -96,4 +96,4 @@ jobs:
       # Generate version summary and comment on PR
       - name: Push changes to remote repository
         if: inputs.git_push
-        run: git push origin ${{ inputs.git_push_branch }}
+        run: git push origin ${{ inputs.git_push_branch }} --follow-tags
