@@ -9,3 +9,6 @@ linter:
 analyzer:
   exclude:
     - test/fixtures/**
+
+formatter:
+  page_width: 120

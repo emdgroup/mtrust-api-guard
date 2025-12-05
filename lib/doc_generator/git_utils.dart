@@ -164,6 +164,7 @@ class GitUtils {
           'chore: bump version to $version [skip ci]',
           'pubspec.yaml',
           'CHANGELOG.md',
+          'version_badge.svg',
         ],
         workingDirectory: root);
     if (result.exitCode != 0) {
