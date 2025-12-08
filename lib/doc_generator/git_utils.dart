@@ -173,7 +173,7 @@ class GitUtils {
   }
 
   static Future<void> gitTag(String tag, String? root) async {
-    final result = await Process.run('git', ['tag', tag], workingDirectory: root);
+    final result = await Process.run('git', ['tag', '-a', tag, '-m', 'Release $tag'], workingDirectory: root);
     if (result.exitCode != 0) {
       throw GitException('Failed to tag $tag: ${result.stderr.toString()}');
     }
