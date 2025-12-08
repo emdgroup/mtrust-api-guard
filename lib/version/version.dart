@@ -85,19 +85,23 @@ Future<VersionResult> version({
   if (generateChangelog) {
     await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).updateChangelogFile();
     changelog = await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).generateChangelogEntry();
+    logger.info('Generated changelog entry for version $nextVersion');
   }
 
   if (badge) {
     final badgeContent = await generateVersionBadge(nextVersion);
     await File(join(dartRoot.path, 'version_badge.svg')).writeAsString(badgeContent);
+    logger.info('Generated version badge for version $nextVersion');
   }
 
   if (commit) {
-    await GitUtils.commitVersion(nextVersion, gitRoot.path);
+    await GitUtils.commitVersion(nextVersion, gitRoot.path, commitBadge: badge);
+    logger.info('Committed version $nextVersion');
   }
 
   if (tag) {
     await GitUtils.gitTag("v$nextVersion", gitRoot.path);
+    logger.info('Tagged version v$nextVersion');
   }
 
   return VersionResult(
