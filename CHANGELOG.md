@@ -1,3 +1,13 @@
+## 1.0.1
+Released on: 12/8/2025, changelog automatically generated.
+
+
+### Bug Fixes
+
+- properly push version badge and tag from workflow ([ae2ffd9](commit/ae2ffd9))
+- properly push version badge and tag from workflow ([452c9c2](commit/452c9c2))
+- string escaping comment, honor analysis_options.yaml excludes and use mason_logger ([#1](issues/1)) ([99079e9](commit/99079e9))
+
 ## 1.0.0
 Released on: 11/4/2025, changelog automatically generated.
 
