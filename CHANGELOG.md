@@ -1,3 +1,16 @@
+## 1.0.1
+Released on: 12/8/2025, changelog automatically generated.
+
+
+### Bug Fixes
+
+- add annotation message to git tag command so that the --follow-tags param from the workflow succeeds ([e23fb1d](commit/e23fb1d))
+- properly push version badge and tag from workflow ([ae2ffd9](commit/ae2ffd9))
+- properly push version badge and tag from workflow ([452c9c2](commit/452c9c2))
+- string escaping comment, honor analysis_options.yaml excludes and use mason_logger ([#1](issues/1)) ([99079e9](commit/99079e9))
+- **git:** stage new files before committing version bump ([451dcb1](commit/451dcb1))
+- remove examples/ dir in order to satisfy pub.dev package requirements ([da32b65](commit/da32b65))
+
 ## 1.0.0
 Released on: 12/8/2025, changelog automatically generated.
 
