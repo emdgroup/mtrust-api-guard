@@ -155,16 +155,32 @@ class GitUtils {
     return result.stdout.toString().trim().isNotEmpty;
   }
 
-  static Future<void> commitVersion(String version, String? root, {bool? commitBadge}) async {
+  static Future<void> commitVersion(String version, String? root,
+      {bool? commitBadge, bool commitChangelog = true}) async {
+    final filesToCommit = [
+      'pubspec.yaml',
+      if (commitChangelog) 'CHANGELOG.md',
+      if (commitBadge == true) 'version_badge.svg',
+    ];
+
+    // Add files to git to ensure they are tracked
+    final addResult = await Process.run(
+      'git',
+      ['add', ...filesToCommit],
+      workingDirectory: root,
+    );
+
+    if (addResult.exitCode != 0) {
+      throw GitException('Failed to add files to git: ${addResult.stderr.toString()}');
+    }
+
     final result = await Process.run(
         'git',
         [
           'commit',
           '-m',
           'chore: bump version to $version [skip ci]',
-          'pubspec.yaml',
-          'CHANGELOG.md',
-          if (commitBadge == true) 'version_badge.svg',
+          ...filesToCommit,
         ],
         workingDirectory: root);
     if (result.exitCode != 0) {
