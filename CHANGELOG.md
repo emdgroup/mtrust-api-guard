@@ -1,3 +1,13 @@
+## 1.0.2
+Released on: 12/8/2025, changelog automatically generated.
+
+
+### Bug Fixes
+
+- add annotation message to git tag command so that the --follow-tags param from the workflow succeeds ([e23fb1d](commit/e23fb1d))
+- properly push version badge and tag from workflow ([ae2ffd9](commit/ae2ffd9))
+- properly push version badge and tag from workflow ([452c9c2](commit/452c9c2))
+
 ## 1.0.1
 Released on: 12/8/2025, changelog automatically generated.
 
