@@ -15,6 +15,7 @@ jobs:
         uses: ./.github/actions/validate-dart
 
   version:
+    needs: validate_dart
     uses: ./.github/workflows/publish_workflow.yaml
     secrets:
       app_id: ${{ secrets.BUMPER_APP_ID }}
