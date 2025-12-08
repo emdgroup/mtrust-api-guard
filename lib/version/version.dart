@@ -95,7 +95,7 @@ Future<VersionResult> version({
   }
 
   if (commit) {
-    await GitUtils.commitVersion(nextVersion, gitRoot.path);
+    await GitUtils.commitVersion(nextVersion, gitRoot.path, commitBadge: badge);
     logger.info('Committed version $nextVersion');
   }
 

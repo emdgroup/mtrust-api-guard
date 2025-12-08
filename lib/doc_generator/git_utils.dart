@@ -155,7 +155,7 @@ class GitUtils {
     return result.stdout.toString().trim().isNotEmpty;
   }
 
-  static Future<void> commitVersion(String version, String? root) async {
+  static Future<void> commitVersion(String version, String? root, {bool? commitBadge}) async {
     final result = await Process.run(
         'git',
         [
@@ -164,7 +164,7 @@ class GitUtils {
           'chore: bump version to $version [skip ci]',
           'pubspec.yaml',
           'CHANGELOG.md',
-          'version_badge.svg',
+          if (commitBadge == true) 'version_badge.svg',
         ],
         workingDirectory: root);
     if (result.exitCode != 0) {
