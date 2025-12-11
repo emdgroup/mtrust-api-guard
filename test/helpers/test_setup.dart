@@ -18,7 +18,11 @@ class TestSetup {
   Future<void> setUp() async {
     tempDir = await Directory.systemTemp.createTemp('api_guard_test_');
     tempDir = Directory(p.join(tempDir.path, 'api_guard_test'));
+    if (tempDir.existsSync()) {
+      await tempDir.delete(recursive: true); // Ensure a clean state
+    }
     await tempDir.create();
+    await runApiGuard('cache', ['--clear']); // Clear cache before each test
   }
 
   /// Clean up the test environment.
@@ -62,16 +66,13 @@ class TestSetup {
   /// Commit all changes with a message.
   Future<void> commitChanges(String message) async {
     await runProcess('git', ['add', '.'], workingDir: tempDir.path);
-    await runProcess('git', ['commit', '-m', message],
-        workingDir: tempDir.path);
+    await runProcess('git', ['commit', '-m', message], workingDir: tempDir.path);
   }
 
   /// Run the API Guard command and handle output.
   Future<void> runApiGuard(String command, List<String> args) async {
-    printOnFailure(
-        'Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
-    printOnFailure(
-        "dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
+    printOnFailure('Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
+    printOnFailure("dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
 
     final result = await Process.run(
       'dart',
@@ -83,18 +84,10 @@ class TestSetup {
     final stderr = result.stderr.toString().trim();
 
     if (stdout.isNotEmpty) {
-      result.stdout
-          .toString()
-          .trim()
-          .split('\n')
-          .forEach((line) => printOnFailure('\t$line'));
+      result.stdout.toString().trim().split('\n').forEach((line) => printOnFailure('\t$line'));
     }
     if (stderr.isNotEmpty) {
-      result.stderr
-          .toString()
-          .trim()
-          .split('\n')
-          .forEach((line) => printOnFailure('\t$line'));
+      result.stderr.toString().trim().split('\n').forEach((line) => printOnFailure('\t$line'));
     }
 
     if (result.exitCode != 0) {
@@ -114,5 +107,17 @@ class TestSetup {
       ['create', '.', '--template', 'package'],
       workingDir: tempDir.path,
     );
+
+    Future<void> _clearDir(String dirName) async {
+      final dir = Directory(p.join(tempDir.path, dirName));
+      if (dir.existsSync()) {
+        await dir.delete(recursive: true);
+        await dir.create();
+      }
+    }
+
+    // remove the contents of lib/ and test/ directories
+    await _clearDir('lib');
+    await _clearDir('test');
   }
 }

@@ -20,9 +20,9 @@ void main() {
     });
 
     test('generate command works as expected', () async {
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 

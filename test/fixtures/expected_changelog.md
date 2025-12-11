@@ -16,6 +16,7 @@
 **User** (lib/src/api.dart)
 - ⚠️ Param became required in constructor new: `_internalId`
 - 🔢 Param became positional in constructor new: `_internalId`
+- ❌ Method removed: `updateEmail`
 
 #### ✨ Minor changes
 
@@ -37,11 +38,13 @@
 **User** (lib/src/api.dart)
 - ❇️ Params added in constructor new: `_internalId`, `phone`
 - ❇️ Property added: `phone`
+- ❇️ Method added: `updateEmail`
 
 #### 👀 Patch changes
 
 **Product** (lib/src/api.dart)
 - ❌ Property removed: `_internalId`
+- ❌ Method removed: `_generateInternalId`
 
 **User** (lib/src/api.dart)
 - ❇️ Property added: `_internalId`
@@ -56,6 +59,7 @@
 
 **Product** (lib/src/api.dart)
 - ❇️ Property added: `_internalId`
+- ❇️ Method added: `_generateInternalId`
 
 **_PrivateClass** (lib/src/api.dart)
 - ❌ Class removed: `_PrivateClass`

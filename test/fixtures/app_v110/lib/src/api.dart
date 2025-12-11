@@ -5,13 +5,16 @@
 class User {
   final String name;
   final int age;
-  final String
-      _internalId; // new private property (should be detected as added, private)
+  final String _internalId; // new private property (should be detected as added, private)
   String? email;
   String? phone; // new property (should be detected as added)
 
   // Changed constructor: added required _internalId, phone is now optional named
   User(this.name, this.age, {this._internalId, this.email, this.phone});
+
+  void updateEmail(String newEmail) {
+    email = newEmail;
+  }
 }
 
 // Keep the Product class for compatibility with previous versions
