@@ -50,6 +50,9 @@ extension DocComponentApiChangesExt on DocComponent {
     changes.addAll(
       properties.compareTo(newComponent.properties, component: this),
     );
+    changes.addAll(
+      methods.compareTo(newComponent.methods, component: this),
+    );
 
     return changes;
   }
@@ -179,6 +182,41 @@ extension PropertyListApiChangesExt on List<DocProperty> {
         changes.add(PropertyApiChange(
           component: component,
           property: newProperties[i],
+          operation: ApiChangeOperation.added,
+        ));
+      }
+    }
+
+    return changes;
+  }
+}
+
+extension MethodListApiChangesExt on List<String> {
+  /// Compares [this] list of methods with [newMethods] and returns a list
+  /// of [ApiChange]s that have been detected between the two lists.
+  List<ApiChange> compareTo(
+    List<String> newMethods, {
+    required DocComponent component,
+  }) {
+    final changes = <ApiChange>[];
+
+    for (var i = 0; i < length; i++) {
+      final newMethod = newMethods.firstWhereOrNull((element) => element == this[i]);
+      if (newMethod == null) {
+        changes.add(MethodApiChange(
+          component: component,
+          methodName: this[i],
+          operation: ApiChangeOperation.removed,
+        ));
+      }
+    }
+
+    for (var i = 0; i < newMethods.length; i++) {
+      final oldMethod = firstWhereOrNull((element) => element == newMethods[i]);
+      if (oldMethod == null) {
+        changes.add(MethodApiChange(
+          component: component,
+          methodName: newMethods[i],
           operation: ApiChangeOperation.added,
         ));
       }

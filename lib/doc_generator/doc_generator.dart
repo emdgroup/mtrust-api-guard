@@ -72,6 +72,16 @@ Future<List<DocComponent>> generateDocs({
       if (cachedContent != null) {
         logger.success('Using cached API documentation for $effectiveRef');
         await restoreOriginalState();
+
+        // Write the cached content to file if requested
+        if (out != null) {
+          if (!File(out).existsSync()) {
+            File(out).createSync();
+          }
+          await File(out).writeAsString(cachedContent);
+          logger.success('Wrote cached documentation to $out');
+        }
+
         return parseDocComponentsFile(cachedContent);
       }
     }

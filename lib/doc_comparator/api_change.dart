@@ -99,6 +99,25 @@ class PropertyApiChange extends ApiChange {
   }
 }
 
+class MethodApiChange extends ApiChange {
+  final String methodName;
+
+  MethodApiChange({
+    required super.component,
+    required super.operation,
+    required this.methodName,
+  }) : super._();
+
+  @override
+  ApiChangeMagnitude getMagnitude() {
+    if (methodName.startsWith('_')) {
+      // if the method is private, it's a patch change
+      return ApiChangeMagnitude.patch;
+    }
+    return super.getMagnitude();
+  }
+}
+
 class ConstructorApiChange extends ApiChange {
   final DocConstructor constructor;
 

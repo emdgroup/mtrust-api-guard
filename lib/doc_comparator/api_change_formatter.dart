@@ -152,6 +152,13 @@ class ApiChangeFormatter {
       return '$text: `${props.join('`, `')}`';
     }
 
+    if (changes.every((c) => c is MethodApiChange)) {
+      final prefix = changes.length > 1 ? 'Methods' : 'Method';
+      final text = _getOperationText(operation, prefix: prefix);
+      final methods = changes.map((c) => (c as MethodApiChange).methodName).toList();
+      return '$text: `${methods.join('`, `')}`';
+    }
+
     if (changes.every((c) => c is ConstructorParameterApiChange)) {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
