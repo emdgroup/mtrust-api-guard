@@ -36,6 +36,7 @@ ApiChangeMagnitude getHighestMagnitude(List<ApiChange> changes) {
 enum ApiChangeOperation {
   added,
   removed,
+  renamed,
   typeChanged,
   // Constructor Parameter changes:
   becameOptional,
@@ -100,22 +101,79 @@ class PropertyApiChange extends ApiChange {
 }
 
 class MethodApiChange extends ApiChange {
-  final String methodName;
+  final DocMethod method;
+  final String? newType;
 
   MethodApiChange({
     required super.component,
     required super.operation,
-    required this.methodName,
+    required this.method,
+    this.newType,
   }) : super._();
 
   @override
   ApiChangeMagnitude getMagnitude() {
-    if (methodName.startsWith('_')) {
+    if (method.name.startsWith('_')) {
       // if the method is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
     return super.getMagnitude();
   }
+}
+
+/// Base class for parameter changes to share magnitude logic
+abstract class ParameterApiChange extends ApiChange {
+  final DocParameter parameter;
+  final String? oldName;
+  final String parentName;
+
+  ParameterApiChange({
+    required super.component,
+    required super.operation,
+    required this.parameter,
+    required this.parentName,
+    this.oldName,
+  }) : super._();
+
+  @override
+  ApiChangeMagnitude getMagnitude() {
+    if (parentName.startsWith('_')) {
+      // if the parent method/constructor is private, it's a patch change
+      return ApiChangeMagnitude.patch;
+    }
+
+    if (operation == ApiChangeOperation.renamed) {
+      return ApiChangeMagnitude.patch;
+    }
+
+    if (operation == ApiChangeOperation.becameRequired ||
+        operation == ApiChangeOperation.becamePositional ||
+        operation == ApiChangeOperation.becameNullUnsafe ||
+        (operation == ApiChangeOperation.removed && parameter.required) ||
+        (operation == ApiChangeOperation.added && parameter.required)) {
+      return ApiChangeMagnitude.major;
+    }
+
+    if (operation == ApiChangeOperation.becameNullSafe ||
+        operation == ApiChangeOperation.becameOptional ||
+        (operation == ApiChangeOperation.removed && !parameter.required) ||
+        (operation == ApiChangeOperation.added && !parameter.required)) {
+      return ApiChangeMagnitude.minor;
+    }
+    return super.getMagnitude();
+  }
+}
+
+class MethodParameterApiChange extends ParameterApiChange {
+  final DocMethod method;
+
+  MethodParameterApiChange({
+    required super.component,
+    required super.operation,
+    required this.method,
+    required super.parameter,
+    super.oldName,
+  }) : super(parentName: method.name);
 }
 
 class ConstructorApiChange extends ApiChange {
@@ -137,36 +195,14 @@ class ConstructorApiChange extends ApiChange {
   }
 }
 
-class ConstructorParameterApiChange extends ApiChange {
+class ConstructorParameterApiChange extends ParameterApiChange {
   final DocConstructor constructor;
-  final DocParameter parameter;
 
   ConstructorParameterApiChange({
     required super.component,
     required super.operation,
     required this.constructor,
-    required this.parameter,
-  }) : super._();
-
-  @override
-  ApiChangeMagnitude getMagnitude() {
-    if (constructor.name.startsWith('_')) {
-      // if the constructor is private, it's a patch change
-      return ApiChangeMagnitude.patch;
-    }
-
-    if (operation == ApiChangeOperation.becameRequired ||
-        operation == ApiChangeOperation.becamePositional ||
-        operation == ApiChangeOperation.becameNullUnsafe ||
-        (operation == ApiChangeOperation.removed && parameter.required)) {
-      return ApiChangeMagnitude.major;
-    }
-
-    if (operation == ApiChangeOperation.becameNullSafe ||
-        operation == ApiChangeOperation.becameOptional ||
-        (operation == ApiChangeOperation.removed && !parameter.required)) {
-      return ApiChangeMagnitude.minor;
-    }
-    return super.getMagnitude();
-  }
+    required super.parameter,
+    super.oldName,
+  }) : super(parentName: constructor.name);
 }

@@ -20,7 +20,7 @@ class DocComponent {
   final String description;
   final List<DocConstructor> constructors;
   final List<DocProperty> properties;
-  final List<String> methods;
+  final List<DocMethod> methods;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
@@ -71,6 +71,7 @@ class DocParameter {
     required this.description,
     required this.named,
     required this.required,
+    this.defaultValue,
   });
 
   final String name;
@@ -78,8 +79,30 @@ class DocParameter {
   final String type;
   final bool named;
   final bool required;
+  final String? defaultValue;
 
   factory DocParameter.fromJson(Map<String, dynamic> json) => _$DocParameterFromJson(json);
 
   Map<String, dynamic> toJson() => _$DocParameterToJson(this);
+}
+
+@JsonSerializable()
+class DocMethod {
+  const DocMethod({
+    required this.name,
+    required this.returnType,
+    required this.signature,
+    required this.features,
+    required this.description,
+  });
+
+  final String name;
+  final String returnType;
+  final List<DocParameter> signature;
+  final List<String> features;
+  final String description;
+
+  factory DocMethod.fromJson(Map<String, dynamic> json) => _$DocMethodFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DocMethodToJson(this);
 }

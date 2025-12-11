@@ -16,8 +16,9 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
       properties: (json['properties'] as List<dynamic>)
           .map((e) => DocProperty.fromJson(e as Map<String, dynamic>))
           .toList(),
-      methods:
-          (json['methods'] as List<dynamic>).map((e) => e as String).toList(),
+      methods: (json['methods'] as List<dynamic>)
+          .map((e) => DocMethod.fromJson(e as Map<String, dynamic>))
+          .toList(),
       filePath: json['filePath'] as String?,
     );
 
@@ -71,6 +72,7 @@ DocParameter _$DocParameterFromJson(Map<String, dynamic> json) => DocParameter(
       description: json['description'] as String,
       named: json['named'] as bool,
       required: json['required'] as bool,
+      defaultValue: json['defaultValue'] as String?,
     );
 
 Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
@@ -80,4 +82,24 @@ Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
       'type': instance.type,
       'named': instance.named,
       'required': instance.required,
+      'defaultValue': instance.defaultValue,
+    };
+
+DocMethod _$DocMethodFromJson(Map<String, dynamic> json) => DocMethod(
+      name: json['name'] as String,
+      returnType: json['returnType'] as String,
+      signature: (json['signature'] as List<dynamic>)
+          .map((e) => DocParameter.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      features:
+          (json['features'] as List<dynamic>).map((e) => e as String).toList(),
+      description: json['description'] as String,
+    );
+
+Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
+      'name': instance.name,
+      'returnType': instance.returnType,
+      'signature': instance.signature,
+      'features': instance.features,
+      'description': instance.description,
     };

@@ -191,34 +191,170 @@ extension PropertyListApiChangesExt on List<DocProperty> {
   }
 }
 
-extension MethodListApiChangesExt on List<String> {
+extension MethodListApiChangesExt on List<DocMethod> {
   /// Compares [this] list of methods with [newMethods] and returns a list
   /// of [ApiChange]s that have been detected between the two lists.
   List<ApiChange> compareTo(
-    List<String> newMethods, {
+    List<DocMethod> newMethods, {
     required DocComponent component,
   }) {
     final changes = <ApiChange>[];
 
     for (var i = 0; i < length; i++) {
-      final newMethod = newMethods.firstWhereOrNull((element) => element == this[i]);
+      final newMethod = newMethods.firstWhereOrNull((element) => element.name == this[i].name);
       if (newMethod == null) {
         changes.add(MethodApiChange(
           component: component,
-          methodName: this[i],
+          method: this[i],
           operation: ApiChangeOperation.removed,
+        ));
+        continue;
+      }
+      changes.addAll(this[i].compareTo(newMethod, component: component));
+    }
+
+    for (var i = 0; i < newMethods.length; i++) {
+      final oldMethod = firstWhereOrNull((element) => element.name == newMethods[i].name);
+      if (oldMethod == null) {
+        changes.add(MethodApiChange(
+          component: component,
+          method: newMethods[i],
+          operation: ApiChangeOperation.added,
         ));
       }
     }
 
-    for (var i = 0; i < newMethods.length; i++) {
-      final oldMethod = firstWhereOrNull((element) => element == newMethods[i]);
-      if (oldMethod == null) {
-        changes.add(MethodApiChange(
-          component: component,
-          methodName: newMethods[i],
-          operation: ApiChangeOperation.added,
-        ));
+    return changes;
+  }
+}
+
+extension MethodApiChangesExt on DocMethod {
+  /// Compares [this] method with [newMethod] and returns a list of
+  /// [ApiChange]s that have been detected between the two methods.
+  List<ApiChange> compareTo(
+    DocMethod newMethod, {
+    required DocComponent component,
+  }) {
+    final changes = <ApiChange>[];
+    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? oldName}) {
+      changes.add(MethodParameterApiChange(
+        component: component,
+        method: this,
+        operation: operation,
+        parameter: parameter,
+        oldName: oldName,
+      ));
+    }
+
+    if (returnType != newMethod.returnType) {
+      changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.typeChanged,
+        newType: newMethod.returnType,
+      ));
+    }
+
+    final oldPositional = signature.where((p) => !p.named).toList();
+    final oldNamed = signature.where((p) => p.named).toList();
+    final newPositional = newMethod.signature.where((p) => !p.named).toList();
+    final newNamed = newMethod.signature.where((p) => p.named).toList();
+
+    final processedOld = <DocParameter>{};
+    final processedNew = <DocParameter>{};
+
+    // Check old named -> new positional
+    for (final oldP in oldNamed) {
+      final newP = newPositional.firstWhereOrNull((p) => p.name == oldP.name);
+      if (newP != null) {
+        _addChange(oldP, ApiChangeOperation.becamePositional);
+        if (oldP.type != newP.type) {
+          _addChange(oldP, ApiChangeOperation.typeChanged);
+        }
+        if (oldP.required != newP.required) {
+          _addChange(
+            oldP,
+            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+          );
+        }
+        processedOld.add(oldP);
+        processedNew.add(newP);
+      }
+    }
+
+    // Check old positional -> new named
+    for (final oldP in oldPositional) {
+      final newP = newNamed.firstWhereOrNull((p) => p.name == oldP.name);
+      if (newP != null) {
+        _addChange(oldP, ApiChangeOperation.becameNamed);
+        if (oldP.type != newP.type) {
+          _addChange(oldP, ApiChangeOperation.typeChanged);
+        }
+        if (oldP.required != newP.required) {
+          _addChange(
+            oldP,
+            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+          );
+        }
+        processedOld.add(oldP);
+        processedNew.add(newP);
+      }
+    }
+
+    // Compare remaining named parameters
+    for (final oldP in oldNamed) {
+      if (processedOld.contains(oldP)) continue;
+      final newP = newNamed.firstWhereOrNull((p) => p.name == oldP.name);
+      if (newP == null) {
+        _addChange(oldP, ApiChangeOperation.removed);
+      } else {
+        processedNew.add(newP);
+        if (oldP.type != newP.type) {
+          _addChange(oldP, ApiChangeOperation.typeChanged);
+        }
+        if (oldP.required != newP.required) {
+          _addChange(
+            oldP,
+            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+          );
+        }
+      }
+    }
+
+    for (final newP in newNamed) {
+      if (processedNew.contains(newP)) continue;
+      _addChange(newP, ApiChangeOperation.added);
+    }
+
+    // Compare remaining positional parameters by index
+    final remainingOldPositional = oldPositional.where((p) => !processedOld.contains(p)).toList();
+    final remainingNewPositional = newPositional.where((p) => !processedNew.contains(p)).toList();
+
+    final maxPos = remainingOldPositional.length > remainingNewPositional.length
+        ? remainingOldPositional.length
+        : remainingNewPositional.length;
+
+    for (var i = 0; i < maxPos; i++) {
+      if (i < remainingOldPositional.length && i < remainingNewPositional.length) {
+        final oldP = remainingOldPositional[i];
+        final newP = remainingNewPositional[i];
+
+        if (oldP.name != newP.name) {
+          _addChange(newP, ApiChangeOperation.renamed, oldName: oldP.name);
+        }
+        if (oldP.type != newP.type) {
+          _addChange(oldP, ApiChangeOperation.typeChanged);
+        }
+        if (oldP.required != newP.required) {
+          _addChange(
+            oldP,
+            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+          );
+        }
+      } else if (i >= remainingOldPositional.length) {
+        _addChange(remainingNewPositional[i], ApiChangeOperation.added);
+      } else {
+        _addChange(remainingOldPositional[i], ApiChangeOperation.removed);
       }
     }
 

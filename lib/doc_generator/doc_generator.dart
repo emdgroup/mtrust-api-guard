@@ -132,6 +132,7 @@ Future<List<DocComponent>> generateDocs({
                                 type: param.type.toString(),
                                 named: param.isNamed,
                                 required: param.isRequired,
+                                defaultValue: param.defaultValueCode,
                               ))
                           .toList(),
                       features: [
@@ -155,7 +156,28 @@ Future<List<DocComponent>> generateDocs({
                       ],
                     ))
                 .toList(),
-            methods: classItem.methods2.map((e) => e.name3.toString()).toList(),
+            methods: classItem.methods2
+                .map((e) => DocMethod(
+                      name: e.name3.toString(),
+                      returnType: e.returnType.toString(),
+                      description: e.documentationComment ?? "",
+                      signature: e.formalParameters
+                          .map((param) => DocParameter(
+                                description: param.documentationComment ?? "",
+                                name: param.name3.toString(),
+                                type: param.type.toString(),
+                                named: param.isNamed,
+                                required: param.isRequired,
+                                defaultValue: param.defaultValueCode,
+                              ))
+                          .toList(),
+                      features: [
+                        if (e.isStatic) "static",
+                        if (e.isAbstract) "abstract",
+                        if (e.isExternal) "external",
+                      ],
+                    ))
+                .toList(),
           ));
         }
       } catch (e) {
@@ -176,7 +198,7 @@ Future<List<DocComponent>> generateDocs({
     final outputProgress = logger.progress("Generating output");
 
     // Generate output
-    final output = jsonEncode(classes);
+    final output = const JsonEncoder.withIndent('  ').convert(classes);
 
     outputProgress.complete();
 
