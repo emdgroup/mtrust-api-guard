@@ -12,8 +12,17 @@ class User {
   // Changed constructor: added required _internalId, phone is now optional named
   User(this.name, this.age, {this._internalId, this.email, this.phone});
 
+  // Added factory constructor:
+  User.fromJson(Map<String, dynamic> json) :
+    throw UnimplementedError();
+
+  // New methods:
   void updateEmail(String newEmail) {
     email = newEmail;
+  }
+
+  void updatePhone(String newPhone) {
+    phone = newPhone;
   }
 }
 

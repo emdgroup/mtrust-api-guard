@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -41,7 +42,11 @@ void main() {
 
       final expectedGeneratedContent = await File(expectedGeneratedFilePath).readAsString();
       final generatedContent = await File(generatedFilePath).readAsString();
-      expect(generatedContent, equalsIgnoringWhitespace(expectedGeneratedContent));
+
+      // decode the json to avoid formatting issues
+      final expectedJson = jsonDecode(expectedGeneratedContent);
+      final generatedJson = jsonDecode(generatedContent);
+      expect(generatedJson, expectedJson);
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

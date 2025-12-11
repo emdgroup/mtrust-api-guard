@@ -1,1 +1,137 @@
-[{"filePath":"lib/src/api.dart","name":"User","isNullSafe":true,"description":"","constructors":[{"name":"new","signature":[{"name":"name","description":"","type":"String","named":false,"required":true},{"name":"age","description":"","type":"int","named":false,"required":true},{"name":"email","description":"","type":"String?","named":true,"required":false}],"features":[]}],"properties":[{"name":"name","type":"String","description":"","features":["final"]},{"name":"age","type":"int","description":"","features":["final"]},{"name":"email","type":"String?","description":"","features":[]}],"methods":[]},{"filePath":"lib/src/api.dart","name":"Product","isNullSafe":true,"description":"","constructors":[{"name":"new","signature":[{"name":"id","description":"","type":"String","named":false,"required":true},{"name":"price","description":"","type":"double","named":false,"required":true}],"features":[]}],"properties":[{"name":"id","type":"String","description":"","features":["final"]},{"name":"price","type":"double","description":"","features":["final"]}],"methods":[]},{"filePath":"lib/src/api.dart","name":"_PrivateClass","isNullSafe":true,"description":"","constructors":[{"name":"new","signature":[{"name":"secret","description":"","type":"String","named":false,"required":true}],"features":[]}],"properties":[{"name":"secret","type":"String","description":"","features":["final"]}],"methods":[]}]
+[
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "User",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      {
+        "name": "new",
+        "signature": [
+          {
+            "name": "name",
+            "description": "",
+            "type": "String",
+            "named": false,
+            "required": true,
+            "defaultValue": null
+          },
+          {
+            "name": "age",
+            "description": "",
+            "type": "int",
+            "named": false,
+            "required": true,
+            "defaultValue": null
+          },
+          {
+            "name": "email",
+            "description": "",
+            "type": "String?",
+            "named": true,
+            "required": false,
+            "defaultValue": null
+          }
+        ],
+        "features": []
+      }
+    ],
+    "properties": [
+      {
+        "name": "name",
+        "type": "String",
+        "description": "",
+        "features": ["final"]
+      },
+      {
+        "name": "age",
+        "type": "int",
+        "description": "",
+        "features": ["final"]
+      },
+      {
+        "name": "email",
+        "type": "String?",
+        "description": "",
+        "features": []
+      }
+    ],
+    "methods": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "Product",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      {
+        "name": "new",
+        "signature": [
+          {
+            "name": "id",
+            "description": "",
+            "type": "String",
+            "named": false,
+            "required": true,
+            "defaultValue": null
+          },
+          {
+            "name": "price",
+            "description": "",
+            "type": "double",
+            "named": false,
+            "required": true,
+            "defaultValue": null
+          }
+        ],
+        "features": []
+      }
+    ],
+    "properties": [
+      {
+        "name": "id",
+        "type": "String",
+        "description": "",
+        "features": ["final"]
+      },
+      {
+        "name": "price",
+        "type": "double",
+        "description": "",
+        "features": ["final"]
+      }
+    ],
+    "methods": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "_PrivateClass",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      {
+        "name": "new",
+        "signature": [
+          {
+            "name": "secret",
+            "description": "",
+            "type": "String",
+            "named": false,
+            "required": true,
+            "defaultValue": null
+          }
+        ],
+        "features": []
+      }
+    ],
+    "properties": [
+      {
+        "name": "secret",
+        "type": "String",
+        "description": "",
+        "features": ["final"]
+      }
+    ],
+    "methods": []
+  }
+]
