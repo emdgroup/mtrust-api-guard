@@ -42,6 +42,7 @@ void main() {
 
       final expectedGeneratedContent = await File(expectedGeneratedFilePath).readAsString();
       final generatedContent = await File(generatedFilePath).readAsString();
+      print(generatedContent);
 
       // decode the json to avoid formatting issues
       final expectedJson = jsonDecode(expectedGeneratedContent);

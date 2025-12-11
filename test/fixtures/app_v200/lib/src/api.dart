@@ -50,3 +50,14 @@ class Order {
 
   Order(this.orderId, this.total);
 }
+
+// Change top-level function: added optional named param 'roundUp' with default value false
+double calculateDiscount(double price, double percentage, {bool roundUp = false}) {
+  double discount = price * (percentage / 100);
+  if (roundUp) {
+    return discount.ceilToDouble();
+  }
+  return discount;
+}
+
+// Remove 'formatUserInfo' top-level function

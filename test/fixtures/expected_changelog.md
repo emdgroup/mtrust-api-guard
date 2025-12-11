@@ -20,6 +20,9 @@
 - 🔄 Method type changed: `updatePhone` (void -> bool)
 - ❇️ Param added in method `updatePhone`: `mobilePhone (positional, required)`
 
+**formatUserInfo** (lib/src/api.dart)
+- ❌ Function removed: `formatUserInfo`
+
 #### ✨ Minor changes
 
 **User** (lib/src/api.dart)
@@ -27,6 +30,9 @@
 - ❇️ Params added in constructor `fromJson`: `fallbackName (named, optional)`, `fallbackAge (named, optional, default: 25)`
 - ❇️ Property added: `mobilePhone`
 - ❇️ Param added in method `updatePhone`: `notifyUserViaEmail (named, optional, default: false)`
+
+**calculateDiscount** (lib/src/api.dart)
+- ❇️ Param added in function `calculateDiscount`: `roundUp (named, optional, default: false)`
 
 #### 👀 Patch changes
 
@@ -49,6 +55,12 @@
 - ❇️ Constructor added: `fromJson`
 - ❇️ Property added: `phone`
 - ❇️ Methods added: `UnimplementedError`, `updateEmail`, `updatePhone`
+
+**calculateDiscount** (lib/src/api.dart)
+- ❇️ Function added: `calculateDiscount`
+
+**formatUserInfo** (lib/src/api.dart)
+- ❇️ Function added: `formatUserInfo`
 
 #### 👀 Patch changes
 

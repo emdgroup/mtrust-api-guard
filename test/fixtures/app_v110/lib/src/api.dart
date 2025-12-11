@@ -41,3 +41,12 @@ class Order {
 
   Order(this.orderId, this.total);
 }
+
+// Add new top-level functions
+double calculateDiscount(double price, double percentage) {
+  return price * (percentage / 100);
+}
+
+String formatUserInfo(String name, int age, {String? email}) {
+  return 'Name: $name, Age: $age, Email: ${email ?? "N/A"}';
+}
