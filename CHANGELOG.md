@@ -1,3 +1,69 @@
+## 2.0.0
+Released on: 12/11/2025, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **git:** stage new files before committing version bump ([451dcb1](commit/451dcb1))
+### Features
+
+- enhance API change detection to include top-level functions ([bd902f3](commit/bd902f3))
+- enhance API change detection with method parameter comparison logic ([2fa9470](commit/2fa9470))
+- add MethodApiChange class and comparison logic for method changes ([f5f7254](commit/f5f7254))
+- add CacheCommand to manage/clear cache ([547327a](commit/547327a))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**ConstructorParameterApiChange** (lib/doc_comparator/api_change.dart)
+- ❌ Property removed: `parameter`
+- ❌ Method removed: `getMagnitude`
+
+**DocComponent** (lib/models/doc_items.dart)
+- 🔄 Param type changed in default constructor: `methods (named, required)`
+- 🔄 Property type changed: `methods`
+
+#### ✨ Minor changes
+
+**Cache** (lib/doc_generator/cache.dart)
+- ❇️ Method added: `getCacheDir`
+
+**CacheCommand** (lib/cache/cache_command.dart)
+- ❇️ Class added: `CacheCommand`
+
+**ConstructorParameterApiChange** (lib/doc_comparator/api_change.dart)
+- ❇️ Param added in default constructor: `oldName (named, optional)`
+
+**DocComponent** (lib/models/doc_items.dart)
+- ❇️ Param added in default constructor: `type (named, optional, default: DocComponentType.classType)`
+- ❇️ Property added: `type`
+
+**DocMethod** (lib/models/doc_items.dart)
+- ❇️ Class added: `DocMethod`
+
+**DocParameter** (lib/models/doc_items.dart)
+- ❇️ Param added in default constructor: `defaultValue (named, optional)`
+- ❇️ Property added: `defaultValue`
+
+**MethodApiChange** (lib/doc_comparator/api_change.dart)
+- ❇️ Class added: `MethodApiChange`
+
+**MethodParameterApiChange** (lib/doc_comparator/api_change.dart)
+- ❇️ Class added: `MethodParameterApiChange`
+
+**ParameterApiChange** (lib/doc_comparator/api_change.dart)
+- ❇️ Class added: `ParameterApiChange`
+
+#### 👀 Patch changes
+
+**_$DocMethodFromJson** (lib/models/doc_items.dart)
+- ❇️ Function added: `_$DocMethodFromJson`
+
+**_$DocMethodToJson** (lib/models/doc_items.dart)
+- ❇️ Function added: `_$DocMethodToJson`
+
+
 ## 1.0.1
 Released on: 12/8/2025, changelog automatically generated.
 
