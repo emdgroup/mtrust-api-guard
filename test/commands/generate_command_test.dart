@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
@@ -20,9 +21,9 @@ void main() {
     });
 
     test('generate command works as expected', () async {
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
@@ -41,7 +42,11 @@ void main() {
 
       final expectedGeneratedContent = await File(expectedGeneratedFilePath).readAsString();
       final generatedContent = await File(generatedFilePath).readAsString();
-      expect(generatedContent, equalsIgnoringWhitespace(expectedGeneratedContent));
+
+      // decode the json to avoid formatting issues
+      final expectedJson = jsonDecode(expectedGeneratedContent);
+      final generatedJson = jsonDecode(generatedContent);
+      expect(generatedJson, expectedJson);
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

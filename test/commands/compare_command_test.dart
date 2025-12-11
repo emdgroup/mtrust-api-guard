@@ -23,9 +23,9 @@ void main() {
 
     test('compare command works as expected', () async {
       // 1. Copy app_v100 to tempDir
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
@@ -73,9 +73,9 @@ void main() {
 
     test('magnitude parameter filters out patch changes when only patch changes exist', () async {
       // 1. Copy app_v100 to tempDir
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 

@@ -3,6 +3,7 @@
 
 **Product** (lib/src/api.dart)
 - ❇️ Property added: `_internalId`
+- ❇️ Method added: `_generateInternalId`
 
 **_PrivateClass** (lib/src/api.dart)
 - ❌ Class removed: `_PrivateClass`

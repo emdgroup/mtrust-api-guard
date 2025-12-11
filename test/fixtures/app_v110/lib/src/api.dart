@@ -5,13 +5,25 @@
 class User {
   final String name;
   final int age;
-  final String
-      _internalId; // new private property (should be detected as added, private)
+  final String _internalId; // new private property (should be detected as added, private)
   String? email;
   String? phone; // new property (should be detected as added)
 
   // Changed constructor: added required _internalId, phone is now optional named
   User(this.name, this.age, {this._internalId, this.email, this.phone});
+
+  // Added factory constructor:
+  User.fromJson(Map<String, dynamic> json) :
+    throw UnimplementedError();
+
+  // New methods:
+  void updateEmail(String newEmail) {
+    email = newEmail;
+  }
+
+  void updatePhone(String newPhone) {
+    phone = newPhone;
+  }
 }
 
 // Keep the Product class for compatibility with previous versions
@@ -28,4 +40,13 @@ class Order {
   final double total;
 
   Order(this.orderId, this.total);
+}
+
+// Add new top-level functions
+double calculateDiscount(double price, double percentage) {
+  return price * (percentage / 100);
+}
+
+String formatUserInfo(String name, int age, {String? email}) {
+  return 'Name: $name, Age: $age, Email: ${email ?? "N/A"}';
 }

@@ -1,21 +1,0 @@
-Resolving dependencies...
-Downloading packages...
-  _fe_analyzer_shared 76.0.0 (82.0.0 available)
-  analyzer 6.11.0 (7.4.5 available)
-  built_value 8.9.5 (8.10.1 available)
-  checked_yaml 2.0.3 (2.0.4 available)
-  dart_style 2.3.8 (3.1.0 available)
-  meta 1.16.0 (1.17.0 available)
-  source_gen 1.5.0 (2.0.0 available)
-  test 1.25.15 (1.26.2 available)
-  test_api 0.7.4 (0.7.6 available)
-  test_core 0.6.8 (0.6.11 available)
-  watcher 1.1.1 (1.1.2 available)
-  win32 5.13.0 (5.14.0 available)
-No dependencies would change in `/Users/yannick/Dev/mtrust-api-guard`.
-12 packages have newer versions incompatible with dependency constraints.
-Try `dart pub outdated` for more information.
-⠋ Analyzing dart files...⠙ Analyzed /private/var/folders/cr/1v3b3gtn1nq4xq_7nj0jbj5m0000gn/T... (0.9s)⠹ Analyzed /private/var/folders/cr/1v3b3gtn1nq4xq_7nj0jbj5m0000gn/T... (0.9s)✓ Analyzed /private/var/folders/cr/1v3b3gtn1nq4xq_7nj0jbj5m0000gn/T/api_guard_test_CPKkGA/api_guard_test/lib/src/api.dart [2/2] (0.9s)
-Found 3 classes: Calculator, User, Order
-⠋ Generating output...✓ Generating output (17ms)
-Generated documentation file: /private/var/folders/cr/1v3b3gtn1nq4xq_7nj0jbj5m0000gn/T/api_guard_test_CPKkGA/api_guard_test/api_guard/documentation.g.dart

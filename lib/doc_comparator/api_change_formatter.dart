@@ -74,14 +74,17 @@ class ApiChangeFormatter {
   Map<int, List<ApiChange>> _groupByChangeCategory(List<ApiChange> changes) {
     return groupBy(
       changes,
-      (change) =>
-          // calculate the "change category key" based on the change type, operation
-          // and, for constructor parameters, the constructor name
-          change.runtimeType.hashCode ^
-          change.operation.hashCode ^
-          (this is ConstructorParameterApiChange
-              ? (this as ConstructorParameterApiChange).constructor.name.hashCode
-              : 0),
+      // calculate the "change category key" based on the change type, operation
+      // and, for parameter changes, the parent (constructor/method) name
+      (change) {
+        var hashCode = change.runtimeType.hashCode ^ change.operation.hashCode;
+        if (change is ConstructorParameterApiChange) {
+          hashCode ^= change.constructor.name.hashCode;
+        } else if (change is MethodParameterApiChange) {
+          hashCode ^= change.method.name.hashCode;
+        }
+        return hashCode;
+      },
     );
   }
 
@@ -134,6 +137,8 @@ class ApiChangeFormatter {
         return '🔠 $prefix became named';
       case ApiChangeOperation.becamePositional:
         return '🔢 $prefix became positional';
+      case ApiChangeOperation.renamed:
+        return '✏️ $prefix renamed';
       case ApiChangeOperation.typeChanged:
         return '🔄 $prefix type changed';
       default:
@@ -152,14 +157,114 @@ class ApiChangeFormatter {
       return '$text: `${props.join('`, `')}`';
     }
 
+    if (changes.every((c) => c is MethodApiChange)) {
+      final firstChange = changes.first as MethodApiChange;
+      final isFunction = firstChange.component.type == DocComponentType.functionType;
+      final prefix =
+          isFunction ? (changes.length > 1 ? 'Functions' : 'Function') : (changes.length > 1 ? 'Methods' : 'Method');
+      final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.typeChanged) {
+        final details = changes.map((c) {
+          final change = c as MethodApiChange;
+          return '`${change.method.name}` (${change.method.returnType} -> ${change.newType})';
+        }).join(', ');
+        return '$text: $details';
+      }
+
+      final methods = changes.map((c) => (c as MethodApiChange).method.name).toList();
+      return '$text: `${methods.join('`, `')}`';
+    }
+
     if (changes.every((c) => c is ConstructorParameterApiChange)) {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
-      final params = changes.map((c) => (c as ConstructorParameterApiChange).parameter.name).toList();
+
       final constructor = (changes.first as ConstructorParameterApiChange).constructor.name;
-      final constructorLabel = "${constructor.startsWith("_") ? "private " : ""}"
-          "constructor${constructor.isEmpty ? '' : " $constructor"}";
+      String constructorLabel;
+      if (constructor == 'new' || constructor.isEmpty) {
+        constructorLabel = "default constructor";
+      } else {
+        constructorLabel = "constructor `$constructor`";
+      }
+      if (constructor.startsWith('_')) {
+        constructorLabel = "private $constructorLabel";
+      }
+
+      if (operation == ApiChangeOperation.renamed) {
+        final details = changes.map((c) {
+          final change = c as ConstructorParameterApiChange;
+          return '`${change.oldName} -> ${change.parameter.name}`';
+        }).join(', ');
+        return '$text in $constructorLabel: $details';
+      }
+
+      final params = changes.map((c) {
+        final change = c as ConstructorParameterApiChange;
+        final param = change.parameter;
+        final buffer = StringBuffer(param.name);
+        if (param.named) {
+          buffer.write(' (named');
+        } else {
+          buffer.write(' (positional');
+        }
+
+        if (param.required) {
+          buffer.write(', required)');
+        } else {
+          buffer.write(', optional');
+          if (param.defaultValue != null) {
+            buffer.write(', default: ${param.defaultValue}');
+          }
+          buffer.write(')');
+        }
+        return buffer.toString();
+      }).toList();
+
       return '$text in $constructorLabel: `${params.join('`, `')}`';
+    }
+
+    if (changes.every((c) => c is MethodParameterApiChange)) {
+      final firstChange = changes.first as MethodParameterApiChange;
+      final isFunction = firstChange.component.type == DocComponentType.functionType;
+      final prefix = changes.length > 1 ? 'Params' : 'Param';
+      final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.renamed) {
+        final details = changes.map((c) {
+          final change = c as MethodParameterApiChange;
+          return '`${change.oldName} -> ${change.parameter.name}`';
+        }).join(', ');
+        final method = (changes.first as MethodParameterApiChange).method.name;
+        final label = isFunction ? 'function' : 'method';
+        return '$text in $label `$method`: $details';
+      }
+
+      final params = changes.map((c) {
+        final change = c as MethodParameterApiChange;
+        final param = change.parameter;
+        final buffer = StringBuffer(param.name);
+        if (param.named) {
+          buffer.write(' (named');
+        } else {
+          buffer.write(' (positional');
+        }
+
+        if (param.required) {
+          buffer.write(', required)');
+        } else {
+          buffer.write(', optional');
+          if (param.defaultValue != null) {
+            buffer.write(', default: ${param.defaultValue}');
+          }
+          buffer.write(')');
+        }
+        return buffer.toString();
+      }).toList();
+
+      final method = (changes.first as MethodParameterApiChange).method.name;
+      final label = isFunction ? 'function' : 'method';
+      return '$text in $label `$method`: `${params.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ConstructorApiChange)) {
@@ -171,7 +276,9 @@ class ApiChangeFormatter {
 
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
-      final text = _getOperationText(operation, prefix: 'Class');
+      final component = (changes.first as ComponentApiChange).component;
+      final prefix = component.type == DocComponentType.functionType ? 'Function' : 'Class';
+      final text = _getOperationText(operation, prefix: prefix);
       final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }

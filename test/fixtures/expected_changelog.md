@@ -14,14 +14,30 @@
 - ❌ Class removed: `Product`
 
 **User** (lib/src/api.dart)
-- ⚠️ Param became required in constructor new: `_internalId`
-- 🔢 Param became positional in constructor new: `_internalId`
+- ⚠️ Param became required in default constructor: `_internalId (named, optional)`
+- 🔢 Param became positional in default constructor: `_internalId (named, optional)`
+- ❌ Method removed: `updateEmail`
+- 🔄 Method type changed: `updatePhone` (void -> bool)
+- ❇️ Param added in method `updatePhone`: `mobilePhone (positional, required)`
+
+**formatUserInfo** (lib/src/api.dart)
+- ❌ Function removed: `formatUserInfo`
 
 #### ✨ Minor changes
 
 **User** (lib/src/api.dart)
-- ❇️ Param added in constructor new: `mobilePhone`
+- ❇️ Param added in default constructor: `mobilePhone (named, optional)`
+- ❇️ Params added in constructor `fromJson`: `fallbackName (named, optional)`, `fallbackAge (named, optional, default: 25)`
 - ❇️ Property added: `mobilePhone`
+- ❇️ Param added in method `updatePhone`: `notifyUserViaEmail (named, optional, default: false)`
+
+**calculateDiscount** (lib/src/api.dart)
+- ❇️ Param added in function `calculateDiscount`: `roundUp (named, optional, default: false)`
+
+#### 👀 Patch changes
+
+**User** (lib/src/api.dart)
+- ✏️ Param renamed in method `updatePhone`: `newPhone -> phone`
 
 
 ## 0.1.0
@@ -35,13 +51,22 @@
 - ❇️ Class added: `Order`
 
 **User** (lib/src/api.dart)
-- ❇️ Params added in constructor new: `_internalId`, `phone`
+- ❇️ Params added in default constructor: `_internalId (named, optional)`, `phone (named, optional)`
+- ❇️ Constructor added: `fromJson`
 - ❇️ Property added: `phone`
+- ❇️ Methods added: `UnimplementedError`, `updateEmail`, `updatePhone`
+
+**calculateDiscount** (lib/src/api.dart)
+- ❇️ Function added: `calculateDiscount`
+
+**formatUserInfo** (lib/src/api.dart)
+- ❇️ Function added: `formatUserInfo`
 
 #### 👀 Patch changes
 
 **Product** (lib/src/api.dart)
 - ❌ Property removed: `_internalId`
+- ❌ Method removed: `_generateInternalId`
 
 **User** (lib/src/api.dart)
 - ❇️ Property added: `_internalId`
@@ -56,6 +81,7 @@
 
 **Product** (lib/src/api.dart)
 - ❇️ Property added: `_internalId`
+- ❇️ Method added: `_generateInternalId`
 
 **_PrivateClass** (lib/src/api.dart)
 - ❌ Class removed: `_PrivateClass`

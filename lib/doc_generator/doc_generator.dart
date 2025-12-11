@@ -72,6 +72,16 @@ Future<List<DocComponent>> generateDocs({
       if (cachedContent != null) {
         logger.success('Using cached API documentation for $effectiveRef');
         await restoreOriginalState();
+
+        // Write the cached content to file if requested
+        if (out != null) {
+          if (!File(out).existsSync()) {
+            File(out).createSync();
+          }
+          await File(out).writeAsString(cachedContent);
+          logger.success('Wrote cached documentation to $out');
+        }
+
         return parseDocComponentsFile(cachedContent);
       }
     }
@@ -102,6 +112,43 @@ Future<List<DocComponent>> generateDocs({
         }
 
         final classesInLibrary = library.element2.classes;
+        final functionsInLibrary = library.element2.topLevelFunctions;
+
+        for (final functionItem in functionsInLibrary) {
+          classes.add(DocComponent(
+            name: functionItem.name3.toString(),
+            filePath: relative(
+              file,
+              from: contextCollection.contextFor(file).contextRoot.root.path,
+            ),
+            isNullSafe: true,
+            description: functionItem.documentationComment?.replaceAll("///", "") ?? "",
+            constructors: [],
+            properties: [],
+            methods: [
+              DocMethod(
+                name: functionItem.name3.toString(),
+                returnType: functionItem.returnType.toString(),
+                description: functionItem.documentationComment ?? "",
+                signature: functionItem.formalParameters
+                    .map((param) => DocParameter(
+                          description: param.documentationComment ?? "",
+                          name: param.name3.toString(),
+                          type: param.type.toString(),
+                          named: param.isNamed,
+                          required: param.isRequired,
+                          defaultValue: param.defaultValueCode,
+                        ))
+                    .toList(),
+                features: [
+                  if (functionItem.isStatic) "static",
+                  if (functionItem.isExternal) "external",
+                ],
+              )
+            ],
+            type: DocComponentType.functionType,
+          ));
+        }
 
         for (final classItem in classesInLibrary) {
           classes.add(DocComponent(
@@ -122,6 +169,7 @@ Future<List<DocComponent>> generateDocs({
                                 type: param.type.toString(),
                                 named: param.isNamed,
                                 required: param.isRequired,
+                                defaultValue: param.defaultValueCode,
                               ))
                           .toList(),
                       features: [
@@ -145,7 +193,28 @@ Future<List<DocComponent>> generateDocs({
                       ],
                     ))
                 .toList(),
-            methods: classItem.methods2.map((e) => e.name3.toString()).toList(),
+            methods: classItem.methods2
+                .map((e) => DocMethod(
+                      name: e.name3.toString(),
+                      returnType: e.returnType.toString(),
+                      description: e.documentationComment ?? "",
+                      signature: e.formalParameters
+                          .map((param) => DocParameter(
+                                description: param.documentationComment ?? "",
+                                name: param.name3.toString(),
+                                type: param.type.toString(),
+                                named: param.isNamed,
+                                required: param.isRequired,
+                                defaultValue: param.defaultValueCode,
+                              ))
+                          .toList(),
+                      features: [
+                        if (e.isStatic) "static",
+                        if (e.isAbstract) "abstract",
+                        if (e.isExternal) "external",
+                      ],
+                    ))
+                .toList(),
           ));
         }
       } catch (e) {
@@ -166,7 +235,7 @@ Future<List<DocComponent>> generateDocs({
     final outputProgress = logger.progress("Generating output");
 
     // Generate output
-    final output = jsonEncode(classes);
+    final output = const JsonEncoder.withIndent('  ').convert(classes);
 
     outputProgress.complete();
 

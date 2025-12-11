@@ -1,0 +1,11 @@
+targets:
+  $default:
+    builders:
+      json_serializable:
+        generate_for:
+          exclude:
+            - test/fixtures/**
+      source_gen:combining_builder:
+        generate_for:
+          exclude:
+            - test/fixtures/**

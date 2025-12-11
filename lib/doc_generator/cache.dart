@@ -9,6 +9,11 @@ class Cache {
     return Directory(cacheDir.replaceAll("\$HOME", homeDir));
   }
 
+  /// Gets the root cache directory
+  Directory getCacheDir() {
+    return _cacheDir;
+  }
+
   /// Gets the cache directory for a specific repository
   Directory getRepositoryCacheDir(String repoPath) {
     final repoName = basename(repoPath);
