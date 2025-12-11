@@ -112,6 +112,43 @@ Future<List<DocComponent>> generateDocs({
         }
 
         final classesInLibrary = library.element2.classes;
+        final functionsInLibrary = library.element2.topLevelFunctions;
+
+        for (final functionItem in functionsInLibrary) {
+          classes.add(DocComponent(
+            name: functionItem.name3.toString(),
+            filePath: relative(
+              file,
+              from: contextCollection.contextFor(file).contextRoot.root.path,
+            ),
+            isNullSafe: true,
+            description: functionItem.documentationComment?.replaceAll("///", "") ?? "",
+            constructors: [],
+            properties: [],
+            methods: [
+              DocMethod(
+                name: functionItem.name3.toString(),
+                returnType: functionItem.returnType.toString(),
+                description: functionItem.documentationComment ?? "",
+                signature: functionItem.formalParameters
+                    .map((param) => DocParameter(
+                          description: param.documentationComment ?? "",
+                          name: param.name3.toString(),
+                          type: param.type.toString(),
+                          named: param.isNamed,
+                          required: param.isRequired,
+                          defaultValue: param.defaultValueCode,
+                        ))
+                    .toList(),
+                features: [
+                  if (functionItem.isStatic) "static",
+                  if (functionItem.isExternal) "external",
+                ],
+              )
+            ],
+            type: DocComponentType.functionType,
+          ));
+        }
 
         for (final classItem in classesInLibrary) {
           classes.add(DocComponent(

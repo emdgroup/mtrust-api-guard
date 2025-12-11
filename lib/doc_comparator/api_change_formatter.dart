@@ -158,7 +158,10 @@ class ApiChangeFormatter {
     }
 
     if (changes.every((c) => c is MethodApiChange)) {
-      final prefix = changes.length > 1 ? 'Methods' : 'Method';
+      final firstChange = changes.first as MethodApiChange;
+      final isFunction = firstChange.component.type == DocComponentType.functionType;
+      final prefix =
+          isFunction ? (changes.length > 1 ? 'Functions' : 'Function') : (changes.length > 1 ? 'Methods' : 'Method');
       final text = _getOperationText(operation, prefix: prefix);
 
       if (operation == ApiChangeOperation.typeChanged) {
@@ -222,6 +225,8 @@ class ApiChangeFormatter {
     }
 
     if (changes.every((c) => c is MethodParameterApiChange)) {
+      final firstChange = changes.first as MethodParameterApiChange;
+      final isFunction = firstChange.component.type == DocComponentType.functionType;
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
 
@@ -231,7 +236,8 @@ class ApiChangeFormatter {
           return '`${change.oldName} -> ${change.parameter.name}`';
         }).join(', ');
         final method = (changes.first as MethodParameterApiChange).method.name;
-        return '$text in method `$method`: $details';
+        final label = isFunction ? 'function' : 'method';
+        return '$text in $label `$method`: $details';
       }
 
       final params = changes.map((c) {
@@ -257,7 +263,8 @@ class ApiChangeFormatter {
       }).toList();
 
       final method = (changes.first as MethodParameterApiChange).method.name;
-      return '$text in method `$method`: `${params.join('`, `')}`';
+      final label = isFunction ? 'function' : 'method';
+      return '$text in $label `$method`: `${params.join('`, `')}`';
     }
 
     if (changes.every((c) => c is ConstructorApiChange)) {
@@ -269,7 +276,9 @@ class ApiChangeFormatter {
 
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
-      final text = _getOperationText(operation, prefix: 'Class');
+      final component = (changes.first as ComponentApiChange).component;
+      final prefix = component.type == DocComponentType.functionType ? 'Function' : 'Class';
+      final text = _getOperationText(operation, prefix: prefix);
       final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }

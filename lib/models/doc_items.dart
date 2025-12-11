@@ -2,6 +2,13 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'doc_items.g.dart';
 
+enum DocComponentType {
+  @JsonValue('class')
+  classType,
+  @JsonValue('function')
+  functionType,
+}
+
 @JsonSerializable()
 class DocComponent {
   const DocComponent({
@@ -12,6 +19,7 @@ class DocComponent {
     required this.properties,
     required this.methods,
     this.filePath,
+    this.type = DocComponentType.classType,
   });
 
   final String? filePath;
@@ -21,6 +29,7 @@ class DocComponent {
   final List<DocConstructor> constructors;
   final List<DocProperty> properties;
   final List<DocMethod> methods;
+  final DocComponentType type;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
