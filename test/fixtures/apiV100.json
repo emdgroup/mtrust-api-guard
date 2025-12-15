@@ -49,15 +49,11 @@
         "description": "",
         "features": ["final"]
       },
-      {
-        "name": "email",
-        "type": "String?",
-        "description": "",
-        "features": []
-      }
+      { "name": "email", "type": "String?", "description": "", "features": [] }
     ],
     "methods": [],
-    "type": "class"
+    "type": "class",
+    "aliasedType": null
   },
   {
     "filePath": "lib/src/api.dart",
@@ -103,7 +99,8 @@
       }
     ],
     "methods": [],
-    "type": "class"
+    "type": "class",
+    "aliasedType": null
   },
   {
     "filePath": "lib/src/api.dart",
@@ -135,6 +132,79 @@
       }
     ],
     "methods": [],
-    "type": "class"
+    "type": "class",
+    "aliasedType": null
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "Status",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [{ "name": "new", "signature": [], "features": ["const"] }],
+    "properties": [
+      {
+        "name": "active",
+        "type": "Status",
+        "description": "",
+        "features": ["static", "const"]
+      },
+      {
+        "name": "inactive",
+        "type": "Status",
+        "description": "",
+        "features": ["static", "const"]
+      },
+      {
+        "name": "values",
+        "type": "List<Status>",
+        "description": "",
+        "features": ["static", "const"]
+      }
+    ],
+    "methods": [],
+    "type": "enum",
+    "aliasedType": null
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "StringExt",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [],
+    "properties": [
+      { "name": "isValid", "type": "bool", "description": "", "features": [] }
+    ],
+    "methods": [],
+    "type": "extension",
+    "aliasedType": "String"
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "TimestampMixin",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [],
+    "properties": [
+      {
+        "name": "createdAt",
+        "type": "DateTime?",
+        "description": "",
+        "features": []
+      }
+    ],
+    "methods": [],
+    "type": "mixin",
+    "aliasedType": null
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "UserID",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [],
+    "properties": [],
+    "methods": [],
+    "type": "typedef",
+    "aliasedType": "String"
   }
 ]

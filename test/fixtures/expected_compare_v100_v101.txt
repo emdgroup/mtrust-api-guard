@@ -7,3 +7,9 @@
 
 **_PrivateClass** (lib/src/api.dart)
 - ❌ Class removed: `_PrivateClass`
+
+**StringExt** (lib/src/api.dart)
+- ❇️ Method added: `_isInternal`
+
+**TimestampMixin** (lib/src/api.dart)
+- ❇️ Method added: `_updateTimestamp`

@@ -50,3 +50,21 @@ double calculateDiscount(double price, double percentage) {
 String formatUserInfo(String name, int age, {String? email}) {
   return 'Name: $name, Age: $age, Email: ${email ?? "N/A"}';
 }
+
+mixin TimestampMixin {
+  DateTime? createdAt;
+  void setTimestamp() {}
+}
+
+enum Status {
+  active,
+  inactive,
+  pending,
+}
+
+typedef UserID = String;
+
+extension StringExt on String {
+  bool get isValid => true;
+  bool get isEmail => contains('@');
+}
