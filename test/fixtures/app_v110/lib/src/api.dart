@@ -26,9 +26,12 @@ class User {
   }
 }
 
-// Keep the Product class for compatibility with previous versions
+// Keep the Product class for compatibility with previous versions, but mark it as deprecated
+@deprecated
 class Product {
+  @deprecated
   final String id;
+  @deprecated
   final double price;
 
   Product(this.id, this.price);

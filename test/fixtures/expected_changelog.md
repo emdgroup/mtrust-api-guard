@@ -100,6 +100,8 @@
 
 **Product** (lib/src/api.dart)
 
+- ➕ Class annotation added: `Product` (@deprecated)
+- ➕ Properties annotation added: `id` (@deprecated), `price` (@deprecated)
 - ❌ Property removed: `_internalId`
 - ❌ Method removed: `_generateInternalId`
 

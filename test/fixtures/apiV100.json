@@ -14,7 +14,8 @@
             "type": "String",
             "named": false,
             "required": true,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           },
           {
             "name": "age",
@@ -22,7 +23,8 @@
             "type": "int",
             "named": false,
             "required": true,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           },
           {
             "name": "email",
@@ -30,10 +32,12 @@
             "type": "String?",
             "named": true,
             "required": false,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           }
         ],
-        "features": []
+        "features": [],
+        "annotations": []
       }
     ],
     "properties": [
@@ -41,19 +45,28 @@
         "name": "name",
         "type": "String",
         "description": "",
-        "features": ["final"]
+        "features": ["final"],
+        "annotations": []
       },
       {
         "name": "age",
         "type": "int",
         "description": "",
-        "features": ["final"]
+        "features": ["final"],
+        "annotations": []
       },
-      { "name": "email", "type": "String?", "description": "", "features": [] }
+      {
+        "name": "email",
+        "type": "String?",
+        "description": "",
+        "features": [],
+        "annotations": []
+      }
     ],
     "methods": [],
     "type": "class",
-    "aliasedType": null
+    "aliasedType": null,
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -70,7 +83,8 @@
             "type": "String",
             "named": false,
             "required": true,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           },
           {
             "name": "price",
@@ -78,10 +92,12 @@
             "type": "double",
             "named": false,
             "required": true,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           }
         ],
-        "features": []
+        "features": [],
+        "annotations": []
       }
     ],
     "properties": [
@@ -89,18 +105,21 @@
         "name": "id",
         "type": "String",
         "description": "",
-        "features": ["final"]
+        "features": ["final"],
+        "annotations": []
       },
       {
         "name": "price",
         "type": "double",
         "description": "",
-        "features": ["final"]
+        "features": ["final"],
+        "annotations": []
       }
     ],
     "methods": [],
     "type": "class",
-    "aliasedType": null
+    "aliasedType": null,
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -117,10 +136,12 @@
             "type": "String",
             "named": false,
             "required": true,
-            "defaultValue": null
+            "defaultValue": null,
+            "annotations": []
           }
         ],
-        "features": []
+        "features": [],
+        "annotations": []
       }
     ],
     "properties": [
@@ -128,42 +149,55 @@
         "name": "secret",
         "type": "String",
         "description": "",
-        "features": ["final"]
+        "features": ["final"],
+        "annotations": []
       }
     ],
     "methods": [],
     "type": "class",
-    "aliasedType": null
+    "aliasedType": null,
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
     "name": "Status",
     "isNullSafe": true,
     "description": "",
-    "constructors": [{ "name": "new", "signature": [], "features": ["const"] }],
+    "constructors": [
+      {
+        "name": "new",
+        "signature": [],
+        "features": ["const"],
+        "annotations": []
+      }
+    ],
     "properties": [
       {
         "name": "active",
         "type": "Status",
         "description": "",
-        "features": ["static", "const"]
+        "features": ["static", "const"],
+        "annotations": []
       },
       {
         "name": "inactive",
         "type": "Status",
         "description": "",
-        "features": ["static", "const"]
+        "features": ["static", "const"],
+        "annotations": []
       },
       {
         "name": "values",
         "type": "List<Status>",
         "description": "",
-        "features": ["static", "const"]
+        "features": ["static", "const"],
+        "annotations": []
       }
     ],
     "methods": [],
     "type": "enum",
-    "aliasedType": null
+    "aliasedType": null,
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -172,11 +206,18 @@
     "description": "",
     "constructors": [],
     "properties": [
-      { "name": "isValid", "type": "bool", "description": "", "features": [] }
+      {
+        "name": "isValid",
+        "type": "bool",
+        "description": "",
+        "features": [],
+        "annotations": []
+      }
     ],
     "methods": [],
     "type": "extension",
-    "aliasedType": "String"
+    "aliasedType": "String",
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -189,12 +230,14 @@
         "name": "createdAt",
         "type": "DateTime?",
         "description": "",
-        "features": []
+        "features": [],
+        "annotations": []
       }
     ],
     "methods": [],
     "type": "mixin",
-    "aliasedType": null
+    "aliasedType": null,
+    "annotations": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -205,6 +248,7 @@
     "properties": [],
     "methods": [],
     "type": "typedef",
-    "aliasedType": "String"
+    "aliasedType": "String",
+    "annotations": []
   }
 ]
