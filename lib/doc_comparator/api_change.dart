@@ -47,21 +47,30 @@ enum ApiChangeOperation {
   becameNullSafe,
   becamePrivate,
   becamePublic,
+  annotationAdded,
+  annotationRemoved,
 }
 
 /// A change description in the API that belongs to a specific component.
 class ApiChange {
   final DocComponent component;
   final ApiChangeOperation operation;
+  final String? annotation;
 
   ApiChange._({
     required this.component,
     required this.operation,
+    this.annotation,
   });
 
   ApiChangeMagnitude getMagnitude() {
     if (component.name.startsWith('_')) {
       // if the component is private, it's a patch change
+      return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+      // For now, let's treat annotation changes as patch changes.
+      // (We can revisit this decision later if needed.)
       return ApiChangeMagnitude.patch;
     }
     if (operation == ApiChangeOperation.added) {
@@ -78,6 +87,7 @@ class ComponentApiChange extends ApiChange {
   ComponentApiChange({
     required super.component,
     required super.operation,
+    super.annotation,
   }) : super._();
 }
 
@@ -88,6 +98,7 @@ class PropertyApiChange extends ApiChange {
     required super.component,
     required super.operation,
     required this.property,
+    super.annotation,
   }) : super._();
 
   @override
@@ -109,6 +120,7 @@ class MethodApiChange extends ApiChange {
     required super.operation,
     required this.method,
     this.newType,
+    super.annotation,
   }) : super._();
 
   @override
@@ -133,6 +145,7 @@ abstract class ParameterApiChange extends ApiChange {
     required this.parameter,
     required this.parentName,
     this.oldName,
+    super.annotation,
   }) : super._();
 
   @override
@@ -173,6 +186,7 @@ class MethodParameterApiChange extends ParameterApiChange {
     required this.method,
     required super.parameter,
     super.oldName,
+    super.annotation,
   }) : super(parentName: method.name);
 }
 
@@ -183,6 +197,7 @@ class ConstructorApiChange extends ApiChange {
     required super.component,
     required super.operation,
     required this.constructor,
+    super.annotation,
   }) : super._();
 
   @override
@@ -204,5 +219,6 @@ class ConstructorParameterApiChange extends ParameterApiChange {
     required this.constructor,
     required super.parameter,
     super.oldName,
+    super.annotation,
   }) : super(parentName: constructor.name);
 }

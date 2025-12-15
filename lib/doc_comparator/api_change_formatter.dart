@@ -141,6 +141,10 @@ class ApiChangeFormatter {
         return '✏️ $prefix renamed';
       case ApiChangeOperation.typeChanged:
         return '🔄 $prefix type changed';
+      case ApiChangeOperation.annotationAdded:
+        return '➕ $prefix annotation added';
+      case ApiChangeOperation.annotationRemoved:
+        return '➖ $prefix annotation removed';
       default:
         return '';
     }
@@ -153,6 +157,12 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is PropertyApiChange)) {
       final prefix = changes.length > 1 ? 'Properties' : 'Property';
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
       final props = changes.map((c) => (c as PropertyApiChange).property.name).toList();
       return '$text: `${props.join('`, `')}`';
     }
@@ -163,6 +173,11 @@ class ApiChangeFormatter {
       final prefix =
           isFunction ? (changes.length > 1 ? 'Functions' : 'Function') : (changes.length > 1 ? 'Methods' : 'Method');
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) => '`${(c as MethodApiChange).method.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
 
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
@@ -189,6 +204,14 @@ class ApiChangeFormatter {
       }
       if (constructor.startsWith('_')) {
         constructorLabel = "private $constructorLabel";
+      }
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) {
+          final change = c as ConstructorParameterApiChange;
+          return '`${change.parameter.name}` (${change.annotation})';
+        }).join(', ');
+        return '$text in $constructorLabel: $details';
       }
 
       if (operation == ApiChangeOperation.renamed) {
@@ -230,6 +253,16 @@ class ApiChangeFormatter {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
 
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) {
+          final change = c as MethodParameterApiChange;
+          return '`${change.parameter.name}` (${change.annotation})';
+        }).join(', ');
+        final method = (changes.first as MethodParameterApiChange).method.name;
+        final label = isFunction ? 'function' : 'method';
+        return '$text in $label `$method`: $details';
+      }
+
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
@@ -270,6 +303,13 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ConstructorApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Constructor');
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details =
+            changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
       final constructors = changes.map((c) => (c as ConstructorApiChange).constructor.name).toList();
       return '$text: `${constructors.join('`, `')}`';
     }
@@ -299,6 +339,13 @@ class ApiChangeFormatter {
           break;
       }
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details =
+            changes.map((c) => '`${(c as ComponentApiChange).component.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
       final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }

@@ -23,6 +23,10 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
       type: $enumDecodeNullable(_$DocComponentTypeEnumMap, json['type']) ??
           DocComponentType.classType,
       aliasedType: json['aliasedType'] as String?,
+      annotations: (json['annotations'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
@@ -36,6 +40,7 @@ Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
       'methods': instance.methods,
       'type': _$DocComponentTypeEnumMap[instance.type]!,
       'aliasedType': instance.aliasedType,
+      'annotations': instance.annotations,
     };
 
 const _$DocComponentTypeEnumMap = {
@@ -53,6 +58,10 @@ DocProperty _$DocPropertyFromJson(Map<String, dynamic> json) => DocProperty(
       description: json['description'] as String,
       features:
           (json['features'] as List<dynamic>).map((e) => e as String).toList(),
+      annotations: (json['annotations'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocPropertyToJson(DocProperty instance) =>
@@ -61,6 +70,7 @@ Map<String, dynamic> _$DocPropertyToJson(DocProperty instance) =>
       'type': instance.type,
       'description': instance.description,
       'features': instance.features,
+      'annotations': instance.annotations,
     };
 
 DocConstructor _$DocConstructorFromJson(Map<String, dynamic> json) =>
@@ -71,6 +81,10 @@ DocConstructor _$DocConstructorFromJson(Map<String, dynamic> json) =>
           .toList(),
       features:
           (json['features'] as List<dynamic>).map((e) => e as String).toList(),
+      annotations: (json['annotations'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocConstructorToJson(DocConstructor instance) =>
@@ -78,6 +92,7 @@ Map<String, dynamic> _$DocConstructorToJson(DocConstructor instance) =>
       'name': instance.name,
       'signature': instance.signature,
       'features': instance.features,
+      'annotations': instance.annotations,
     };
 
 DocParameter _$DocParameterFromJson(Map<String, dynamic> json) => DocParameter(
@@ -87,6 +102,10 @@ DocParameter _$DocParameterFromJson(Map<String, dynamic> json) => DocParameter(
       named: json['named'] as bool,
       required: json['required'] as bool,
       defaultValue: json['defaultValue'] as String?,
+      annotations: (json['annotations'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
@@ -97,6 +116,7 @@ Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
       'named': instance.named,
       'required': instance.required,
       'defaultValue': instance.defaultValue,
+      'annotations': instance.annotations,
     };
 
 DocMethod _$DocMethodFromJson(Map<String, dynamic> json) => DocMethod(
@@ -108,6 +128,10 @@ DocMethod _$DocMethodFromJson(Map<String, dynamic> json) => DocMethod(
       features:
           (json['features'] as List<dynamic>).map((e) => e as String).toList(),
       description: json['description'] as String,
+      annotations: (json['annotations'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
@@ -116,4 +140,5 @@ Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
       'signature': instance.signature,
       'features': instance.features,
       'description': instance.description,
+      'annotations': instance.annotations,
     };

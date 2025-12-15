@@ -29,6 +29,7 @@ class DocComponent {
     this.filePath,
     this.type = DocComponentType.classType,
     this.aliasedType,
+    this.annotations = const [],
   });
 
   final String? filePath;
@@ -40,6 +41,7 @@ class DocComponent {
   final List<DocMethod> methods;
   final DocComponentType type;
   final String? aliasedType;
+  final List<String> annotations;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
@@ -53,12 +55,14 @@ class DocProperty {
     required this.type,
     required this.description,
     required this.features,
+    this.annotations = const [],
   });
 
   final String name;
   final String type;
   final String description;
   final List<String> features;
+  final List<String> annotations;
 
   factory DocProperty.fromJson(Map<String, dynamic> json) => _$DocPropertyFromJson(json);
 
@@ -71,11 +75,13 @@ class DocConstructor {
     required this.name,
     required this.signature,
     required this.features,
+    this.annotations = const [],
   });
 
   final String name;
   final List<DocParameter> signature;
   final List<String> features;
+  final List<String> annotations;
 
   factory DocConstructor.fromJson(Map<String, dynamic> json) => _$DocConstructorFromJson(json);
 
@@ -91,6 +97,7 @@ class DocParameter {
     required this.named,
     required this.required,
     this.defaultValue,
+    this.annotations = const [],
   });
 
   final String name;
@@ -99,6 +106,7 @@ class DocParameter {
   final bool named;
   final bool required;
   final String? defaultValue;
+  final List<String> annotations;
 
   factory DocParameter.fromJson(Map<String, dynamic> json) => _$DocParameterFromJson(json);
 
@@ -113,6 +121,7 @@ class DocMethod {
     required this.signature,
     required this.features,
     required this.description,
+    this.annotations = const [],
   });
 
   final String name;
@@ -120,6 +129,7 @@ class DocMethod {
   final List<DocParameter> signature;
   final List<String> features;
   final String description;
+  final List<String> annotations;
 
   factory DocMethod.fromJson(Map<String, dynamic> json) => _$DocMethodFromJson(json);
 

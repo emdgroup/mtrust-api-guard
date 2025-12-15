@@ -25,6 +25,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.classType,
+      annotations: _getAnnotations(element),
     ));
     super.visitClassElement(element);
   }
@@ -41,6 +42,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.mixinType,
+      annotations: _getAnnotations(element),
     ));
     super.visitMixinElement(element);
   }
@@ -57,6 +59,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       properties: _mapProperties(element.fields2),
       methods: _mapMethods(element.methods2),
       type: DocComponentType.enumType,
+      annotations: _getAnnotations(element),
     ));
     super.visitEnumElement(element);
   }
@@ -74,6 +77,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       methods: [],
       type: DocComponentType.typedefType,
       aliasedType: element.aliasedType.toString(),
+      annotations: _getAnnotations(element),
     ));
     super.visitTypeAliasElement(element);
   }
@@ -91,6 +95,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       methods: _mapMethods(element.methods2),
       type: DocComponentType.extensionType,
       aliasedType: element.extendedType.toString(),
+      annotations: _getAnnotations(element),
     ));
     super.visitExtensionElement(element);
   }
@@ -115,9 +120,11 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
             if (element.isStatic) "static",
             if (element.isExternal) "external",
           ],
+          annotations: _getAnnotations(element),
         )
       ],
       type: DocComponentType.functionType,
+      annotations: _getAnnotations(element),
     ));
     super.visitTopLevelFunctionElement(element);
   }
@@ -127,6 +134,15 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
   /// Extracts the documentation comment from an element.
   String _getDescription(dynamic element) {
     return element.documentationComment?.replaceAll("///", "") ?? "";
+  }
+
+  /// Extracts annotations from an element.
+  List<String> _getAnnotations(dynamic element) {
+    final meta = element.metadata2;
+    if (meta is Metadata) {
+      return meta.annotations.map((e) => e.toSource()).toList();
+    }
+    return [];
   }
 
   /// Collects all methods from the element and its supertypes, excluding [Object].
@@ -174,6 +190,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
                 if (e.isFactory) "factory",
                 if (e.isExternal) "external",
               ],
+              annotations: _getAnnotations(e),
             ))
         .toList();
   }
@@ -192,6 +209,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
                 if (e.isConst) "const",
                 if (e.isLate) "late",
               ],
+              annotations: _getAnnotations(e),
             ))
         .toList();
   }
@@ -209,6 +227,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
                 if (e.isAbstract) "abstract",
                 if (e.isExternal) "external",
               ],
+              annotations: _getAnnotations(e),
             ))
         .toList();
   }
@@ -223,6 +242,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
               named: param.isNamed,
               required: param.isRequired,
               defaultValue: param.defaultValueCode,
+              annotations: _getAnnotations(param),
             ))
         .toList();
   }
