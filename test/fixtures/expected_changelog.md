@@ -8,6 +8,20 @@
 
 #### 💣 Breaking changes
 
+**`class` ClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
+
+- 🔄 Superclass changed: `BaseClass -> AnotherBaseClass`
+- ➖ Interface removed: `InterfaceA`, `InterfaceB`
+- ➖ Mixin removed: `MixinA`, `MixinB`
+
+**`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
+
+- ❌ Class removed: `InterfaceB`
+
+**`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
+
+- ❌ Mixin removed: `MixinB`
+
 **`class` Product** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
 
 - ❌ Class removed: `Product`
@@ -42,6 +56,10 @@
 
 #### ✨ Minor changes
 
+**`class` AnotherBaseClass** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
+
+- ❇️ Class added: `AnotherBaseClass`
+
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v1.0.0/lib/src/api.dart))
 
 - ❇️ Param added in default constructor: `mobilePhone (named, optional)`
@@ -64,6 +82,19 @@
 ### API Changes
 
 #### ✨ Minor changes
+
+**`class` ClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v0.1.0/lib/src/api.dart))
+
+- ➕ Interface added: `InterfaceB`
+- ➕ Mixin added: `MixinB`
+
+**`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v0.1.0/lib/src/api.dart))
+
+- ❇️ Class added: `InterfaceB`
+
+**`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v0.1.0/lib/src/api.dart))
+
+- ❇️ Mixin added: `MixinB`
 
 **`class` Order** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/blob/v0.1.0/lib/src/api.dart))
 
@@ -121,7 +152,7 @@
 
 ### Bug Fixes
 
-- add _internalId to Product, remove _PrivateClass
+- add _internalId to Product, remove _PrivateClass 
 
 ### API Changes
 

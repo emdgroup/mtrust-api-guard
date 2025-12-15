@@ -29,8 +29,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       superClass: (element.supertype != null && !element.supertype!.isDartCoreObject)
           ? element.supertype!.element3.name3
           : null,
-      interfaces:
-          element.interfaces.map((e) => e.element3.name3!).toList(),
+      interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
       mixins: element.mixins.map((e) => e.element3.name3!).toList(),
     ));
     super.visitClassElement(element);
@@ -49,8 +48,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.mixinType,
       annotations: _getAnnotations(element),
-      interfaces:
-          element.interfaces.map((e) => e.element3.name3!).toList(),
+      interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
     ));
     super.visitMixinElement(element);
   }

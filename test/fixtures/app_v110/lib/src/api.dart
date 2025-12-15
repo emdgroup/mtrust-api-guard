@@ -71,3 +71,15 @@ extension StringExt on String {
   bool get isValid => true;
   bool get isEmail => contains('@');
 }
+
+abstract class BaseClass {}
+
+abstract class InterfaceA {}
+
+abstract class InterfaceB {}
+
+mixin MixinA {}
+
+mixin MixinB {}
+
+class ClassWithSuper extends BaseClass with MixinA, MixinB implements InterfaceA, InterfaceB {}
