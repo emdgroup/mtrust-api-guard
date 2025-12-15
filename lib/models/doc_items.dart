@@ -30,6 +30,9 @@ class DocComponent {
     this.type = DocComponentType.classType,
     this.aliasedType,
     this.annotations = const [],
+    this.superClass,
+    this.interfaces = const [],
+    this.mixins = const [],
   });
 
   final String? filePath;
@@ -42,6 +45,9 @@ class DocComponent {
   final DocComponentType type;
   final String? aliasedType;
   final List<String> annotations;
+  final String? superClass;
+  final List<String> interfaces;
+  final List<String> mixins;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 

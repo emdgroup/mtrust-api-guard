@@ -72,6 +72,53 @@ extension DocComponentApiChangesExt on DocComponent {
       }
     }
 
+    if (superClass != newComponent.superClass) {
+      changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.superClassChanged,
+        changedValue:
+            '${superClass ?? 'null'} -> ${newComponent.superClass ?? 'null'}',
+      ));
+    }
+
+    for (final interface in interfaces) {
+      if (!newComponent.interfaces.contains(interface)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.interfaceRemoved,
+          changedValue: interface,
+        ));
+      }
+    }
+    for (final interface in newComponent.interfaces) {
+      if (!interfaces.contains(interface)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.interfaceAdded,
+          changedValue: interface,
+        ));
+      }
+    }
+
+    for (final mixin in mixins) {
+      if (!newComponent.mixins.contains(mixin)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.mixinRemoved,
+          changedValue: mixin,
+        ));
+      }
+    }
+    for (final mixin in newComponent.mixins) {
+      if (!mixins.contains(mixin)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.mixinAdded,
+          changedValue: mixin,
+        ));
+      }
+    }
+
     changes.addAll(
       constructors.compareTo(newComponent.constructors, component: this),
     );

@@ -27,6 +27,15 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      superClass: json['superClass'] as String?,
+      interfaces: (json['interfaces'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
+      mixins: (json['mixins'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
@@ -41,6 +50,9 @@ Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
       'type': _$DocComponentTypeEnumMap[instance.type]!,
       'aliasedType': instance.aliasedType,
       'annotations': instance.annotations,
+      'superClass': instance.superClass,
+      'interfaces': instance.interfaces,
+      'mixins': instance.mixins,
     };
 
 const _$DocComponentTypeEnumMap = {

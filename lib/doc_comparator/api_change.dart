@@ -49,6 +49,11 @@ enum ApiChangeOperation {
   becamePublic,
   annotationAdded,
   annotationRemoved,
+  superClassChanged,
+  interfaceAdded,
+  interfaceRemoved,
+  mixinAdded,
+  mixinRemoved,
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -56,11 +61,13 @@ class ApiChange {
   final DocComponent component;
   final ApiChangeOperation operation;
   final String? annotation;
+  final String? changedValue;
 
   ApiChange._({
     required this.component,
     required this.operation,
     this.annotation,
+    this.changedValue,
   });
 
   ApiChangeMagnitude getMagnitude() {
@@ -73,7 +80,9 @@ class ApiChange {
       // (We can revisit this decision later if needed.)
       return ApiChangeMagnitude.patch;
     }
-    if (operation == ApiChangeOperation.added) {
+    if (operation == ApiChangeOperation.added ||
+        operation == ApiChangeOperation.interfaceAdded ||
+        operation == ApiChangeOperation.mixinAdded) {
       // if a parameter, class or property was added, it's usually a minor
       // change (unless it's private)
       return ApiChangeMagnitude.minor;
@@ -88,6 +97,7 @@ class ComponentApiChange extends ApiChange {
     required super.component,
     required super.operation,
     super.annotation,
+    super.changedValue,
   }) : super._();
 }
 

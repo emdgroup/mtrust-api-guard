@@ -154,6 +154,16 @@ class ApiChangeFormatter {
         return '➕ $prefix annotation added';
       case ApiChangeOperation.annotationRemoved:
         return '➖ $prefix annotation removed';
+      case ApiChangeOperation.superClassChanged:
+        return '🔄 Superclass changed';
+      case ApiChangeOperation.interfaceAdded:
+        return '➕ Interface added';
+      case ApiChangeOperation.interfaceRemoved:
+        return '➖ Interface removed';
+      case ApiChangeOperation.mixinAdded:
+        return '➕ Mixin added';
+      case ApiChangeOperation.mixinRemoved:
+        return '➖ Mixin removed';
       default:
         return '';
     }
@@ -332,6 +342,15 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details =
             changes.map((c) => '`${(c as ComponentApiChange).component.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.superClassChanged ||
+          operation == ApiChangeOperation.interfaceAdded ||
+          operation == ApiChangeOperation.interfaceRemoved ||
+          operation == ApiChangeOperation.mixinAdded ||
+          operation == ApiChangeOperation.mixinRemoved) {
+        final details = changes.map((c) => '`${(c as ComponentApiChange).changedValue}`').join(', ');
         return '$text: $details';
       }
 
