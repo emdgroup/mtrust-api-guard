@@ -66,7 +66,10 @@
     "methods": [],
     "type": "class",
     "aliasedType": null,
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -119,7 +122,10 @@
     "methods": [],
     "type": "class",
     "aliasedType": null,
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -156,7 +162,61 @@
     "methods": [],
     "type": "class",
     "aliasedType": null,
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "BaseClass",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      { "name": "new", "signature": [], "features": [], "annotations": [] }
+    ],
+    "properties": [],
+    "methods": [],
+    "type": "class",
+    "aliasedType": null,
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "InterfaceA",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      { "name": "new", "signature": [], "features": [], "annotations": [] }
+    ],
+    "properties": [],
+    "methods": [],
+    "type": "class",
+    "aliasedType": null,
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "ClassWithSuper",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [
+      { "name": "new", "signature": [], "features": [], "annotations": [] }
+    ],
+    "properties": [],
+    "methods": [],
+    "type": "class",
+    "aliasedType": null,
+    "annotations": [],
+    "superClass": "BaseClass",
+    "interfaces": ["InterfaceA"],
+    "mixins": ["MixinA"]
   },
   {
     "filePath": "lib/src/api.dart",
@@ -197,7 +257,10 @@
     "methods": [],
     "type": "enum",
     "aliasedType": null,
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -217,7 +280,10 @@
     "methods": [],
     "type": "extension",
     "aliasedType": "String",
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -237,7 +303,25 @@
     "methods": [],
     "type": "mixin",
     "aliasedType": null,
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
+  },
+  {
+    "filePath": "lib/src/api.dart",
+    "name": "MixinA",
+    "isNullSafe": true,
+    "description": "",
+    "constructors": [],
+    "properties": [],
+    "methods": [],
+    "type": "mixin",
+    "aliasedType": null,
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -249,6 +333,9 @@
     "methods": [],
     "type": "typedef",
     "aliasedType": "String",
-    "annotations": []
+    "annotations": [],
+    "superClass": null,
+    "interfaces": [],
+    "mixins": []
   }
 ]
