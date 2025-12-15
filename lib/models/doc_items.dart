@@ -7,6 +7,14 @@ enum DocComponentType {
   classType,
   @JsonValue('function')
   functionType,
+  @JsonValue('mixin')
+  mixinType,
+  @JsonValue('enum')
+  enumType,
+  @JsonValue('typedef')
+  typedefType,
+  @JsonValue('extension')
+  extensionType,
 }
 
 @JsonSerializable()
@@ -20,6 +28,7 @@ class DocComponent {
     required this.methods,
     this.filePath,
     this.type = DocComponentType.classType,
+    this.aliasedType,
   });
 
   final String? filePath;
@@ -30,6 +39,7 @@ class DocComponent {
   final List<DocProperty> properties;
   final List<DocMethod> methods;
   final DocComponentType type;
+  final String? aliasedType;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 

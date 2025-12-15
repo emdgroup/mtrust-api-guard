@@ -44,6 +44,15 @@ extension DocComponentApiChangesExt on DocComponent {
       );
     }
 
+    if (aliasedType != newComponent.aliasedType) {
+      changes.add(
+        ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.typeChanged,
+        ),
+      );
+    }
+
     changes.addAll(
       constructors.compareTo(newComponent.constructors, component: this),
     );

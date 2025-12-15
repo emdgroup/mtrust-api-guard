@@ -277,7 +277,27 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
       final component = (changes.first as ComponentApiChange).component;
-      final prefix = component.type == DocComponentType.functionType ? 'Function' : 'Class';
+      String prefix;
+      switch (component.type) {
+        case DocComponentType.functionType:
+          prefix = 'Function';
+          break;
+        case DocComponentType.classType:
+          prefix = 'Class';
+          break;
+        case DocComponentType.mixinType:
+          prefix = 'Mixin';
+          break;
+        case DocComponentType.enumType:
+          prefix = 'Enum';
+          break;
+        case DocComponentType.typedefType:
+          prefix = 'Typedef';
+          break;
+        case DocComponentType.extensionType:
+          prefix = 'Extension';
+          break;
+      }
       final text = _getOperationText(operation, prefix: prefix);
       final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';

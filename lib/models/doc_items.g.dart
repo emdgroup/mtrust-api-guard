@@ -22,6 +22,7 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
       filePath: json['filePath'] as String?,
       type: $enumDecodeNullable(_$DocComponentTypeEnumMap, json['type']) ??
           DocComponentType.classType,
+      aliasedType: json['aliasedType'] as String?,
     );
 
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
@@ -34,11 +35,16 @@ Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
       'properties': instance.properties,
       'methods': instance.methods,
       'type': _$DocComponentTypeEnumMap[instance.type]!,
+      'aliasedType': instance.aliasedType,
     };
 
 const _$DocComponentTypeEnumMap = {
   DocComponentType.classType: 'class',
   DocComponentType.functionType: 'function',
+  DocComponentType.mixinType: 'mixin',
+  DocComponentType.enumType: 'enum',
+  DocComponentType.typedefType: 'typedef',
+  DocComponentType.extensionType: 'extension',
 };
 
 DocProperty _$DocPropertyFromJson(Map<String, dynamic> json) => DocProperty(
