@@ -9,6 +9,8 @@ class ApiChangeFormatter {
 
   final int markdownHeaderLevel;
 
+  final String? fileBaseUrl;
+
   ApiChangeFormatter(
     this.changes, {
     this.markdownHeaderLevel = 1,
@@ -17,6 +19,7 @@ class ApiChangeFormatter {
       ApiChangeMagnitude.minor,
       ApiChangeMagnitude.patch,
     },
+    this.fileBaseUrl,
   });
 
   bool get hasRelevantChanges => changes.any(
@@ -43,8 +46,14 @@ class ApiChangeFormatter {
       );
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
+        final firstChange = componentChanges[component]!.first;
+        final componentObj = firstChange.component;
+        final typeLabel = _getComponentTypeLabel(componentObj.type);
+        final filePath = componentObj.filePath;
+        final linkTarget = fileBaseUrl != null ? '$fileBaseUrl/$filePath' : filePath;
+
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**$component** (${componentChanges[component]!.first.component.filePath})');
+        changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` $component** ([$filePath]($linkTarget))');
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
@@ -317,27 +326,7 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
       final component = (changes.first as ComponentApiChange).component;
-      String prefix;
-      switch (component.type) {
-        case DocComponentType.functionType:
-          prefix = 'Function';
-          break;
-        case DocComponentType.classType:
-          prefix = 'Class';
-          break;
-        case DocComponentType.mixinType:
-          prefix = 'Mixin';
-          break;
-        case DocComponentType.enumType:
-          prefix = 'Enum';
-          break;
-        case DocComponentType.typedefType:
-          prefix = 'Typedef';
-          break;
-        case DocComponentType.extensionType:
-          prefix = 'Extension';
-          break;
-      }
+      final prefix = _getComponentTypeLabel(component.type);
       final text = _getOperationText(operation, prefix: prefix);
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
@@ -352,5 +341,22 @@ class ApiChangeFormatter {
 
     // This should actually never happen:
     return '${changes.length} unknown changes';
+  }
+
+  String _getComponentTypeLabel(DocComponentType type) {
+    switch (type) {
+      case DocComponentType.classType:
+        return 'Class';
+      case DocComponentType.functionType:
+        return 'Function';
+      case DocComponentType.mixinType:
+        return 'Mixin';
+      case DocComponentType.enumType:
+        return 'Enum';
+      case DocComponentType.typedefType:
+        return 'Typedef';
+      case DocComponentType.extensionType:
+        return 'Extension';
+    }
   }
 }

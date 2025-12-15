@@ -38,10 +38,18 @@ class ChangelogGeneratorCommand extends Command
       help: 'Update the CHANGELOG.md file',
       defaultsTo: true,
     );
+    argParser.addOption(
+      'base-url',
+      help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)',
+    );
   }
 
   bool get update {
     return argResults?['update'] as bool;
+  }
+
+  String? get baseUrl {
+    return argResults?['base-url'] as String?;
   }
 
   @override
@@ -58,6 +66,7 @@ class ChangelogGeneratorCommand extends Command
     final changelogGenerator = ChangelogGenerator(
       apiChanges: changes,
       projectRoot: root,
+      fileBaseUrl: baseUrl,
     );
 
     if (update) {

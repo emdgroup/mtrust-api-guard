@@ -11,10 +11,12 @@ import 'package:yaml/yaml.dart';
 class ChangelogGenerator {
   final List<ApiChange> apiChanges;
   final Directory projectRoot;
+  final String? fileBaseUrl;
 
   ChangelogGenerator({
     required this.apiChanges,
     required this.projectRoot,
+    this.fileBaseUrl,
   });
 
   /// Gets the commits since the last version tag
@@ -92,10 +94,23 @@ class ChangelogGenerator {
   /// Generates a changelog entry, including the version from pubspec.yaml
   /// and the formatted API changes
   Future<String> generateChangelogEntry() async {
-    final version = await _getPackageVersion();
+    final pubspecInfo = await _getPubspecInfo();
+    final version = pubspecInfo['version']!;
+    final homepage = pubspecInfo['homepage'];
+
+    var effectiveBaseUrl = fileBaseUrl;
+    if (effectiveBaseUrl == null && homepage != null) {
+      var url = homepage;
+      if (url.endsWith('/')) {
+        url = url.substring(0, url.length - 1);
+      }
+      effectiveBaseUrl = '$url/blob/v$version';
+    }
+
     final apiChangesFormatter = ApiChangeFormatter(
       apiChanges,
       markdownHeaderLevel: 4,
+      fileBaseUrl: effectiveBaseUrl,
     );
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();
@@ -152,8 +167,8 @@ class ChangelogGenerator {
     logger.info('CHANGELOG.md updated successfully.');
   }
 
-  /// Retrieves the package version from pubspec.yaml
-  Future<String> _getPackageVersion() async {
+  /// Retrieves the package version and homepage from pubspec.yaml
+  Future<Map<String, String?>> _getPubspecInfo() async {
     try {
       final pubspecFile = File(join(projectRoot.path, 'pubspec.yaml'));
       if (!pubspecFile.existsSync()) {
@@ -168,9 +183,14 @@ class ChangelogGenerator {
         throw Exception('Version not found in pubspec.yaml');
       }
 
-      return version.toString();
+      final homepage = pubspec['homepage']?.toString() ?? pubspec['repository']?.toString();
+
+      return {
+        'version': version.toString(),
+        'homepage': homepage,
+      };
     } catch (e) {
-      logger.err('Error retrieving package version: $e');
+      logger.err('Error retrieving package info: $e');
       rethrow;
     }
   }
