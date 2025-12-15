@@ -119,6 +119,10 @@
 
 ## 0.0.2
 
+### Bug Fixes
+
+- add _internalId to Product, remove _PrivateClass
+
 ### API Changes
 
 #### 👀 Patch changes

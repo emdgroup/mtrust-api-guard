@@ -51,8 +51,7 @@ void main() {
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
       // 5. Commit and run version command to detect patch change
-      await testSetup.commitChanges('API change to v${TestConstants.patchVersion}');
-
+      await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
       await testSetup.runApiGuard('version', []);
 
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);

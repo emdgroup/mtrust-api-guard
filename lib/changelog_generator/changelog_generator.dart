@@ -20,9 +20,16 @@ class ChangelogGenerator {
   });
 
   /// Gets the commits since the last version tag
+  /// If the latest tag matches the current version (e.g. CI running on tagged commit),
+  /// it gets the commits since the previous tag.
+  /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
   Future<List<Commit>> _getCommitsSinceLastVersion() async {
     try {
       logger.detail("Getting commits since last version");
+
+      final pubspecInfo = await _getPubspecInfo();
+      final currentVersion = pubspecInfo['version'];
+
       // Get all tags sorted by creation date (newest first)
       final tagsResult = await Process.run(
         'git',
@@ -35,9 +42,17 @@ class ChangelogGenerator {
         final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
 
         String? previousTag;
-        if (tags.length > 1) {
-          // Get the second tag (previous version)
-          previousTag = tags[1];
+        if (tags.isNotEmpty) {
+          final latestTag = tags.first;
+          final latestTagVersion = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
+
+          if (latestTagVersion == currentVersion) {
+            if (tags.length > 1) {
+              previousTag = tags[1];
+            }
+          } else {
+            previousTag = latestTag;
+          }
         }
 
         // Get commits since the previous tag (or all commits if no previous tag)
