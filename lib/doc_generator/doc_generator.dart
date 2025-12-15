@@ -7,6 +7,7 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
+import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/models/doc_items.dart';
@@ -111,112 +112,14 @@ Future<List<DocComponent>> generateDocs({
           throw StateError('Library not resolved.');
         }
 
-        final classesInLibrary = library.element2.classes;
-        final functionsInLibrary = library.element2.topLevelFunctions;
-
-        for (final functionItem in functionsInLibrary) {
-          classes.add(DocComponent(
-            name: functionItem.name3.toString(),
-            filePath: relative(
-              file,
-              from: contextCollection.contextFor(file).contextRoot.root.path,
-            ),
-            isNullSafe: true,
-            description: functionItem.documentationComment?.replaceAll("///", "") ?? "",
-            constructors: [],
-            properties: [],
-            methods: [
-              DocMethod(
-                name: functionItem.name3.toString(),
-                returnType: functionItem.returnType.toString(),
-                description: functionItem.documentationComment ?? "",
-                signature: functionItem.formalParameters
-                    .map((param) => DocParameter(
-                          description: param.documentationComment ?? "",
-                          name: param.name3.toString(),
-                          type: param.type.toString(),
-                          named: param.isNamed,
-                          required: param.isRequired,
-                          defaultValue: param.defaultValueCode,
-                        ))
-                    .toList(),
-                features: [
-                  if (functionItem.isStatic) "static",
-                  if (functionItem.isExternal) "external",
-                ],
-              )
-            ],
-            type: DocComponentType.functionType,
-          ));
-        }
-
-        for (final classItem in classesInLibrary) {
-          classes.add(DocComponent(
-            name: classItem.name3.toString(),
-            filePath: relative(
-              file,
-              from: contextCollection.contextFor(file).contextRoot.root.path,
-            ),
-            isNullSafe: true,
-            description: classItem.documentationComment?.replaceAll("///", "") ?? "",
-            constructors: classItem.constructors2
-                .map((e) => DocConstructor(
-                      name: e.name3.toString(),
-                      signature: e.formalParameters
-                          .map((param) => DocParameter(
-                                description: param.documentationComment ?? "",
-                                name: param.name3.toString(),
-                                type: param.type.toString(),
-                                named: param.isNamed,
-                                required: param.isRequired,
-                                defaultValue: param.defaultValueCode,
-                              ))
-                          .toList(),
-                      features: [
-                        if (e.isConst) "const",
-                        if (e.isFactory) "factory",
-                        if (e.isExternal) "external",
-                      ],
-                    ))
-                .toList(),
-            properties: classItem.fields2
-                .map((e) => DocProperty(
-                      name: e.name3.toString(),
-                      type: e.type.toString(),
-                      description: e.documentationComment ?? "",
-                      features: [
-                        if (e.isStatic) "static",
-                        if (e.isCovariant) "covariant",
-                        if (e.isFinal) "final",
-                        if (e.isConst) "const",
-                        if (e.isLate) "late",
-                      ],
-                    ))
-                .toList(),
-            methods: classItem.methods2
-                .map((e) => DocMethod(
-                      name: e.name3.toString(),
-                      returnType: e.returnType.toString(),
-                      description: e.documentationComment ?? "",
-                      signature: e.formalParameters
-                          .map((param) => DocParameter(
-                                description: param.documentationComment ?? "",
-                                name: param.name3.toString(),
-                                type: param.type.toString(),
-                                named: param.isNamed,
-                                required: param.isRequired,
-                                defaultValue: param.defaultValueCode,
-                              ))
-                          .toList(),
-                      features: [
-                        if (e.isStatic) "static",
-                        if (e.isAbstract) "abstract",
-                        if (e.isExternal) "external",
-                      ],
-                    ))
-                .toList(),
-          ));
-        }
+        final visitor = DocVisitor(
+          filePath: relative(
+            file,
+            from: contextCollection.contextFor(file).contextRoot.root.path,
+          ),
+        );
+        library.element2.accept2(visitor);
+        classes.addAll(visitor.components);
       } catch (e) {
         logger.err('Error analyzing file $file: $e');
       }
