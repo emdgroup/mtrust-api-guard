@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:conventional/conventional.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
@@ -11,12 +12,14 @@ import 'package:yaml/yaml.dart';
 class ChangelogGenerator {
   final List<ApiChange> apiChanges;
   final Directory projectRoot;
-  final String? fileBaseUrl;
+  final String? baseRef;
+  final String? newRef;
 
   ChangelogGenerator({
     required this.apiChanges,
     required this.projectRoot,
-    this.fileBaseUrl,
+    this.baseRef,
+    this.newRef,
   });
 
   /// Gets the commits since the last version tag
@@ -111,21 +114,17 @@ class ChangelogGenerator {
   Future<String> generateChangelogEntry() async {
     final pubspecInfo = await _getPubspecInfo();
     final version = pubspecInfo['version']!;
-    final homepage = pubspecInfo['homepage'];
 
-    var effectiveBaseUrl = fileBaseUrl;
-    if (effectiveBaseUrl == null && homepage != null) {
-      var url = homepage;
-      if (url.endsWith('/')) {
-        url = url.substring(0, url.length - 1);
-      }
-      effectiveBaseUrl = '$url/blob/v$version';
+    final remoteUrl = await GitUtils.getRemoteUrl(projectRoot.path);
+
+    String? fileUrlBuilder(String filePath) {
+      return GitUtils.buildCompareUrl(remoteUrl, baseRef, newRef, filePath);
     }
 
     final apiChangesFormatter = ApiChangeFormatter(
       apiChanges,
       markdownHeaderLevel: 4,
-      fileBaseUrl: effectiveBaseUrl,
+      fileUrlBuilder: fileUrlBuilder,
     );
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();

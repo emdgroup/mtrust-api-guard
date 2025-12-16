@@ -9,7 +9,7 @@ class ApiChangeFormatter {
 
   final int markdownHeaderLevel;
 
-  final String? fileBaseUrl;
+  final String? Function(String filePath)? fileUrlBuilder;
 
   ApiChangeFormatter(
     this.changes, {
@@ -19,7 +19,7 @@ class ApiChangeFormatter {
       ApiChangeMagnitude.minor,
       ApiChangeMagnitude.patch,
     },
-    this.fileBaseUrl,
+    this.fileUrlBuilder,
   });
 
   bool get hasRelevantChanges => changes.any(
@@ -50,7 +50,8 @@ class ApiChangeFormatter {
         final componentObj = firstChange.component;
         final typeLabel = _getComponentTypeLabel(componentObj.type);
         final filePath = componentObj.filePath;
-        final linkTarget = fileBaseUrl != null ? '$fileBaseUrl/$filePath' : filePath;
+        final linkTarget =
+            (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
 
         changelogBuffer.writeln();
         changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` $component** ([$filePath]($linkTarget))');

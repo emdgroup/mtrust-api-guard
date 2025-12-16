@@ -38,24 +38,17 @@ class ChangelogGeneratorCommand extends Command
       help: 'Update the CHANGELOG.md file',
       defaultsTo: true,
     );
-    argParser.addOption(
-      'base-url',
-      help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)',
-    );
   }
 
   bool get update {
     return argResults?['update'] as bool;
   }
 
-  String? get baseUrl {
-    return argResults?['base-url'] as String?;
-  }
-
   @override
   FutureOr? run() async {
+    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(Directory.current.path);
     final changes = await compare(
-      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      baseRef: resolvedBaseRef,
       newRef: newRef,
       dartRoot: root,
       gitRoot: Directory.current,
@@ -66,7 +59,8 @@ class ChangelogGeneratorCommand extends Command
     final changelogGenerator = ChangelogGenerator(
       apiChanges: changes,
       projectRoot: root,
-      fileBaseUrl: baseUrl,
+      baseRef: resolvedBaseRef,
+      newRef: newRef,
     );
 
     if (update) {

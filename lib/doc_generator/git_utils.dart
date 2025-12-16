@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -47,6 +49,19 @@ class GitUtils {
     } catch (e) {
       throw GitException('Unexpected error: $e');
     }
+  }
+
+  /// Gets the current commit hash
+  static Future<String?> getCurrentCommitHash(String? root) async {
+    try {
+      final result = await Process.run('git', ['rev-parse', 'HEAD'], workingDirectory: root);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+    } catch (e) {
+      logger.detail('Could not get current commit hash: $e');
+    }
+    return null;
   }
 
   /// Checks if the current directory is a Git repository
@@ -217,6 +232,44 @@ class GitUtils {
       throw GitException('Failed to show ref $ref:$path: ${result.stderr.toString()}');
     }
     return result.stdout.toString().trim();
+  }
+
+  /// Gets the remote URL of the git repository
+  static Future<String?> getRemoteUrl(String? root) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['config', '--get', 'remote.origin.url'],
+        workingDirectory: root,
+      );
+      if (result.exitCode == 0) {
+        var url = result.stdout.toString().trim();
+        if (url.startsWith('git@')) {
+          url = url.replaceFirst(':', '/').replaceFirst('git@', 'https://');
+        }
+        if (url.endsWith('.git')) {
+          url = url.substring(0, url.length - 4);
+        }
+        return url;
+      }
+    } catch (e) {
+      logger.detail('Could not get git remote url: $e');
+    }
+    return null;
+  }
+
+  /// Builds a comparison URL for a file between two refs
+  static String? buildCompareUrl(
+    String? remoteUrl,
+    String? baseRef,
+    String? newRef,
+    String filePath,
+  ) {
+    if (remoteUrl == null || baseRef == null || newRef == null) {
+      return null;
+    }
+    final digest = sha256.convert(utf8.encode(filePath));
+    return '$remoteUrl/compare/$baseRef..$newRef#diff-$digest';
   }
 }
 

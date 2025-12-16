@@ -71,7 +71,6 @@ class DocComparatorCommand extends Command
     final formatter = ApiChangeFormatter(
       changes,
       magnitudes: magnitudes,
-      fileBaseUrl: baseUrl,
     );
 
     if (!formatter.hasRelevantChanges) {
