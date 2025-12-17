@@ -12,7 +12,13 @@ import 'package:yaml/yaml.dart';
 class ChangelogGenerator {
   final List<ApiChange> apiChanges;
   final Directory projectRoot;
+
+  /// The git reference of the previous version (e.g. v1.0.0).
+  /// Used for generating comparison URLs.
   final String? baseRef;
+
+  /// The git reference of the new version (e.g. v1.1.0 or a commit hash).
+  /// Used for generating comparison URLs.
   final String? newRef;
 
   ChangelogGenerator({
@@ -27,78 +33,12 @@ class ChangelogGenerator {
   /// it gets the commits since the previous tag.
   /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
   Future<List<Commit>> _getCommitsSinceLastVersion() async {
-    try {
-      logger.detail("Getting commits since last version");
+    logger.detail("Getting commits since last version");
 
-      final pubspecInfo = await _getPubspecInfo();
-      final currentVersion = pubspecInfo['version'];
+    final pubspecInfo = await _getPubspecInfo();
+    final currentVersion = pubspecInfo['version']!;
 
-      // Get all tags sorted by creation date (newest first)
-      final tagsResult = await Process.run(
-        'git',
-        ['tag', '--sort=-creatordate'],
-        workingDirectory: projectRoot.path,
-      );
-
-      final commits = <Commit>[];
-      if (tagsResult.exitCode == 0) {
-        final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
-
-        String? previousTag;
-        if (tags.isNotEmpty) {
-          final latestTag = tags.first;
-          final latestTagVersion = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
-
-          if (latestTagVersion == currentVersion) {
-            if (tags.length > 1) {
-              previousTag = tags[1];
-            }
-          } else {
-            previousTag = latestTag;
-          }
-        }
-
-        // Get commits since the previous tag (or all commits if no previous tag)
-        final gitArgs = ['--no-pager', 'log', '--no-decorate'];
-        if (previousTag != null) {
-          gitArgs.add('$previousTag..HEAD');
-        }
-
-        final commitResult = await Process.run(
-          'git',
-          gitArgs,
-          workingDirectory: projectRoot.path,
-        );
-
-        if (commitResult.exitCode == 0) {
-          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
-        }
-      } else {
-        logger.detail(
-          "No tags exist, this is treated as first release. "
-          "Changelog will contain all commits.",
-        );
-        // If no tags exist, get all commits
-        final commitResult = await Process.run(
-          'git',
-          ['--no-pager', 'log', '--no-decorate'],
-          workingDirectory: projectRoot.path,
-        );
-        if (commitResult.exitCode == 0) {
-          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
-        }
-      }
-
-      return commits;
-    } catch (e) {
-      logger.err('Error retrieving commits: $e');
-      return [];
-    }
-  }
-
-  /// Parses the git log output into CommitInfo objects
-  List<Commit> _parseCommitLog(String log) {
-    return Commit.parseCommits(log);
+    return GitUtils.getCommitsSinceLastTag(projectRoot.path, currentVersion);
   }
 
   /// These are the commit types that should trigger a release.

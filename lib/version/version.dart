@@ -84,6 +84,9 @@ Future<VersionResult> version({
   String? badgeContent;
   if (generateChangelog) {
     String changelogNewRef;
+    // If we are committing, we use the new version tag as the new ref.
+    // If we are not committing (e.g. dry run / PR), we use the current commit hash
+    // so the link points to the specific commit.
     if (commit) {
       changelogNewRef = "v$nextVersion";
     } else {

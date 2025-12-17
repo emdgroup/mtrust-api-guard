@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:conventional/conventional.dart';
 import 'package:crypto/crypto.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -270,6 +271,84 @@ class GitUtils {
     }
     final digest = sha256.convert(utf8.encode(filePath));
     return '$remoteUrl/compare/$baseRef..$newRef#diff-$digest';
+  }
+
+  /// Gets the commits between two refs
+  /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
+  static Future<List<Commit>> getCommits({
+    required String root,
+    String? fromRef,
+    String? toRef,
+  }) async {
+    try {
+      final gitArgs = ['--no-pager', 'log', '--no-decorate'];
+      if (fromRef != null) {
+        gitArgs.add('$fromRef..${toRef ?? 'HEAD'}');
+      } else if (toRef != null) {
+        gitArgs.add(toRef);
+      }
+
+      final commitResult = await Process.run(
+        'git',
+        gitArgs,
+        workingDirectory: root,
+      );
+
+      if (commitResult.exitCode == 0) {
+        return Commit.parseCommits(commitResult.stdout.toString().trim());
+      }
+      return [];
+    } catch (e) {
+      logger.err('Error retrieving commits: $e');
+      return [];
+    }
+  }
+
+  /// Gets the commits since the last version tag
+  /// If the latest tag matches the current version (e.g. CI running on tagged commit),
+  /// it gets the commits since the previous tag.
+  /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
+  static Future<List<Commit>> getCommitsSinceLastTag(
+    String root,
+    String currentVersion,
+  ) async {
+    try {
+      // Get all tags sorted by creation date (newest first)
+      final tagsResult = await Process.run(
+        'git',
+        ['tag', '--sort=-creatordate'],
+        workingDirectory: root,
+      );
+
+      if (tagsResult.exitCode == 0) {
+        final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
+
+        String? previousTag;
+        if (tags.isNotEmpty) {
+          final latestTag = tags.first;
+          final latestTagVersion = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
+
+          if (latestTagVersion == currentVersion) {
+            if (tags.length > 1) {
+              previousTag = tags[1];
+            }
+          } else {
+            previousTag = latestTag;
+          }
+        }
+
+        return getCommits(root: root, fromRef: previousTag);
+      } else {
+        logger.detail(
+          "No tags exist, this is treated as first release. "
+          "Changelog will contain all commits.",
+        );
+        return getCommits(root: root);
+      }
+    } catch (e) {
+      logger.err('Error retrieving commits: $e');
+      return [];
+    }
   }
 }
 
