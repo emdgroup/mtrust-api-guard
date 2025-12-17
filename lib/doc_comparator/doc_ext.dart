@@ -118,6 +118,17 @@ extension DocComponentApiChangesExt on DocComponent {
       }
     }
 
+    // Skip type parameter comparison for functions to prevent duplicate reports, as they are
+    // already handled in MethodApiChangesExt.
+    if (type != DocComponentType.functionType &&
+        !const ListEquality().equals(typeParameters, newComponent.typeParameters)) {
+      changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.typeParametersChanged,
+        changedValue: '${typeParameters.join(', ')} -> ${newComponent.typeParameters.join(', ')}',
+      ));
+    }
+
     changes.addAll(
       constructors.compareTo(newComponent.constructors, component: this),
     );
@@ -395,6 +406,15 @@ extension MethodApiChangesExt on DocMethod {
         method: this,
         operation: ApiChangeOperation.typeChanged,
         newType: newMethod.returnType,
+      ));
+    }
+
+    if (!const ListEquality().equals(typeParameters, newMethod.typeParameters)) {
+      changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.typeParametersChanged,
+        changedValue: '${typeParameters.join(', ')} -> ${newMethod.typeParameters.join(', ')}',
       ));
     }
 

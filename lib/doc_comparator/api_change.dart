@@ -54,6 +54,7 @@ enum ApiChangeOperation {
   interfaceRemoved,
   mixinAdded,
   mixinRemoved,
+  typeParametersChanged,
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -131,6 +132,7 @@ class MethodApiChange extends ApiChange {
     required this.method,
     this.newType,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override

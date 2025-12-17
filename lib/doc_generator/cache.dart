@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dart_apitool/api_tool.dart';
 import 'package:path/path.dart';
 
 class Cache {

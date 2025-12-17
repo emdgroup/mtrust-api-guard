@@ -54,7 +54,8 @@ class ApiChangeFormatter {
             (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
 
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` $component** ([$filePath]($linkTarget))');
+        changelogBuffer
+            .writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** ([$filePath]($linkTarget))');
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
@@ -165,6 +166,8 @@ class ApiChangeFormatter {
         return '➕ Mixin added';
       case ApiChangeOperation.mixinRemoved:
         return '➖ Mixin removed';
+      case ApiChangeOperation.typeParametersChanged:
+        return '🔄 Type parameters changed';
       default:
         return '';
     }
@@ -203,6 +206,14 @@ class ApiChangeFormatter {
         final details = changes.map((c) {
           final change = c as MethodApiChange;
           return '`${change.method.name}` (${change.method.returnType} -> ${change.newType})';
+        }).join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.typeParametersChanged) {
+        final details = changes.map((c) {
+          final change = c as MethodApiChange;
+          return '`${change.method.name}` (${change.changedValue})';
         }).join(', ');
         return '$text: $details';
       }
@@ -350,7 +361,8 @@ class ApiChangeFormatter {
           operation == ApiChangeOperation.interfaceAdded ||
           operation == ApiChangeOperation.interfaceRemoved ||
           operation == ApiChangeOperation.mixinAdded ||
-          operation == ApiChangeOperation.mixinRemoved) {
+          operation == ApiChangeOperation.mixinRemoved ||
+          operation == ApiChangeOperation.typeParametersChanged) {
         final details = changes.map((c) => '`${(c as ComponentApiChange).changedValue}`').join(', ');
         return '$text: $details';
       }

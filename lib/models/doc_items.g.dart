@@ -36,6 +36,10 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      typeParameters: (json['typeParameters'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
@@ -53,6 +57,7 @@ Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
       'superClass': instance.superClass,
       'interfaces': instance.interfaces,
       'mixins': instance.mixins,
+      'typeParameters': instance.typeParameters,
     };
 
 const _$DocComponentTypeEnumMap = {
@@ -144,6 +149,10 @@ DocMethod _$DocMethodFromJson(Map<String, dynamic> json) => DocMethod(
               ?.map((e) => e as String)
               .toList() ??
           const [],
+      typeParameters: (json['typeParameters'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
@@ -153,4 +162,5 @@ Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
       'features': instance.features,
       'description': instance.description,
       'annotations': instance.annotations,
+      'typeParameters': instance.typeParameters,
     };
