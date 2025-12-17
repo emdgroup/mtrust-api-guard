@@ -26,6 +26,15 @@ void main() {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
 
+      // 1.1 Add homepage to pubspec.yaml for testing changelog links
+      final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      final pubspecContent = await pubspecFile.readAsString();
+      final updatedPubspecContent = pubspecContent.replaceFirst(
+        'homepage:',
+        'homepage: https://github.com/emdgroup/mtrust-api-guard/',
+      );
+      await pubspecFile.writeAsString(updatedPubspecContent);
+
       // 2. Set up initial version (1.0.0)
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
 
@@ -42,8 +51,7 @@ void main() {
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
       // 5. Commit and run version command to detect patch change
-      await testSetup.commitChanges('API change to v${TestConstants.patchVersion}');
-
+      await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
       await testSetup.runApiGuard('version', []);
 
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);

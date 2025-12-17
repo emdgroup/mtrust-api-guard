@@ -36,7 +36,7 @@ jobs:
         run: dart pub global activate --source path .
       - name: Compare API changes
         id: version
-        run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
+        run: mtrust_api_guard version --badge --no-commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
 
       - name: Generate version summary and comment on PR
         if: github.event_name == 'pull_request'

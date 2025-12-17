@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:conventional/conventional.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
@@ -12,73 +13,32 @@ class ChangelogGenerator {
   final List<ApiChange> apiChanges;
   final Directory projectRoot;
 
+  /// The git reference of the previous version (e.g. v1.0.0).
+  /// Used for generating comparison URLs.
+  final String? baseRef;
+
+  /// The git reference of the new version (e.g. v1.1.0 or a commit hash).
+  /// Used for generating comparison URLs.
+  final String? newRef;
+
   ChangelogGenerator({
     required this.apiChanges,
     required this.projectRoot,
+    this.baseRef,
+    this.newRef,
   });
 
   /// Gets the commits since the last version tag
+  /// If the latest tag matches the current version (e.g. CI running on tagged commit),
+  /// it gets the commits since the previous tag.
+  /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
   Future<List<Commit>> _getCommitsSinceLastVersion() async {
-    try {
-      logger.detail("Getting commits since last version");
-      // Get all tags sorted by creation date (newest first)
-      final tagsResult = await Process.run(
-        'git',
-        ['tag', '--sort=-creatordate'],
-        workingDirectory: projectRoot.path,
-      );
+    logger.detail("Getting commits since last version");
 
-      final commits = <Commit>[];
-      if (tagsResult.exitCode == 0) {
-        final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
+    final pubspecInfo = await _getPubspecInfo();
+    final currentVersion = pubspecInfo['version']!;
 
-        String? previousTag;
-        if (tags.length > 1) {
-          // Get the second tag (previous version)
-          previousTag = tags[1];
-        }
-
-        // Get commits since the previous tag (or all commits if no previous tag)
-        final gitArgs = ['--no-pager', 'log', '--no-decorate'];
-        if (previousTag != null) {
-          gitArgs.add('$previousTag..HEAD');
-        }
-
-        final commitResult = await Process.run(
-          'git',
-          gitArgs,
-          workingDirectory: projectRoot.path,
-        );
-
-        if (commitResult.exitCode == 0) {
-          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
-        }
-      } else {
-        logger.detail(
-          "No tags exist, this is treated as first release. "
-          "Changelog will contain all commits.",
-        );
-        // If no tags exist, get all commits
-        final commitResult = await Process.run(
-          'git',
-          ['--no-pager', 'log', '--no-decorate'],
-          workingDirectory: projectRoot.path,
-        );
-        if (commitResult.exitCode == 0) {
-          commits.addAll(_parseCommitLog(commitResult.stdout.toString().trim()));
-        }
-      }
-
-      return commits;
-    } catch (e) {
-      logger.err('Error retrieving commits: $e');
-      return [];
-    }
-  }
-
-  /// Parses the git log output into CommitInfo objects
-  List<Commit> _parseCommitLog(String log) {
-    return Commit.parseCommits(log);
+    return GitUtils.getCommitsSinceLastTag(projectRoot.path, currentVersion);
   }
 
   /// These are the commit types that should trigger a release.
@@ -92,10 +52,19 @@ class ChangelogGenerator {
   /// Generates a changelog entry, including the version from pubspec.yaml
   /// and the formatted API changes
   Future<String> generateChangelogEntry() async {
-    final version = await _getPackageVersion();
+    final pubspecInfo = await _getPubspecInfo();
+    final version = pubspecInfo['version']!;
+
+    final remoteUrl = await GitUtils.getRemoteUrl(projectRoot.path);
+
+    String? fileUrlBuilder(String filePath) {
+      return GitUtils.buildCompareUrl(remoteUrl, baseRef, newRef, filePath);
+    }
+
     final apiChangesFormatter = ApiChangeFormatter(
       apiChanges,
       markdownHeaderLevel: 4,
+      fileUrlBuilder: fileUrlBuilder,
     );
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();
@@ -152,8 +121,8 @@ class ChangelogGenerator {
     logger.info('CHANGELOG.md updated successfully.');
   }
 
-  /// Retrieves the package version from pubspec.yaml
-  Future<String> _getPackageVersion() async {
+  /// Retrieves the package version and homepage from pubspec.yaml
+  Future<Map<String, String?>> _getPubspecInfo() async {
     try {
       final pubspecFile = File(join(projectRoot.path, 'pubspec.yaml'));
       if (!pubspecFile.existsSync()) {
@@ -168,9 +137,14 @@ class ChangelogGenerator {
         throw Exception('Version not found in pubspec.yaml');
       }
 
-      return version.toString();
+      final homepage = pubspec['homepage']?.toString() ?? pubspec['repository']?.toString();
+
+      return {
+        'version': version.toString(),
+        'homepage': homepage,
+      };
     } catch (e) {
-      logger.err('Error retrieving package version: $e');
+      logger.err('Error retrieving package info: $e');
       rethrow;
     }
   }

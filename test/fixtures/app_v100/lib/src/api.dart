@@ -20,3 +20,26 @@ class _PrivateClass {
 
   _PrivateClass(this.secret);
 }
+
+mixin TimestampMixin {
+  DateTime? createdAt;
+}
+
+enum Status {
+  active,
+  inactive,
+}
+
+typedef UserID = String;
+
+extension StringExt on String {
+  bool get isValid => true;
+}
+
+abstract class BaseClass {}
+
+abstract class InterfaceA {}
+
+mixin MixinA {}
+
+class ClassWithSuper extends BaseClass with MixinA implements InterfaceA {}

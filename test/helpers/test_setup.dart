@@ -35,6 +35,11 @@ class TestSetup {
     await runProcess('git', ['init'], workingDir: tempDir.path);
     await runProcess(
       'git',
+      ['remote', 'add', 'origin', 'https://github.com/emdgroup/mtrust-api-guard.git'],
+      workingDir: tempDir.path,
+    );
+    await runProcess(
+      'git',
       ['config', 'user.email', TestConstants.testEmail],
       workingDir: tempDir.path,
     );

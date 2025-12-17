@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:conventional/conventional.dart';
+import 'package:crypto/crypto.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:pub_semver/pub_semver.dart';
 
@@ -47,6 +50,19 @@ class GitUtils {
     } catch (e) {
       throw GitException('Unexpected error: $e');
     }
+  }
+
+  /// Gets the current commit hash
+  static Future<String?> getCurrentCommitHash(String? root) async {
+    try {
+      final result = await Process.run('git', ['rev-parse', 'HEAD'], workingDirectory: root);
+      if (result.exitCode == 0) {
+        return result.stdout.toString().trim();
+      }
+    } catch (e) {
+      logger.detail('Could not get current commit hash: $e');
+    }
+    return null;
   }
 
   /// Checks if the current directory is a Git repository
@@ -217,6 +233,122 @@ class GitUtils {
       throw GitException('Failed to show ref $ref:$path: ${result.stderr.toString()}');
     }
     return result.stdout.toString().trim();
+  }
+
+  /// Gets the remote URL of the git repository
+  static Future<String?> getRemoteUrl(String? root) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['config', '--get', 'remote.origin.url'],
+        workingDirectory: root,
+      );
+      if (result.exitCode == 0) {
+        var url = result.stdout.toString().trim();
+        if (url.startsWith('git@')) {
+          url = url.replaceFirst(':', '/').replaceFirst('git@', 'https://');
+        }
+        if (url.endsWith('.git')) {
+          url = url.substring(0, url.length - 4);
+        }
+        return url;
+      }
+    } catch (e) {
+      logger.detail('Could not get git remote url: $e');
+    }
+    return null;
+  }
+
+  /// Builds a comparison URL for a file between two refs
+  static String? buildCompareUrl(
+    String? remoteUrl,
+    String? baseRef,
+    String? newRef,
+    String filePath,
+  ) {
+    if (remoteUrl == null || baseRef == null || newRef == null) {
+      return null;
+    }
+    final digest = sha256.convert(utf8.encode(filePath));
+    return '$remoteUrl/compare/$baseRef..$newRef#diff-$digest';
+  }
+
+  /// Gets the commits between two refs
+  /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
+  static Future<List<Commit>> getCommits({
+    required String root,
+    String? fromRef,
+    String? toRef,
+  }) async {
+    try {
+      final gitArgs = ['--no-pager', 'log', '--no-decorate'];
+      if (fromRef != null) {
+        gitArgs.add('$fromRef..${toRef ?? 'HEAD'}');
+      } else if (toRef != null) {
+        gitArgs.add(toRef);
+      }
+
+      final commitResult = await Process.run(
+        'git',
+        gitArgs,
+        workingDirectory: root,
+      );
+
+      if (commitResult.exitCode == 0) {
+        return Commit.parseCommits(commitResult.stdout.toString().trim());
+      }
+      return [];
+    } catch (e) {
+      logger.err('Error retrieving commits: $e');
+      return [];
+    }
+  }
+
+  /// Gets the commits since the last version tag
+  /// If the latest tag matches the current version (e.g. CI running on tagged commit),
+  /// it gets the commits since the previous tag.
+  /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
+  static Future<List<Commit>> getCommitsSinceLastTag(
+    String root,
+    String currentVersion,
+  ) async {
+    try {
+      // Get all tags sorted by creation date (newest first)
+      final tagsResult = await Process.run(
+        'git',
+        ['tag', '--sort=-creatordate'],
+        workingDirectory: root,
+      );
+
+      if (tagsResult.exitCode == 0) {
+        final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
+
+        String? previousTag;
+        if (tags.isNotEmpty) {
+          final latestTag = tags.first;
+          final latestTagVersion = latestTag.startsWith('v') ? latestTag.substring(1) : latestTag;
+
+          if (latestTagVersion == currentVersion) {
+            if (tags.length > 1) {
+              previousTag = tags[1];
+            }
+          } else {
+            previousTag = latestTag;
+          }
+        }
+
+        return getCommits(root: root, fromRef: previousTag);
+      } else {
+        logger.detail(
+          "No tags exist, this is treated as first release. "
+          "Changelog will contain all commits.",
+        );
+        return getCommits(root: root);
+      }
+    } catch (e) {
+      logger.err('Error retrieving commits: $e');
+      return [];
+    }
   }
 }
 

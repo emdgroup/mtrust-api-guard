@@ -44,6 +44,80 @@ extension DocComponentApiChangesExt on DocComponent {
       );
     }
 
+    if (aliasedType != newComponent.aliasedType) {
+      changes.add(
+        ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.typeChanged,
+        ),
+      );
+    }
+
+    for (final annotation in annotations) {
+      if (!newComponent.annotations.contains(annotation)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.annotationRemoved,
+          annotation: annotation,
+        ));
+      }
+    }
+    for (final annotation in newComponent.annotations) {
+      if (!annotations.contains(annotation)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.annotationAdded,
+          annotation: annotation,
+        ));
+      }
+    }
+
+    if (superClass != newComponent.superClass) {
+      changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.superClassChanged,
+        changedValue: '${superClass ?? 'null'} -> ${newComponent.superClass ?? 'null'}',
+      ));
+    }
+
+    for (final interface in interfaces) {
+      if (!newComponent.interfaces.contains(interface)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.interfaceRemoved,
+          changedValue: interface,
+        ));
+      }
+    }
+    for (final interface in newComponent.interfaces) {
+      if (!interfaces.contains(interface)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.interfaceAdded,
+          changedValue: interface,
+        ));
+      }
+    }
+
+    for (final mixin in mixins) {
+      if (!newComponent.mixins.contains(mixin)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.mixinRemoved,
+          changedValue: mixin,
+        ));
+      }
+    }
+    for (final mixin in newComponent.mixins) {
+      if (!mixins.contains(mixin)) {
+        changes.add(ComponentApiChange(
+          component: this,
+          operation: ApiChangeOperation.mixinAdded,
+          changedValue: mixin,
+        ));
+      }
+    }
+
     changes.addAll(
       constructors.compareTo(newComponent.constructors, component: this),
     );
@@ -66,12 +140,35 @@ extension ConstructorApiChangesExt on DocConstructor {
     required DocComponent component,
   }) {
     final changes = <ApiChange>[];
-    _addChange(DocParameter parameter, ApiChangeOperation operation) {
+
+    for (final annotation in annotations) {
+      if (!newConstructor.annotations.contains(annotation)) {
+        changes.add(ConstructorApiChange(
+          component: component,
+          constructor: this,
+          operation: ApiChangeOperation.annotationRemoved,
+          annotation: annotation,
+        ));
+      }
+    }
+    for (final annotation in newConstructor.annotations) {
+      if (!annotations.contains(annotation)) {
+        changes.add(ConstructorApiChange(
+          component: component,
+          constructor: this,
+          operation: ApiChangeOperation.annotationAdded,
+          annotation: annotation,
+        ));
+      }
+    }
+
+    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? annotation}) {
       changes.add(ConstructorParameterApiChange(
         component: component,
         constructor: this,
         operation: operation,
         parameter: parameter,
+        annotation: annotation,
       ));
     }
 
@@ -96,6 +193,17 @@ extension ConstructorApiChangesExt on DocConstructor {
       }
       if (oldParam.type != newParam.type) {
         _addChange(oldParam, ApiChangeOperation.typeChanged);
+      }
+
+      for (final annotation in oldParam.annotations) {
+        if (!newParam.annotations.contains(annotation)) {
+          _addChange(oldParam, ApiChangeOperation.annotationRemoved, annotation: annotation);
+        }
+      }
+      for (final annotation in newParam.annotations) {
+        if (!oldParam.annotations.contains(annotation)) {
+          _addChange(oldParam, ApiChangeOperation.annotationAdded, annotation: annotation);
+        }
       }
     }
 
@@ -174,6 +282,27 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           operation: ApiChangeOperation.typeChanged,
         ));
       }
+
+      for (final annotation in this[i].annotations) {
+        if (!newProperty.annotations.contains(annotation)) {
+          changes.add(PropertyApiChange(
+            component: component,
+            property: this[i],
+            operation: ApiChangeOperation.annotationRemoved,
+            annotation: annotation,
+          ));
+        }
+      }
+      for (final annotation in newProperty.annotations) {
+        if (!this[i].annotations.contains(annotation)) {
+          changes.add(PropertyApiChange(
+            component: component,
+            property: this[i],
+            operation: ApiChangeOperation.annotationAdded,
+            annotation: annotation,
+          ));
+        }
+      }
     }
 
     for (var i = 0; i < newProperties.length; i++) {
@@ -236,14 +365,28 @@ extension MethodApiChangesExt on DocMethod {
     required DocComponent component,
   }) {
     final changes = <ApiChange>[];
-    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? oldName}) {
+    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? oldName, String? annotation}) {
       changes.add(MethodParameterApiChange(
         component: component,
         method: this,
         operation: operation,
         parameter: parameter,
         oldName: oldName,
+        annotation: annotation,
       ));
+    }
+
+    void _checkParamAnnotations(DocParameter oldP, DocParameter newP) {
+      for (final annotation in oldP.annotations) {
+        if (!newP.annotations.contains(annotation)) {
+          _addChange(oldP, ApiChangeOperation.annotationRemoved, annotation: annotation);
+        }
+      }
+      for (final annotation in newP.annotations) {
+        if (!oldP.annotations.contains(annotation)) {
+          _addChange(oldP, ApiChangeOperation.annotationAdded, annotation: annotation);
+        }
+      }
     }
 
     if (returnType != newMethod.returnType) {
@@ -253,6 +396,27 @@ extension MethodApiChangesExt on DocMethod {
         operation: ApiChangeOperation.typeChanged,
         newType: newMethod.returnType,
       ));
+    }
+
+    for (final annotation in annotations) {
+      if (!newMethod.annotations.contains(annotation)) {
+        changes.add(MethodApiChange(
+          component: component,
+          method: this,
+          operation: ApiChangeOperation.annotationRemoved,
+          annotation: annotation,
+        ));
+      }
+    }
+    for (final annotation in newMethod.annotations) {
+      if (!annotations.contains(annotation)) {
+        changes.add(MethodApiChange(
+          component: component,
+          method: this,
+          operation: ApiChangeOperation.annotationAdded,
+          annotation: annotation,
+        ));
+      }
     }
 
     final oldPositional = signature.where((p) => !p.named).toList();
@@ -277,6 +441,7 @@ extension MethodApiChangesExt on DocMethod {
             oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
           );
         }
+        _checkParamAnnotations(oldP, newP);
         processedOld.add(oldP);
         processedNew.add(newP);
       }
@@ -296,6 +461,7 @@ extension MethodApiChangesExt on DocMethod {
             oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
           );
         }
+        _checkParamAnnotations(oldP, newP);
         processedOld.add(oldP);
         processedNew.add(newP);
       }
@@ -318,6 +484,7 @@ extension MethodApiChangesExt on DocMethod {
             oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
           );
         }
+        _checkParamAnnotations(oldP, newP);
       }
     }
 
@@ -351,6 +518,7 @@ extension MethodApiChangesExt on DocMethod {
             oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
           );
         }
+        _checkParamAnnotations(oldP, newP);
       } else if (i >= remainingOldPositional.length) {
         _addChange(remainingNewPositional[i], ApiChangeOperation.added);
       } else {

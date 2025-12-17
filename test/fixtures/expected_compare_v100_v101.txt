@@ -1,9 +1,15 @@
 
 # 👀 Patch changes
 
-**Product** (lib/src/api.dart)
+**`class` Product** ([lib/src/api.dart](lib/src/api.dart))
 - ❇️ Property added: `_internalId`
 - ❇️ Method added: `_generateInternalId`
 
-**_PrivateClass** (lib/src/api.dart)
+**`extension` StringExt** ([lib/src/api.dart](lib/src/api.dart))
+- ❇️ Method added: `_isInternal`
+
+**`mixin` TimestampMixin** ([lib/src/api.dart](lib/src/api.dart))
+- ❇️ Method added: `_updateTimestamp`
+
+**`class` _PrivateClass** ([lib/src/api.dart](lib/src/api.dart))
 - ❌ Class removed: `_PrivateClass`

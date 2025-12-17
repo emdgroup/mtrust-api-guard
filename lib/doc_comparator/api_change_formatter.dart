@@ -9,6 +9,8 @@ class ApiChangeFormatter {
 
   final int markdownHeaderLevel;
 
+  final String? Function(String filePath)? fileUrlBuilder;
+
   ApiChangeFormatter(
     this.changes, {
     this.markdownHeaderLevel = 1,
@@ -17,6 +19,7 @@ class ApiChangeFormatter {
       ApiChangeMagnitude.minor,
       ApiChangeMagnitude.patch,
     },
+    this.fileUrlBuilder,
   });
 
   bool get hasRelevantChanges => changes.any(
@@ -43,8 +46,15 @@ class ApiChangeFormatter {
       );
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
+        final firstChange = componentChanges[component]!.first;
+        final componentObj = firstChange.component;
+        final typeLabel = _getComponentTypeLabel(componentObj.type);
+        final filePath = componentObj.filePath;
+        final linkTarget =
+            (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
+
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**$component** (${componentChanges[component]!.first.component.filePath})');
+        changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` $component** ([$filePath]($linkTarget))');
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
@@ -141,6 +151,20 @@ class ApiChangeFormatter {
         return '✏️ $prefix renamed';
       case ApiChangeOperation.typeChanged:
         return '🔄 $prefix type changed';
+      case ApiChangeOperation.annotationAdded:
+        return '➕ $prefix annotation added';
+      case ApiChangeOperation.annotationRemoved:
+        return '➖ $prefix annotation removed';
+      case ApiChangeOperation.superClassChanged:
+        return '🔄 Superclass changed';
+      case ApiChangeOperation.interfaceAdded:
+        return '➕ Interface added';
+      case ApiChangeOperation.interfaceRemoved:
+        return '➖ Interface removed';
+      case ApiChangeOperation.mixinAdded:
+        return '➕ Mixin added';
+      case ApiChangeOperation.mixinRemoved:
+        return '➖ Mixin removed';
       default:
         return '';
     }
@@ -153,6 +177,12 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is PropertyApiChange)) {
       final prefix = changes.length > 1 ? 'Properties' : 'Property';
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
       final props = changes.map((c) => (c as PropertyApiChange).property.name).toList();
       return '$text: `${props.join('`, `')}`';
     }
@@ -163,6 +193,11 @@ class ApiChangeFormatter {
       final prefix =
           isFunction ? (changes.length > 1 ? 'Functions' : 'Function') : (changes.length > 1 ? 'Methods' : 'Method');
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) => '`${(c as MethodApiChange).method.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
 
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
@@ -189,6 +224,14 @@ class ApiChangeFormatter {
       }
       if (constructor.startsWith('_')) {
         constructorLabel = "private $constructorLabel";
+      }
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) {
+          final change = c as ConstructorParameterApiChange;
+          return '`${change.parameter.name}` (${change.annotation})';
+        }).join(', ');
+        return '$text in $constructorLabel: $details';
       }
 
       if (operation == ApiChangeOperation.renamed) {
@@ -230,6 +273,16 @@ class ApiChangeFormatter {
       final prefix = changes.length > 1 ? 'Params' : 'Param';
       final text = _getOperationText(operation, prefix: prefix);
 
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details = changes.map((c) {
+          final change = c as MethodParameterApiChange;
+          return '`${change.parameter.name}` (${change.annotation})';
+        }).join(', ');
+        final method = (changes.first as MethodParameterApiChange).method.name;
+        final label = isFunction ? 'function' : 'method';
+        return '$text in $label `$method`: $details';
+      }
+
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
@@ -270,6 +323,13 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ConstructorApiChange)) {
       // This should always be a single change, so we use singular:
       final text = _getOperationText(operation, prefix: 'Constructor');
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details =
+            changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
       final constructors = changes.map((c) => (c as ConstructorApiChange).constructor.name).toList();
       return '$text: `${constructors.join('`, `')}`';
     }
@@ -277,13 +337,46 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is ComponentApiChange)) {
       // This should always be a single change, so we use singular:
       final component = (changes.first as ComponentApiChange).component;
-      final prefix = component.type == DocComponentType.functionType ? 'Function' : 'Class';
+      final prefix = _getComponentTypeLabel(component.type);
       final text = _getOperationText(operation, prefix: prefix);
+
+      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
+        final details =
+            changes.map((c) => '`${(c as ComponentApiChange).component.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.superClassChanged ||
+          operation == ApiChangeOperation.interfaceAdded ||
+          operation == ApiChangeOperation.interfaceRemoved ||
+          operation == ApiChangeOperation.mixinAdded ||
+          operation == ApiChangeOperation.mixinRemoved) {
+        final details = changes.map((c) => '`${(c as ComponentApiChange).changedValue}`').join(', ');
+        return '$text: $details';
+      }
+
       final components = changes.map((c) => (c as ComponentApiChange).component).toList();
       return '$text: `${components.map((c) => c.name).join('`, `')}`';
     }
 
     // This should actually never happen:
     return '${changes.length} unknown changes';
+  }
+
+  String _getComponentTypeLabel(DocComponentType type) {
+    switch (type) {
+      case DocComponentType.classType:
+        return 'Class';
+      case DocComponentType.functionType:
+        return 'Function';
+      case DocComponentType.mixinType:
+        return 'Mixin';
+      case DocComponentType.enumType:
+        return 'Enum';
+      case DocComponentType.typedefType:
+        return 'Typedef';
+      case DocComponentType.extensionType:
+        return 'Extension';
+    }
   }
 }

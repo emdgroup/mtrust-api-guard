@@ -26,9 +26,12 @@ class User {
   }
 }
 
-// Keep the Product class for compatibility with previous versions
+// Keep the Product class for compatibility with previous versions, but mark it as deprecated
+@deprecated
 class Product {
+  @deprecated
   final String id;
+  @deprecated
   final double price;
 
   Product(this.id, this.price);
@@ -50,3 +53,33 @@ double calculateDiscount(double price, double percentage) {
 String formatUserInfo(String name, int age, {String? email}) {
   return 'Name: $name, Age: $age, Email: ${email ?? "N/A"}';
 }
+
+mixin TimestampMixin {
+  DateTime? createdAt;
+  void setTimestamp() {}
+}
+
+enum Status {
+  active,
+  inactive,
+  pending,
+}
+
+typedef UserID = String;
+
+extension StringExt on String {
+  bool get isValid => true;
+  bool get isEmail => contains('@');
+}
+
+abstract class BaseClass {}
+
+abstract class InterfaceA {}
+
+abstract class InterfaceB {}
+
+mixin MixinA {}
+
+mixin MixinB {}
+
+class ClassWithSuper extends BaseClass with MixinA, MixinB implements InterfaceA, InterfaceB {}

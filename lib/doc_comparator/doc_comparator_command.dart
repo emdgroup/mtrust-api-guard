@@ -34,10 +34,18 @@ class DocComparatorCommand extends Command
       'out',
       help: 'Write the comparison results to a file',
     );
+    argParser.addOption(
+      'base-url',
+      help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)',
+    );
   }
 
   String? get out {
     return argResults?['out'] as String?;
+  }
+
+  String? get baseUrl {
+    return argResults?['base-url'] as String?;
   }
 
   Set<ApiChangeMagnitude> get magnitudes {

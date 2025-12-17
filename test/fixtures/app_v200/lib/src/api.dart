@@ -61,3 +61,31 @@ double calculateDiscount(double price, double percentage, {bool roundUp = false}
 }
 
 // Remove 'formatUserInfo' top-level function
+
+mixin TimestampMixin {
+  // Removed createdAt
+  void setTimestamp() {}
+}
+
+enum Status {
+  active,
+  // Removed inactive
+  pending,
+}
+
+typedef UserID = int; // Changed underlying type from String to int
+
+extension StringExt on String {
+  // Removed isValid
+  bool get isEmail => contains('@');
+}
+
+abstract class BaseClass {}
+
+abstract class AnotherBaseClass {}
+
+abstract class InterfaceA {}
+
+mixin MixinA {}
+
+class ClassWithSuper extends AnotherBaseClass {}

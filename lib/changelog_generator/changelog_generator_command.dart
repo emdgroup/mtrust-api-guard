@@ -46,8 +46,9 @@ class ChangelogGeneratorCommand extends Command
 
   @override
   FutureOr? run() async {
+    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(Directory.current.path);
     final changes = await compare(
-      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      baseRef: resolvedBaseRef,
       newRef: newRef,
       dartRoot: root,
       gitRoot: Directory.current,
@@ -58,6 +59,8 @@ class ChangelogGeneratorCommand extends Command
     final changelogGenerator = ChangelogGenerator(
       apiChanges: changes,
       projectRoot: root,
+      baseRef: resolvedBaseRef,
+      newRef: newRef,
     );
 
     if (update) {

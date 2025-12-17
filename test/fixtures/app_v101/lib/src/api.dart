@@ -22,3 +22,28 @@ class Product {
 }
 
 // Removed _PrivateClass
+
+mixin TimestampMixin {
+  DateTime? createdAt;
+  void _updateTimestamp() {}
+}
+
+enum Status {
+  active,
+  inactive,
+}
+
+typedef UserID = String;
+
+extension StringExt on String {
+  bool get isValid => true;
+  bool _isInternal() => false;
+}
+
+abstract class BaseClass {}
+
+abstract class InterfaceA {}
+
+mixin MixinA {}
+
+class ClassWithSuper extends BaseClass with MixinA implements InterfaceA {}

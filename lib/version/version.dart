@@ -83,8 +83,24 @@ Future<VersionResult> version({
   String? changelog;
   String? badgeContent;
   if (generateChangelog) {
-    await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).updateChangelogFile();
-    changelog = await ChangelogGenerator(apiChanges: changes, projectRoot: dartRoot).generateChangelogEntry();
+    String changelogNewRef;
+    // If we are committing, we use the new version tag as the new ref.
+    // If we are not committing (e.g. dry run / PR), we use the current commit hash
+    // so the link points to the specific commit.
+    if (commit) {
+      changelogNewRef = "v$nextVersion";
+    } else {
+      changelogNewRef = await GitUtils.getCurrentCommitHash(gitRoot.path) ?? "HEAD";
+    }
+
+    final generator = ChangelogGenerator(
+      apiChanges: changes,
+      projectRoot: dartRoot,
+      baseRef: effectiveBaseRef,
+      newRef: changelogNewRef,
+    );
+    await generator.updateChangelogFile();
+    changelog = await generator.generateChangelogEntry();
     logger.info('Generated changelog entry for version $nextVersion');
   }
 
