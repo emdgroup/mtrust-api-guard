@@ -1,3 +1,111 @@
+## 2.1.0
+Released on: 12/17/2025, changelog automatically generated.
+
+
+### Bug Fixes
+
+- disable commit flag in PR workflow ([f4676e8](commit/f4676e8))
+- correctly extract commits in changelog generation ([c15f23e](commit/c15f23e))
+### Features
+
+- support enums, extensions, mixins, typedefs, superclasses and annotations ([e2f7226](commit/e2f7226))
+- enhance changelog generation with compare URLs ([b317b55](commit/b317b55))
+- enhance API change detection with new operations for superclass, interfaces, and mixins ([e151ce9](commit/e151ce9))
+- add base URL option for changelog and API change formatting ([7c38812](commit/7c38812))
+- add support for annotation addition and removal in API changes ([50f71a3](commit/50f71a3))
+- add support for mixins, extensions, typedefs and enums ([45c9e96](commit/45c9e96))
+
+### API Changes
+
+#### ✨ Minor changes
+
+**`class` ApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` ApiChangeFormatter** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❇️ Param added in default constructor: `fileUrlBuilder (named, optional)`
+- ❇️ Property added: `fileUrlBuilder`
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `annotationAdded`, `annotationRemoved`, `superClassChanged`, `interfaceAdded`, `interfaceRemoved`, `mixinAdded`, `mixinRemoved`
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Params added in default constructor: `baseRef (named, optional)`, `newRef (named, optional)`
+- ❇️ Properties added: `baseRef`, `newRef`
+
+**`class` ComponentApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Params added in default constructor: `annotation (named, optional)`, `changedValue (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` ConstructorApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` ConstructorParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` DocComparatorCommand** ([lib/doc_comparator/doc_comparator_command.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-999dbfd12b9cb9e8e119208558e2d6511ab63060f6f0bcb5abc8a8d7e96b6a42))
+- ❇️ Property added: `baseUrl`
+
+**`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Params added in default constructor: `aliasedType (named, optional)`, `annotations (named, optional, default: const [])`, `superClass (named, optional)`, `interfaces (named, optional, default: const [])`, `mixins (named, optional, default: const [])`
+- ❇️ Properties added: `aliasedType`, `annotations`, `superClass`, `interfaces`, `mixins`
+
+**`enum` DocComponentType** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Properties added: `mixinType`, `enumType`, `typedefType`, `extensionType`
+
+**`class` DocConstructor** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `annotations (named, optional, default: const [])`
+- ❇️ Property added: `annotations`
+
+**`class` DocMethod** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `annotations (named, optional, default: const [])`
+- ❇️ Property added: `annotations`
+
+**`class` DocParameter** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `annotations (named, optional, default: const [])`
+- ❇️ Property added: `annotations`
+
+**`class` DocProperty** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `annotations (named, optional, default: const [])`
+- ❇️ Property added: `annotations`
+
+**`class` DocVisitor** ([lib/doc_generator/doc_visitor.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-c5d6dadddbd05895698f77e15f545cf92cae135301f04c0f3c8344a387754c8a))
+- ❇️ Class added: `DocVisitor`
+
+**`class` GitUtils** ([lib/doc_generator/git_utils.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-ac66fa073c89f0f601e8861f270d5d5a6bd3ce8c2fcbbfc804c554c5023653a0))
+- ❇️ Methods added: `getCurrentCommitHash`, `getRemoteUrl`, `buildCompareUrl`, `getCommits`, `getCommitsSinceLastTag`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` MethodParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` ParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+**`class` PropertyApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `annotation (named, optional)`
+- ❇️ Properties added: `annotation`, `changedValue`
+
+#### 👀 Patch changes
+
+**`class` ApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Params added in private constructor `_`: `annotation (named, optional)`, `changedValue (named, optional)`
+
+**`class` ApiChangeFormatter** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❇️ Method added: `_getComponentTypeLabel`
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.0.0..v2.1.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❌ Methods removed: `_parseCommitLog`, `_getPackageVersion`
+- ❇️ Method added: `_getPubspecInfo`
+
+
 ## 2.0.0
 Released on: 12/11/2025, changelog automatically generated.
 
