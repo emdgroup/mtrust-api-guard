@@ -89,3 +89,13 @@ abstract class InterfaceA {}
 mixin MixinA {}
 
 class ClassWithSuper extends AnotherBaseClass {}
+
+class GenericClass<T extends num> {
+  T value;
+
+  GenericClass(this.value);
+}
+
+V genericMethod<V extends num>(V input) {
+  return input;
+}

@@ -83,3 +83,13 @@ mixin MixinA {}
 mixin MixinB {}
 
 class ClassWithSuper extends BaseClass with MixinA, MixinB implements InterfaceA, InterfaceB {}
+
+class GenericClass<T> {
+  T value;
+
+  GenericClass(this.value);
+}
+
+void genericMethod<K, V>(K key, V value) {
+  // Do something generic
+}

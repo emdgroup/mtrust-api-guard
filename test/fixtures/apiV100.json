@@ -69,7 +69,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -125,7 +126,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -165,7 +167,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -182,7 +185,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -199,7 +203,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -216,7 +221,8 @@
     "annotations": [],
     "superClass": "BaseClass",
     "interfaces": ["InterfaceA"],
-    "mixins": ["MixinA"]
+    "mixins": ["MixinA"],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -260,7 +266,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -283,7 +290,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -306,7 +314,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -321,7 +330,8 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   },
   {
     "filePath": "lib/src/api.dart",
@@ -336,6 +346,7 @@
     "annotations": [],
     "superClass": null,
     "interfaces": [],
-    "mixins": []
+    "mixins": [],
+    "typeParameters": []
   }
 ]
