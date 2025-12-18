@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:mtrust_api_guard/doc_comparator/comparators/comparator_helpers.dart';
 import 'package:mtrust_api_guard/doc_comparator/comparators/member_comparator.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 
@@ -6,27 +7,20 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
   List<ApiChange> compareTo(List<DocComponent> newComponents) {
     final changes = <ApiChange>[];
 
-    for (var i = 0; i < length; i++) {
-      final newComponent = newComponents.firstWhereOrNull((element) => element.name == this[i].name);
-      if (newComponent == null) {
-        changes.add(ComponentApiChange(
-          component: this[i],
-          operation: ApiChangeOperation.removed,
-        ));
-        continue;
-      }
-      changes.addAll(this[i].compareTo(newComponent));
-    }
-
-    for (var i = 0; i < newComponents.length; i++) {
-      final oldComponent = firstWhereOrNull((element) => element.name == newComponents[i].name);
-      if (oldComponent == null) {
-        changes.add(ComponentApiChange(
-          component: newComponents[i],
-          operation: ApiChangeOperation.added,
-        ));
-      }
-    }
+    compareLists<DocComponent>(
+      oldList: this,
+      newList: newComponents,
+      keyExtractor: (c) => c.name,
+      onRemoved: (c) => changes.add(ComponentApiChange(
+        component: c,
+        operation: ApiChangeOperation.removed,
+      )),
+      onAdded: (c) => changes.add(ComponentApiChange(
+        component: c,
+        operation: ApiChangeOperation.added,
+      )),
+      onMatched: (oldC, newC) => changes.addAll(oldC.compareTo(newC)),
+    );
 
     return changes;
   }
@@ -54,24 +48,20 @@ extension DocComponentApiChangesExt on DocComponent {
       );
     }
 
-    for (final annotation in annotations) {
-      if (!newComponent.annotations.contains(annotation)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.annotationRemoved,
-          annotation: annotation,
-        ));
-      }
-    }
-    for (final annotation in newComponent.annotations) {
-      if (!annotations.contains(annotation)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.annotationAdded,
-          annotation: annotation,
-        ));
-      }
-    }
+    compareAnnotations(
+      oldAnnotations: annotations,
+      newAnnotations: newComponent.annotations,
+      onRemoved: (a) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.annotationRemoved,
+        annotation: a,
+      )),
+      onAdded: (a) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.annotationAdded,
+        annotation: a,
+      )),
+    );
 
     if (superClass != newComponent.superClass) {
       changes.add(ComponentApiChange(
@@ -81,43 +71,39 @@ extension DocComponentApiChangesExt on DocComponent {
       ));
     }
 
-    for (final interface in interfaces) {
-      if (!newComponent.interfaces.contains(interface)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.interfaceRemoved,
-          changedValue: interface,
-        ));
-      }
-    }
-    for (final interface in newComponent.interfaces) {
-      if (!interfaces.contains(interface)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.interfaceAdded,
-          changedValue: interface,
-        ));
-      }
-    }
+    compareLists<String>(
+      oldList: interfaces,
+      newList: newComponent.interfaces,
+      keyExtractor: (i) => i,
+      onRemoved: (i) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.interfaceRemoved,
+        changedValue: i,
+      )),
+      onAdded: (i) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.interfaceAdded,
+        changedValue: i,
+      )),
+      onMatched: (_, __) {},
+    );
 
-    for (final mixin in mixins) {
-      if (!newComponent.mixins.contains(mixin)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.mixinRemoved,
-          changedValue: mixin,
-        ));
-      }
-    }
-    for (final mixin in newComponent.mixins) {
-      if (!mixins.contains(mixin)) {
-        changes.add(ComponentApiChange(
-          component: this,
-          operation: ApiChangeOperation.mixinAdded,
-          changedValue: mixin,
-        ));
-      }
-    }
+    compareLists<String>(
+      oldList: mixins,
+      newList: newComponent.mixins,
+      keyExtractor: (m) => m,
+      onRemoved: (m) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.mixinRemoved,
+        changedValue: m,
+      )),
+      onAdded: (m) => changes.add(ComponentApiChange(
+        component: this,
+        operation: ApiChangeOperation.mixinAdded,
+        changedValue: m,
+      )),
+      onMatched: (_, __) {},
+    );
 
     // Skip type parameter comparison for functions to prevent duplicate reports, as they are
     // already handled in MethodApiChangesExt.

@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
+import 'comparator_helpers.dart';
 
 extension ConstructorApiChangesExt on DocConstructor {
   /// Compares [this] constructor with [newConstructor] and returns a list of
@@ -10,26 +11,22 @@ extension ConstructorApiChangesExt on DocConstructor {
   }) {
     final changes = <ApiChange>[];
 
-    for (final annotation in annotations) {
-      if (!newConstructor.annotations.contains(annotation)) {
-        changes.add(ConstructorApiChange(
-          component: component,
-          constructor: this,
-          operation: ApiChangeOperation.annotationRemoved,
-          annotation: annotation,
-        ));
-      }
-    }
-    for (final annotation in newConstructor.annotations) {
-      if (!annotations.contains(annotation)) {
-        changes.add(ConstructorApiChange(
-          component: component,
-          constructor: this,
-          operation: ApiChangeOperation.annotationAdded,
-          annotation: annotation,
-        ));
-      }
-    }
+    compareAnnotations(
+      oldAnnotations: annotations,
+      newAnnotations: newConstructor.annotations,
+      onRemoved: (a) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: this,
+        operation: ApiChangeOperation.annotationRemoved,
+        annotation: a,
+      )),
+      onAdded: (a) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: this,
+        operation: ApiChangeOperation.annotationAdded,
+        annotation: a,
+      )),
+    );
 
     _addChange(DocParameter parameter, ApiChangeOperation operation, {String? annotation}) {
       changes.add(ConstructorParameterApiChange(
@@ -64,16 +61,12 @@ extension ConstructorApiChangesExt on DocConstructor {
         _addChange(oldParam, ApiChangeOperation.typeChanged);
       }
 
-      for (final annotation in oldParam.annotations) {
-        if (!newParam.annotations.contains(annotation)) {
-          _addChange(oldParam, ApiChangeOperation.annotationRemoved, annotation: annotation);
-        }
-      }
-      for (final annotation in newParam.annotations) {
-        if (!oldParam.annotations.contains(annotation)) {
-          _addChange(oldParam, ApiChangeOperation.annotationAdded, annotation: annotation);
-        }
-      }
+      compareAnnotations(
+        oldAnnotations: oldParam.annotations,
+        newAnnotations: newParam.annotations,
+        onRemoved: (a) => _addChange(oldParam, ApiChangeOperation.annotationRemoved, annotation: a),
+        onAdded: (a) => _addChange(oldParam, ApiChangeOperation.annotationAdded, annotation: a),
+      );
     }
 
     for (var i = 0; i < newConstructor.signature.length; i++) {
@@ -97,29 +90,22 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
   }) {
     final changes = <ApiChange>[];
 
-    for (var i = 0; i < length; i++) {
-      final newConstructor = newConstructors.firstWhereOrNull((element) => element.name == this[i].name);
-      if (newConstructor == null) {
-        changes.add(ConstructorApiChange(
-          component: component,
-          constructor: this[i],
-          operation: ApiChangeOperation.removed,
-        ));
-        continue;
-      }
-      changes.addAll(this[i].compareTo(newConstructor, component: component));
-    }
-
-    for (var i = 0; i < newConstructors.length; i++) {
-      final oldConstructor = firstWhereOrNull((element) => element.name == newConstructors[i].name);
-      if (oldConstructor == null) {
-        changes.add(ConstructorApiChange(
-          component: component,
-          constructor: newConstructors[i],
-          operation: ApiChangeOperation.added,
-        ));
-      }
-    }
+    compareLists<DocConstructor>(
+      oldList: this,
+      newList: newConstructors,
+      keyExtractor: (c) => c.name,
+      onRemoved: (c) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: c,
+        operation: ApiChangeOperation.removed,
+      )),
+      onAdded: (c) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: c,
+        operation: ApiChangeOperation.added,
+      )),
+      onMatched: (oldC, newC) => changes.addAll(oldC.compareTo(newC, component: component)),
+    );
 
     return changes;
   }
@@ -134,56 +120,47 @@ extension PropertyListApiChangesExt on List<DocProperty> {
   }) {
     final changes = <ApiChange>[];
 
-    for (var i = 0; i < length; i++) {
-      final newProperty = newProperties.firstWhereOrNull((element) => element.name == this[i].name);
-      if (newProperty == null) {
-        changes.add(PropertyApiChange(
-          component: component,
-          property: this[i],
-          operation: ApiChangeOperation.removed,
-        ));
-        continue;
-      }
-      if (this[i].type != newProperty.type) {
-        changes.add(PropertyApiChange(
-          component: component,
-          property: this[i],
-          operation: ApiChangeOperation.typeChanged,
-        ));
-      }
-
-      for (final annotation in this[i].annotations) {
-        if (!newProperty.annotations.contains(annotation)) {
+    compareLists<DocProperty>(
+      oldList: this,
+      newList: newProperties,
+      keyExtractor: (p) => p.name,
+      onRemoved: (p) => changes.add(PropertyApiChange(
+        component: component,
+        property: p,
+        operation: ApiChangeOperation.removed,
+      )),
+      onAdded: (p) => changes.add(PropertyApiChange(
+        component: component,
+        property: p,
+        operation: ApiChangeOperation.added,
+      )),
+      onMatched: (oldP, newP) {
+        if (oldP.type != newP.type) {
           changes.add(PropertyApiChange(
             component: component,
-            property: this[i],
+            property: oldP,
+            operation: ApiChangeOperation.typeChanged,
+          ));
+        }
+
+        compareAnnotations(
+          oldAnnotations: oldP.annotations,
+          newAnnotations: newP.annotations,
+          onRemoved: (a) => changes.add(PropertyApiChange(
+            component: component,
+            property: oldP,
             operation: ApiChangeOperation.annotationRemoved,
-            annotation: annotation,
-          ));
-        }
-      }
-      for (final annotation in newProperty.annotations) {
-        if (!this[i].annotations.contains(annotation)) {
-          changes.add(PropertyApiChange(
+            annotation: a,
+          )),
+          onAdded: (a) => changes.add(PropertyApiChange(
             component: component,
-            property: this[i],
+            property: oldP,
             operation: ApiChangeOperation.annotationAdded,
-            annotation: annotation,
-          ));
-        }
-      }
-    }
-
-    for (var i = 0; i < newProperties.length; i++) {
-      final oldProperty = firstWhereOrNull((element) => element.name == newProperties[i].name);
-      if (oldProperty == null) {
-        changes.add(PropertyApiChange(
-          component: component,
-          property: newProperties[i],
-          operation: ApiChangeOperation.added,
-        ));
-      }
-    }
+            annotation: a,
+          )),
+        );
+      },
+    );
 
     return changes;
   }
@@ -198,29 +175,22 @@ extension MethodListApiChangesExt on List<DocMethod> {
   }) {
     final changes = <ApiChange>[];
 
-    for (var i = 0; i < length; i++) {
-      final newMethod = newMethods.firstWhereOrNull((element) => element.name == this[i].name);
-      if (newMethod == null) {
-        changes.add(MethodApiChange(
-          component: component,
-          method: this[i],
-          operation: ApiChangeOperation.removed,
-        ));
-        continue;
-      }
-      changes.addAll(this[i].compareTo(newMethod, component: component));
-    }
-
-    for (var i = 0; i < newMethods.length; i++) {
-      final oldMethod = firstWhereOrNull((element) => element.name == newMethods[i].name);
-      if (oldMethod == null) {
-        changes.add(MethodApiChange(
-          component: component,
-          method: newMethods[i],
-          operation: ApiChangeOperation.added,
-        ));
-      }
-    }
+    compareLists<DocMethod>(
+      oldList: this,
+      newList: newMethods,
+      keyExtractor: (m) => m.name,
+      onRemoved: (m) => changes.add(MethodApiChange(
+        component: component,
+        method: m,
+        operation: ApiChangeOperation.removed,
+      )),
+      onAdded: (m) => changes.add(MethodApiChange(
+        component: component,
+        method: m,
+        operation: ApiChangeOperation.added,
+      )),
+      onMatched: (oldM, newM) => changes.addAll(oldM.compareTo(newM, component: component)),
+    );
 
     return changes;
   }
@@ -246,16 +216,12 @@ extension MethodApiChangesExt on DocMethod {
     }
 
     void _checkParamAnnotations(DocParameter oldP, DocParameter newP) {
-      for (final annotation in oldP.annotations) {
-        if (!newP.annotations.contains(annotation)) {
-          _addChange(oldP, ApiChangeOperation.annotationRemoved, annotation: annotation);
-        }
-      }
-      for (final annotation in newP.annotations) {
-        if (!oldP.annotations.contains(annotation)) {
-          _addChange(oldP, ApiChangeOperation.annotationAdded, annotation: annotation);
-        }
-      }
+      compareAnnotations(
+        oldAnnotations: oldP.annotations,
+        newAnnotations: newP.annotations,
+        onRemoved: (a) => _addChange(oldP, ApiChangeOperation.annotationRemoved, annotation: a),
+        onAdded: (a) => _addChange(oldP, ApiChangeOperation.annotationAdded, annotation: a),
+      );
     }
 
     if (returnType != newMethod.returnType) {
@@ -276,26 +242,22 @@ extension MethodApiChangesExt on DocMethod {
       ));
     }
 
-    for (final annotation in annotations) {
-      if (!newMethod.annotations.contains(annotation)) {
-        changes.add(MethodApiChange(
-          component: component,
-          method: this,
-          operation: ApiChangeOperation.annotationRemoved,
-          annotation: annotation,
-        ));
-      }
-    }
-    for (final annotation in newMethod.annotations) {
-      if (!annotations.contains(annotation)) {
-        changes.add(MethodApiChange(
-          component: component,
-          method: this,
-          operation: ApiChangeOperation.annotationAdded,
-          annotation: annotation,
-        ));
-      }
-    }
+    compareAnnotations(
+      oldAnnotations: annotations,
+      newAnnotations: newMethod.annotations,
+      onRemoved: (a) => changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.annotationRemoved,
+        annotation: a,
+      )),
+      onAdded: (a) => changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.annotationAdded,
+        annotation: a,
+      )),
+    );
 
     final oldPositional = signature.where((p) => !p.named).toList();
     final oldNamed = signature.where((p) => p.named).toList();
