@@ -57,6 +57,24 @@ class DocComponent {
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
+  factory DocComponent.metadata({
+    required String name,
+    required DocComponentType type,
+    required String description,
+    String? filePath,
+  }) {
+    return DocComponent(
+      name: name,
+      type: type,
+      isNullSafe: true,
+      description: description,
+      constructors: const [],
+      properties: const [],
+      methods: const [],
+      filePath: filePath,
+    );
+  }
+
   Map<String, dynamic> toJson() => _$DocComponentToJson(this);
 
   String get genericName {

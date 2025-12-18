@@ -46,7 +46,7 @@
 **`typedef` UserID** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - 🔄 Typedef type changed: `UserID`
 
-**`platform constraint` android:minSdkVersion** ([null](null))
+**`platform constraint` android:minSdkVersion** ([android/app/build.gradle](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-9526ccfd1d1813ed49c39f8c54dbeb512607376a007d824b905bc8b4e4d202d9))
 - 📱 Platform constraint changed: `Android minSdkVersion changed from 19 to 21`
 
 **`function` formatUserInfo** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
@@ -145,7 +145,7 @@
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Property added: `_internalId`
 
-**`dependency` path** ([null](null))
+**`dependency` path** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
 - 📦 Dependency removed: `path`
 
 
@@ -174,7 +174,7 @@
 **`class` _PrivateClass** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `_PrivateClass`
 
-**`dependency` path** ([null](null))
+**`dependency` path** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
 - 📦 Dependency added: `path`
 
 
