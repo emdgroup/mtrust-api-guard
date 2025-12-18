@@ -49,6 +49,12 @@ enum ApiChangeOperation {
   becamePublic,
   annotationAdded,
   annotationRemoved,
+  // Dependency changes:
+  dependencyAdded,
+  dependencyRemoved,
+  dependencyChanged,
+  // Platform constraint changes:
+  platformConstraintChanged,
   superClassChanged,
   interfaceAdded,
   interfaceRemoved,
@@ -80,6 +86,14 @@ class ApiChange {
       // For now, let's treat annotation changes as patch changes.
       // (We can revisit this decision later if needed.)
       return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.dependencyAdded ||
+        operation == ApiChangeOperation.dependencyRemoved ||
+        operation == ApiChangeOperation.dependencyChanged) {
+      return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.platformConstraintChanged) {
+      return ApiChangeMagnitude.major;
     }
     if (operation == ApiChangeOperation.added ||
         operation == ApiChangeOperation.interfaceAdded ||

@@ -10,11 +10,11 @@ import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
-import 'package:mtrust_api_guard/models/doc_items.dart';
+import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart';
 
-Future<List<DocComponent>> generateDocs({
+Future<PackageApi> generateDocs({
   required String gitRef,
   required String? out,
   required Directory dartRoot,
@@ -83,7 +83,7 @@ Future<List<DocComponent>> generateDocs({
           logger.success('Wrote cached documentation to $out');
         }
 
-        return parseDocComponentsFile(cachedContent);
+        return parsePackageApiFile(cachedContent);
       }
     }
   }
@@ -95,6 +95,10 @@ Future<List<DocComponent>> generateDocs({
       logger.err('No Dart files found in the specified paths. Exiting');
       exit(1);
     }
+
+    // Analyze pubspec
+    final pubspecAnalyzer = PubspecAnalyzer(dartRoot.path);
+    final packageMetadata = await pubspecAnalyzer.analyze();
 
     final contextCollection = AnalysisContextCollection(
       includedPaths: dartFiles.toList(),
@@ -137,8 +141,13 @@ Future<List<DocComponent>> generateDocs({
 
     final outputProgress = logger.progress("Generating output");
 
+    final packageApi = PackageApi(
+      metadata: packageMetadata,
+      components: classes,
+    );
+
     // Generate output
-    final output = const JsonEncoder.withIndent('  ').convert(classes);
+    final output = const JsonEncoder.withIndent('  ').convert(packageApi);
 
     outputProgress.complete();
 
@@ -156,9 +165,9 @@ Future<List<DocComponent>> generateDocs({
       await File(out).writeAsString(output);
       logger.success('Wrote generated documentation to $out');
     }
+
+    return packageApi;
   } finally {
     restoreOriginalState();
   }
-
-  return classes;
 }

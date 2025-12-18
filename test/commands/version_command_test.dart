@@ -38,6 +38,22 @@ void main() {
       // 2. Set up initial version (1.0.0)
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
 
+      // Add initial android constraints
+      final androidDir = Directory(p.join(testSetup.tempDir.path, 'android', 'app'));
+      if (!androidDir.existsSync()) {
+        androidDir.createSync(recursive: true);
+      }
+      final gradleFile = File(p.join(androidDir.path, 'build.gradle'));
+      await gradleFile.writeAsString('''
+android {
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 30
+        compileSdkVersion 30
+    }
+}
+''');
+
       // 3. Commit initial state and tag it
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
 
@@ -50,6 +66,16 @@ void main() {
       // 4. Apply patch-level changes (1.0.0 -> 1.0.1)
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
+      // Add a dependency
+      final pubspecFileV101 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContentV101 = await pubspecFileV101.readAsString();
+      // Add path dependency to avoid pub get issues
+      pubspecContentV101 = pubspecContentV101.replaceFirst(
+        'dependencies:',
+        'dependencies:\n  path: ^1.8.0',
+      );
+      await pubspecFileV101.writeAsString(pubspecContentV101);
+
       // 5. Commit and run version command to detect patch change
       await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
       await testSetup.runApiGuard('version', []);
@@ -58,6 +84,15 @@ void main() {
 
       // 6. Apply minor-level changes (1.0.1 -> 1.1.0)
       await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+
+      // Remove dependency added in previous step
+      final pubspecFileV110 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContentV110 = await pubspecFileV110.readAsString();
+      pubspecContentV110 = pubspecContentV110.replaceFirst(
+        'dependencies:\n  path: ^1.8.0',
+        'dependencies:',
+      );
+      await pubspecFileV110.writeAsString(pubspecContentV110);
 
       // 7. Commit and run version command to detect minor change
       await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
@@ -68,6 +103,19 @@ void main() {
 
       // 8. Apply major-level changes (1.1.0 -> 2.0.0)
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
+
+      // Change android constraints
+      final gradleFileV200 = File(p.join(testSetup.tempDir.path, 'android', 'app', 'build.gradle'));
+      await gradleFileV200.writeAsString('''
+android {
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 30
+        compileSdkVersion 30
+    }
+}
+''');
+
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
 
       await testSetup.runApiGuard('version', []);

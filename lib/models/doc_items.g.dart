@@ -67,6 +67,8 @@ const _$DocComponentTypeEnumMap = {
   DocComponentType.enumType: 'enum',
   DocComponentType.typedefType: 'typedef',
   DocComponentType.extensionType: 'extension',
+  DocComponentType.dependencyType: 'dependency',
+  DocComponentType.platformConstraintType: 'platform_constraint',
 };
 
 DocProperty _$DocPropertyFromJson(Map<String, dynamic> json) => DocProperty(

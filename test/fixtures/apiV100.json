@@ -1,352 +1,381 @@
-[
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "User",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
+{
+  "metadata": {
+    "packageName": "api_guard_test",
+    "packageVersion": "0.0.1",
+    "dependencies": [
       {
-        "name": "new",
-        "signature": [
-          {
-            "name": "name",
-            "description": "",
-            "type": "String",
-            "named": false,
-            "required": true,
-            "defaultValue": null,
-            "annotations": []
-          },
-          {
-            "name": "age",
-            "description": "",
-            "type": "int",
-            "named": false,
-            "required": true,
-            "defaultValue": null,
-            "annotations": []
-          },
-          {
-            "name": "email",
-            "description": "",
-            "type": "String?",
-            "named": true,
-            "required": false,
-            "defaultValue": null,
-            "annotations": []
-          }
-        ],
-        "features": [],
-        "annotations": []
+        "packageName": "flutter",
+        "packageVersion": null
       }
     ],
-    "properties": [
-      {
-        "name": "name",
-        "type": "String",
-        "description": "",
-        "features": ["final"],
-        "annotations": []
-      },
-      {
-        "name": "age",
-        "type": "int",
-        "description": "",
-        "features": ["final"],
-        "annotations": []
-      },
-      {
-        "name": "email",
-        "type": "String?",
-        "description": "",
-        "features": [],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
+    "androidConstraints": null,
+    "iosConstraints": null
   },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "Product",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      {
-        "name": "new",
-        "signature": [
-          {
-            "name": "id",
-            "description": "",
-            "type": "String",
-            "named": false,
-            "required": true,
-            "defaultValue": null,
-            "annotations": []
-          },
-          {
-            "name": "price",
-            "description": "",
-            "type": "double",
-            "named": false,
-            "required": true,
-            "defaultValue": null,
-            "annotations": []
-          }
-        ],
-        "features": [],
-        "annotations": []
-      }
-    ],
-    "properties": [
-      {
-        "name": "id",
-        "type": "String",
-        "description": "",
-        "features": ["final"],
-        "annotations": []
-      },
-      {
-        "name": "price",
-        "type": "double",
-        "description": "",
-        "features": ["final"],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "_PrivateClass",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      {
-        "name": "new",
-        "signature": [
-          {
-            "name": "secret",
-            "description": "",
-            "type": "String",
-            "named": false,
-            "required": true,
-            "defaultValue": null,
-            "annotations": []
-          }
-        ],
-        "features": [],
-        "annotations": []
-      }
-    ],
-    "properties": [
-      {
-        "name": "secret",
-        "type": "String",
-        "description": "",
-        "features": ["final"],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "BaseClass",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      { "name": "new", "signature": [], "features": [], "annotations": [] }
-    ],
-    "properties": [],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "InterfaceA",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      { "name": "new", "signature": [], "features": [], "annotations": [] }
-    ],
-    "properties": [],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "ClassWithSuper",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      { "name": "new", "signature": [], "features": [], "annotations": [] }
-    ],
-    "properties": [],
-    "methods": [],
-    "type": "class",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": "BaseClass",
-    "interfaces": ["InterfaceA"],
-    "mixins": ["MixinA"],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "Status",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [
-      {
-        "name": "new",
-        "signature": [],
-        "features": ["const"],
-        "annotations": []
-      }
-    ],
-    "properties": [
-      {
-        "name": "active",
-        "type": "Status",
-        "description": "",
-        "features": ["static", "const"],
-        "annotations": []
-      },
-      {
-        "name": "inactive",
-        "type": "Status",
-        "description": "",
-        "features": ["static", "const"],
-        "annotations": []
-      },
-      {
-        "name": "values",
-        "type": "List<Status>",
-        "description": "",
-        "features": ["static", "const"],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "enum",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "StringExt",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [],
-    "properties": [
-      {
-        "name": "isValid",
-        "type": "bool",
-        "description": "",
-        "features": [],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "extension",
-    "aliasedType": "String",
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "TimestampMixin",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [],
-    "properties": [
-      {
-        "name": "createdAt",
-        "type": "DateTime?",
-        "description": "",
-        "features": [],
-        "annotations": []
-      }
-    ],
-    "methods": [],
-    "type": "mixin",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "MixinA",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [],
-    "properties": [],
-    "methods": [],
-    "type": "mixin",
-    "aliasedType": null,
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  },
-  {
-    "filePath": "lib/src/api.dart",
-    "name": "UserID",
-    "isNullSafe": true,
-    "description": "",
-    "constructors": [],
-    "properties": [],
-    "methods": [],
-    "type": "typedef",
-    "aliasedType": "String",
-    "annotations": [],
-    "superClass": null,
-    "interfaces": [],
-    "mixins": [],
-    "typeParameters": []
-  }
-]
+  "components": [
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "User",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [
+            {
+              "name": "name",
+              "description": "",
+              "type": "String",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            },
+            {
+              "name": "age",
+              "description": "",
+              "type": "int",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            },
+            {
+              "name": "email",
+              "description": "",
+              "type": "String?",
+              "named": true,
+              "required": false,
+              "defaultValue": null,
+              "annotations": []
+            }
+          ],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "name",
+          "type": "String",
+          "description": "",
+          "features": ["final"],
+          "annotations": []
+        },
+        {
+          "name": "age",
+          "type": "int",
+          "description": "",
+          "features": ["final"],
+          "annotations": []
+        },
+        {
+          "name": "email",
+          "type": "String?",
+          "description": "",
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "Product",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [
+            {
+              "name": "id",
+              "description": "",
+              "type": "String",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            },
+            {
+              "name": "price",
+              "description": "",
+              "type": "double",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            }
+          ],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "id",
+          "type": "String",
+          "description": "",
+          "features": ["final"],
+          "annotations": []
+        },
+        {
+          "name": "price",
+          "type": "double",
+          "description": "",
+          "features": ["final"],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "_PrivateClass",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [
+            {
+              "name": "secret",
+              "description": "",
+              "type": "String",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            }
+          ],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "secret",
+          "type": "String",
+          "description": "",
+          "features": ["final"],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "BaseClass",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "InterfaceA",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "ClassWithSuper",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [],
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "properties": [],
+      "methods": [],
+      "type": "class",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": "BaseClass",
+      "interfaces": ["InterfaceA"],
+      "mixins": ["MixinA"],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "Status",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [
+        {
+          "name": "new",
+          "signature": [],
+          "features": ["const"],
+          "annotations": []
+        }
+      ],
+      "properties": [
+        {
+          "name": "active",
+          "type": "Status",
+          "description": "",
+          "features": ["static", "const"],
+          "annotations": []
+        },
+        {
+          "name": "inactive",
+          "type": "Status",
+          "description": "",
+          "features": ["static", "const"],
+          "annotations": []
+        },
+        {
+          "name": "values",
+          "type": "List<Status>",
+          "description": "",
+          "features": ["static", "const"],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "enum",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "StringExt",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [],
+      "properties": [
+        {
+          "name": "isValid",
+          "type": "bool",
+          "description": "",
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "extension",
+      "aliasedType": "String",
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "TimestampMixin",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [],
+      "properties": [
+        {
+          "name": "createdAt",
+          "type": "DateTime?",
+          "description": "",
+          "features": [],
+          "annotations": []
+        }
+      ],
+      "methods": [],
+      "type": "mixin",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "MixinA",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [],
+      "properties": [],
+      "methods": [],
+      "type": "mixin",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "UserID",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [],
+      "properties": [],
+      "methods": [],
+      "type": "typedef",
+      "aliasedType": "String",
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    }
+  ]
+}

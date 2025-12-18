@@ -15,6 +15,10 @@ enum DocComponentType {
   typedefType,
   @JsonValue('extension')
   extensionType,
+  @JsonValue('dependency')
+  dependencyType,
+  @JsonValue('platform_constraint')
+  platformConstraintType,
 }
 
 @JsonSerializable()
