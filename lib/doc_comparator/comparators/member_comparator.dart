@@ -272,7 +272,7 @@ extension MethodApiChangesExt on DocMethod {
         component: component,
         method: this,
         operation: ApiChangeOperation.typeParametersChanged,
-        changedValue: '${typeParameters.join(', ')} -> ${newMethod.typeParameters.join(', ')}',
+        changedValue: '`${typeParameters.join(', ')}` → `${newMethod.typeParameters.join(', ')}`',
       ));
     }
 
@@ -305,7 +305,7 @@ extension MethodApiChangesExt on DocMethod {
     final processedOld = <DocParameter>{};
     final processedNew = <DocParameter>{};
 
-    // Check old named -> new positional
+    // Check old named → new positional
     for (final oldP in oldNamed) {
       final newP = newPositional.firstWhereOrNull((p) => p.name == oldP.name);
       if (newP != null) {
@@ -325,7 +325,7 @@ extension MethodApiChangesExt on DocMethod {
       }
     }
 
-    // Check old positional -> new named
+    // Check old positional → new named
     for (final oldP in oldPositional) {
       final newP = newNamed.firstWhereOrNull((p) => p.name == oldP.name);
       if (newP != null) {

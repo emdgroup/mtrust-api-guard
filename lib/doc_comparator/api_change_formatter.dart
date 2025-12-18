@@ -217,7 +217,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
           final change = c as MethodApiChange;
-          return '`${change.method.name}` (${change.method.returnType} -> ${change.newType})';
+          return '`${change.method.name}` (`${change.method.returnType}` → `${change.newType}`)';
         }).join(', ');
         return '$text: $details';
       }
@@ -260,7 +260,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as ConstructorParameterApiChange;
-          return '`${change.oldName} -> ${change.parameter.name}`';
+          return '`${change.oldName}` → `${change.parameter.name}`';
         }).join(', ');
         return '$text in $constructorLabel: $details';
       }
@@ -309,7 +309,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
-          return '`${change.oldName} -> ${change.parameter.name}`';
+          return '`${change.oldName}` → `${change.parameter.name}`';
         }).join(', ');
         final method = (changes.first as MethodParameterApiChange).method.name;
         final label = isFunction ? 'function' : 'method';
@@ -377,7 +377,7 @@ class ApiChangeFormatter {
           operation == ApiChangeOperation.typeParametersChanged ||
           operation == ApiChangeOperation.dependencyChanged ||
           operation == ApiChangeOperation.platformConstraintChanged) {
-        final details = changes.map((c) => '`${(c as ComponentApiChange).changedValue}`').join(', ');
+        final details = changes.map((c) => '${(c as ComponentApiChange).changedValue}').join(', ');
         return '$text: $details';
       }
 

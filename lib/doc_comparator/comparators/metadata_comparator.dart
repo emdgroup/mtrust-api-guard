@@ -18,7 +18,7 @@ extension MetadataComparator on PackageMetadata {
             filePath: 'pubspec.yaml',
           ),
           operation: ApiChangeOperation.dependencyRemoved,
-          changedValue: 'Dependency $pkg removed',
+          changedValue: 'Dependency `$pkg` removed',
         ));
       } else {
         final baseDep = baseDeps[pkg]!;
@@ -32,7 +32,7 @@ extension MetadataComparator on PackageMetadata {
               filePath: 'pubspec.yaml',
             ),
             operation: ApiChangeOperation.dependencyChanged,
-            changedValue: 'Dependency $pkg changed from ${baseDep.packageVersion} to ${newDep.packageVersion}',
+            changedValue: 'Dependency `$pkg` changed from `${baseDep.packageVersion}` to `${newDep.packageVersion}`',
           ));
         }
       }
@@ -48,7 +48,7 @@ extension MetadataComparator on PackageMetadata {
             filePath: 'pubspec.yaml',
           ),
           operation: ApiChangeOperation.dependencyAdded,
-          changedValue: 'Dependency $pkg added',
+          changedValue: 'Dependency `$pkg` added',
         ));
       }
     }
@@ -63,7 +63,7 @@ extension MetadataComparator on PackageMetadata {
           filePath: 'pubspec.yaml',
         ),
         operation: ApiChangeOperation.platformConstraintChanged,
-        changedValue: 'SDK constraint changed from $sdkVersion to ${newMeta.sdkVersion}',
+        changedValue: 'SDK constraint changed from `$sdkVersion` to `${newMeta.sdkVersion}`',
       ));
     }
 
@@ -80,7 +80,7 @@ extension MetadataComparator on PackageMetadata {
             filePath: 'android/app/build.gradle',
           ),
           operation: ApiChangeOperation.platformConstraintChanged,
-          changedValue: 'Android minSdkVersion changed from $baseMin to $newMin',
+          changedValue: 'Android minSdkVersion changed from `$baseMin` to `$newMin`',
         ));
       }
       // Add other android constraints checks if needed
@@ -99,7 +99,7 @@ extension MetadataComparator on PackageMetadata {
             filePath: 'ios/Runner.xcodeproj/project.pbxproj',
           ),
           operation: ApiChangeOperation.platformConstraintChanged,
-          changedValue: 'iOS minimumOsVersion changed from $baseMin to $newMin',
+          changedValue: 'iOS minimumOsVersion changed from `$baseMin` to `$newMin`',
         ));
       }
     }

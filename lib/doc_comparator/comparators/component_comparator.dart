@@ -77,7 +77,7 @@ extension DocComponentApiChangesExt on DocComponent {
       changes.add(ComponentApiChange(
         component: this,
         operation: ApiChangeOperation.superClassChanged,
-        changedValue: '${superClass ?? 'null'} -> ${newComponent.superClass ?? 'null'}',
+        changedValue: '`${superClass ?? 'null'}` → `${newComponent.superClass ?? 'null'}`',
       ));
     }
 
@@ -126,7 +126,7 @@ extension DocComponentApiChangesExt on DocComponent {
       changes.add(ComponentApiChange(
         component: this,
         operation: ApiChangeOperation.typeParametersChanged,
-        changedValue: '${typeParameters.join(', ')} -> ${newComponent.typeParameters.join(', ')}',
+        changedValue: '`${typeParameters.join(', ')}` → `${newComponent.typeParameters.join(', ')}`',
       ));
     }
 
