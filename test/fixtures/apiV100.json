@@ -2,12 +2,8 @@
   "metadata": {
     "packageName": "api_guard_test",
     "packageVersion": "0.0.1",
-    "dependencies": [
-      {
-        "packageName": "flutter",
-        "packageVersion": null
-      }
-    ],
+    "sdkVersion": "^3.10.4",
+    "dependencies": [{ "packageName": "flutter", "packageVersion": null }],
     "androidConstraints": null,
     "iosConstraints": null
   },
@@ -189,12 +185,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
@@ -212,12 +203,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
@@ -235,12 +221,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],

@@ -19,6 +19,7 @@ class PubspecAnalyzer {
 
     final packageName = pubspecYaml['name'] as String?;
     final packageVersion = pubspecYaml['version'] as String?;
+    final sdkVersion = _getSdkVersion(pubspecYaml);
     final dependencies = _getDependencies(pubspecYaml);
 
     final androidConstraints = await _getAndroidConstraints();
@@ -27,10 +28,19 @@ class PubspecAnalyzer {
     return PackageMetadata(
       packageName: packageName,
       packageVersion: packageVersion,
+      sdkVersion: sdkVersion,
       dependencies: dependencies,
       androidConstraints: androidConstraints,
       iosConstraints: iosConstraints,
     );
+  }
+
+  String? _getSdkVersion(dynamic pubspecYaml) {
+    final environment = pubspecYaml['environment'];
+    if (environment is Map) {
+      return environment['sdk']?.toString();
+    }
+    return null;
   }
 
   List<PackageDependency> _getDependencies(dynamic pubspecYaml) {

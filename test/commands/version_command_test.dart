@@ -28,7 +28,14 @@ void main() {
 
       // 1.1 Add homepage to pubspec.yaml for testing changelog links
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      final pubspecContent = await pubspecFile.readAsString();
+      var pubspecContent = await pubspecFile.readAsString();
+
+      // Normalize SDK constraint to ensure consistent test results regardless of local Flutter version
+      pubspecContent = pubspecContent.replaceAll(
+        RegExp(r'sdk:.*'),
+        'sdk: ">=3.0.0 <4.0.0"',
+      );
+
       final updatedPubspecContent = pubspecContent.replaceFirst(
         'homepage:',
         'homepage: https://github.com/emdgroup/mtrust-api-guard/',
@@ -115,6 +122,15 @@ android {
     }
 }
 ''');
+
+      // Change SDK constraints (Breaking change)
+      final pubspecFileV200 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContentV200 = await pubspecFileV200.readAsString();
+      pubspecContentV200 = pubspecContentV200.replaceFirst(
+        'sdk: ">=3.0.0 <4.0.0"',
+        'sdk: ">=3.2.0 <4.0.0"',
+      );
+      await pubspecFileV200.writeAsString(pubspecContentV200);
 
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
 

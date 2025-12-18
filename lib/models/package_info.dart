@@ -21,6 +21,7 @@ class PackageApi {
 class PackageMetadata {
   final String? packageName;
   final String? packageVersion;
+  final String? sdkVersion;
   final List<PackageDependency> dependencies;
   final AndroidPlatformConstraints? androidConstraints;
   final IOSPlatformConstraints? iosConstraints;
@@ -28,6 +29,7 @@ class PackageMetadata {
   PackageMetadata({
     this.packageName,
     this.packageVersion,
+    this.sdkVersion,
     this.dependencies = const [],
     this.androidConstraints,
     this.iosConstraints,

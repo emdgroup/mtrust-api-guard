@@ -53,6 +53,20 @@ extension MetadataComparator on PackageMetadata {
       }
     }
 
+    // Compare SDK constraints
+    if (sdkVersion != newMeta.sdkVersion) {
+      changes.add(ComponentApiChange(
+        component: DocComponent.metadata(
+          name: 'sdk',
+          type: DocComponentType.platformConstraintType,
+          description: 'Dart SDK Constraint',
+          filePath: 'pubspec.yaml',
+        ),
+        operation: ApiChangeOperation.platformConstraintChanged,
+        changedValue: 'SDK constraint changed from $sdkVersion to ${newMeta.sdkVersion}',
+      ));
+    }
+
     // Compare Android constraints
     if (androidConstraints != null || newMeta.androidConstraints != null) {
       final baseMin = androidConstraints?.minSdkVersion;
