@@ -155,6 +155,7 @@ android {
       final changelogContent = stripChangelog(
         await changelogFile.readAsString(),
       );
+      printOnFailure('Generated Changelog:\n$changelogContent');
 
       if (!testSetup.fixtures.expectedChangelogFile.existsSync()) {
         testSetup.fixtures.expectedChangelogFile.createSync();

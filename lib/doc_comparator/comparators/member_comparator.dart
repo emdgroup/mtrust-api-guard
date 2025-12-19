@@ -1,6 +1,117 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'comparator_helpers.dart';
+
+/// Compares two lists of parameters and invokes [onDiff] for detected changes.
+///
+/// This implements "Smarter Parameter Matching" by:
+/// 1. Matching parameters by name.
+/// 2. Matching remaining parameters by type and order (to detect renames).
+/// 3. Detecting additions and removals.
+void _compareParameters({
+  required List<DocParameter> oldParameters,
+  required List<DocParameter> newParameters,
+  required void Function(DocParameter param, ApiChangeOperation op, {String? oldName, String? annotation}) onDiff,
+}) {
+  final oldParamsCopy = [...oldParameters];
+  final newParamsCopy = [...newParameters];
+
+  final matchedByName = <DocParameter, DocParameter>{};
+
+  // 1. Match by name
+  for (final oldParam in oldParameters) {
+    final matchingNewParam = newParameters.firstWhereOrNull((p) => p.name == oldParam.name);
+    if (matchingNewParam != null) {
+      matchedByName[oldParam] = matchingNewParam;
+    }
+  }
+
+  // Remove matched by name from copies
+  for (final oldParam in matchedByName.keys) {
+    oldParamsCopy.remove(oldParam);
+    newParamsCopy.remove(matchedByName[oldParam]!);
+  }
+
+  // 2. Match by type order (for remaining POSITIONAL parameters only)
+  // We should not match named parameters by type/order because for named parameters, the name IS the identity.
+  final oldPositionalRemaining = oldParamsCopy.where((p) => !p.named).toList();
+  final newPositionalRemaining = newParamsCopy.where((p) => !p.named).toList();
+
+  final matchedByTypeOrder = <DocParameter, DocParameter>{};
+  final length = min(oldPositionalRemaining.length, newPositionalRemaining.length);
+  for (int i = 0; i < length; i++) {
+    if (oldPositionalRemaining[i].type != newPositionalRemaining[i].type) {
+      break; // Stop at first mismatch to avoid false positives
+    }
+    matchedByTypeOrder[oldPositionalRemaining[i]] = newPositionalRemaining[i];
+  }
+
+  // Remove matched by type order from copies
+  for (final oldParam in matchedByTypeOrder.keys) {
+    oldParamsCopy.remove(oldParam);
+    newParamsCopy.remove(matchedByTypeOrder[oldParam]!);
+  }
+
+  // Combine matches
+  final allMatches = {...matchedByName, ...matchedByTypeOrder};
+
+  // Check for reordering of positional parameters
+  final oldPositional = oldParameters.where((p) => !p.named).toList();
+  final newPositional = newParameters.where((p) => !p.named).toList();
+
+  // Process matches
+  for (final oldParam in allMatches.keys) {
+    final newParam = allMatches[oldParam]!;
+
+    if (oldParam.name != newParam.name) {
+      onDiff(newParam, ApiChangeOperation.renamed, oldName: oldParam.name);
+    }
+
+    if (oldParam.type != newParam.type) {
+      onDiff(oldParam, ApiChangeOperation.typeChanged);
+    }
+
+    if (oldParam.required != newParam.required) {
+      onDiff(
+        oldParam,
+        oldParam.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+      );
+    }
+
+    if (oldParam.named != newParam.named) {
+      onDiff(
+        oldParam,
+        oldParam.named ? ApiChangeOperation.becamePositional : ApiChangeOperation.becameNamed,
+      );
+    } else if (!oldParam.named) {
+      // Check for reordering (only for positional parameters)
+      final oldIndex = oldPositional.indexOf(oldParam);
+      final newIndex = newPositional.indexOf(newParam);
+      if (oldIndex != -1 && newIndex != -1 && oldIndex != newIndex) {
+        onDiff(oldParam, ApiChangeOperation.reordered);
+      }
+    }
+
+    compareAnnotations(
+      oldAnnotations: oldParam.annotations,
+      newAnnotations: newParam.annotations,
+      onRemoved: (a) => onDiff(oldParam, ApiChangeOperation.annotationRemoved, annotation: a),
+      onAdded: (a) => onDiff(oldParam, ApiChangeOperation.annotationAdded, annotation: a),
+    );
+  }
+
+  // Process removed
+  for (final oldParam in oldParamsCopy) {
+    onDiff(oldParam, ApiChangeOperation.removed);
+  }
+
+  // Process added
+  for (final newParam in newParamsCopy) {
+    onDiff(newParam, ApiChangeOperation.added);
+  }
+}
 
 extension ConstructorApiChangesExt on DocConstructor {
   /// Compares [this] constructor with [newConstructor] and returns a list of
@@ -28,54 +139,20 @@ extension ConstructorApiChangesExt on DocConstructor {
       )),
     );
 
-    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? annotation}) {
-      changes.add(ConstructorParameterApiChange(
-        component: component,
-        constructor: this,
-        operation: operation,
-        parameter: parameter,
-        annotation: annotation,
-      ));
-    }
-
-    for (var i = 0; i < signature.length; i++) {
-      final oldParam = signature[i];
-      final newParam = newConstructor.signature.firstWhereOrNull((element) => element.name == oldParam.name);
-      if (newParam == null) {
-        _addChange(oldParam, ApiChangeOperation.removed);
-        continue;
-      }
-      if (oldParam.required != newParam.required) {
-        _addChange(
-          oldParam,
-          oldParam.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
-        );
-      }
-      if (oldParam.named != newParam.named) {
-        _addChange(
-          oldParam,
-          oldParam.named ? ApiChangeOperation.becamePositional : ApiChangeOperation.becameNamed,
-        );
-      }
-      if (oldParam.type != newParam.type) {
-        _addChange(oldParam, ApiChangeOperation.typeChanged);
-      }
-
-      compareAnnotations(
-        oldAnnotations: oldParam.annotations,
-        newAnnotations: newParam.annotations,
-        onRemoved: (a) => _addChange(oldParam, ApiChangeOperation.annotationRemoved, annotation: a),
-        onAdded: (a) => _addChange(oldParam, ApiChangeOperation.annotationAdded, annotation: a),
-      );
-    }
-
-    for (var i = 0; i < newConstructor.signature.length; i++) {
-      final newParam = newConstructor.signature[i];
-      final oldParam = signature.firstWhereOrNull((element) => element.name == newParam.name);
-      if (oldParam == null) {
-        _addChange(newParam, ApiChangeOperation.added);
-      }
-    }
+    _compareParameters(
+      oldParameters: signature,
+      newParameters: newConstructor.signature,
+      onDiff: (param, op, {oldName, annotation}) {
+        changes.add(ConstructorParameterApiChange(
+          component: component,
+          constructor: this,
+          operation: op,
+          parameter: param,
+          oldName: oldName,
+          annotation: annotation,
+        ));
+      },
+    );
 
     return changes;
   }
@@ -204,25 +281,6 @@ extension MethodApiChangesExt on DocMethod {
     required DocComponent component,
   }) {
     final changes = <ApiChange>[];
-    _addChange(DocParameter parameter, ApiChangeOperation operation, {String? oldName, String? annotation}) {
-      changes.add(MethodParameterApiChange(
-        component: component,
-        method: this,
-        operation: operation,
-        parameter: parameter,
-        oldName: oldName,
-        annotation: annotation,
-      ));
-    }
-
-    void _checkParamAnnotations(DocParameter oldP, DocParameter newP) {
-      compareAnnotations(
-        oldAnnotations: oldP.annotations,
-        newAnnotations: newP.annotations,
-        onRemoved: (a) => _addChange(oldP, ApiChangeOperation.annotationRemoved, annotation: a),
-        onAdded: (a) => _addChange(oldP, ApiChangeOperation.annotationAdded, annotation: a),
-      );
-    }
 
     if (returnType != newMethod.returnType) {
       changes.add(MethodApiChange(
@@ -259,112 +317,20 @@ extension MethodApiChangesExt on DocMethod {
       )),
     );
 
-    final oldPositional = signature.where((p) => !p.named).toList();
-    final oldNamed = signature.where((p) => p.named).toList();
-    final newPositional = newMethod.signature.where((p) => !p.named).toList();
-    final newNamed = newMethod.signature.where((p) => p.named).toList();
-
-    final processedOld = <DocParameter>{};
-    final processedNew = <DocParameter>{};
-
-    // Check old named → new positional
-    for (final oldP in oldNamed) {
-      final newP = newPositional.firstWhereOrNull((p) => p.name == oldP.name);
-      if (newP != null) {
-        _addChange(oldP, ApiChangeOperation.becamePositional);
-        if (oldP.type != newP.type) {
-          _addChange(oldP, ApiChangeOperation.typeChanged);
-        }
-        if (oldP.required != newP.required) {
-          _addChange(
-            oldP,
-            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
-          );
-        }
-        _checkParamAnnotations(oldP, newP);
-        processedOld.add(oldP);
-        processedNew.add(newP);
-      }
-    }
-
-    // Check old positional → new named
-    for (final oldP in oldPositional) {
-      final newP = newNamed.firstWhereOrNull((p) => p.name == oldP.name);
-      if (newP != null) {
-        _addChange(oldP, ApiChangeOperation.becameNamed);
-        if (oldP.type != newP.type) {
-          _addChange(oldP, ApiChangeOperation.typeChanged);
-        }
-        if (oldP.required != newP.required) {
-          _addChange(
-            oldP,
-            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
-          );
-        }
-        _checkParamAnnotations(oldP, newP);
-        processedOld.add(oldP);
-        processedNew.add(newP);
-      }
-    }
-
-    // Compare remaining named parameters
-    for (final oldP in oldNamed) {
-      if (processedOld.contains(oldP)) continue;
-      final newP = newNamed.firstWhereOrNull((p) => p.name == oldP.name);
-      if (newP == null) {
-        _addChange(oldP, ApiChangeOperation.removed);
-      } else {
-        processedNew.add(newP);
-        if (oldP.type != newP.type) {
-          _addChange(oldP, ApiChangeOperation.typeChanged);
-        }
-        if (oldP.required != newP.required) {
-          _addChange(
-            oldP,
-            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
-          );
-        }
-        _checkParamAnnotations(oldP, newP);
-      }
-    }
-
-    for (final newP in newNamed) {
-      if (processedNew.contains(newP)) continue;
-      _addChange(newP, ApiChangeOperation.added);
-    }
-
-    // Compare remaining positional parameters by index
-    final remainingOldPositional = oldPositional.where((p) => !processedOld.contains(p)).toList();
-    final remainingNewPositional = newPositional.where((p) => !processedNew.contains(p)).toList();
-
-    final maxPos = remainingOldPositional.length > remainingNewPositional.length
-        ? remainingOldPositional.length
-        : remainingNewPositional.length;
-
-    for (var i = 0; i < maxPos; i++) {
-      if (i < remainingOldPositional.length && i < remainingNewPositional.length) {
-        final oldP = remainingOldPositional[i];
-        final newP = remainingNewPositional[i];
-
-        if (oldP.name != newP.name) {
-          _addChange(newP, ApiChangeOperation.renamed, oldName: oldP.name);
-        }
-        if (oldP.type != newP.type) {
-          _addChange(oldP, ApiChangeOperation.typeChanged);
-        }
-        if (oldP.required != newP.required) {
-          _addChange(
-            oldP,
-            oldP.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
-          );
-        }
-        _checkParamAnnotations(oldP, newP);
-      } else if (i >= remainingOldPositional.length) {
-        _addChange(remainingNewPositional[i], ApiChangeOperation.added);
-      } else {
-        _addChange(remainingOldPositional[i], ApiChangeOperation.removed);
-      }
-    }
+    _compareParameters(
+      oldParameters: signature,
+      newParameters: newMethod.signature,
+      onDiff: (param, op, {oldName, annotation}) {
+        changes.add(MethodParameterApiChange(
+          component: component,
+          method: this,
+          operation: op,
+          parameter: param,
+          oldName: oldName,
+          annotation: annotation,
+        ));
+      },
+    );
 
     return changes;
   }

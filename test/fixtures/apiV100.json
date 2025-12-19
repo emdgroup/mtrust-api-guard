@@ -72,7 +72,27 @@
           "annotations": []
         }
       ],
-      "methods": [],
+      "methods": [
+        {
+          "name": "updateEmail",
+          "returnType": "void",
+          "signature": [
+            {
+              "name": "newEmail",
+              "description": "",
+              "type": "String",
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            }
+          ],
+          "features": [],
+          "description": "",
+          "annotations": [],
+          "typeParameters": []
+        }
+      ],
       "type": "class",
       "aliasedType": null,
       "annotations": [],

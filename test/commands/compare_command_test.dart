@@ -57,6 +57,7 @@ void main() {
 
       // 6. Read the compare output
       final compareOutput = await File(compareOutputFile).readAsString();
+      printOnFailure('Compare Output:\n$compareOutput');
 
       // 7. Compare to expected snapshot
       final expectedCompareFile = File(p.join(testSetup.fixtures.fixturesDir.path, 'expected_compare_v100_v101.txt'));

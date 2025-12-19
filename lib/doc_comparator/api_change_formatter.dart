@@ -152,6 +152,8 @@ class ApiChangeFormatter {
         return '🔠 $prefix became named';
       case ApiChangeOperation.becamePositional:
         return '🔢 $prefix became positional';
+      case ApiChangeOperation.reordered:
+        return '🔢 $prefix reordered';
       case ApiChangeOperation.renamed:
         return '✏️ $prefix renamed';
       case ApiChangeOperation.typeChanged:

@@ -37,6 +37,7 @@ enum ApiChangeOperation {
   added,
   removed,
   renamed,
+  reordered,
   typeChanged,
   // Constructor Parameter changes:
   becameOptional,
@@ -183,6 +184,10 @@ abstract class ParameterApiChange extends ApiChange {
 
     if (operation == ApiChangeOperation.renamed) {
       return ApiChangeMagnitude.patch;
+    }
+
+    if (operation == ApiChangeOperation.reordered) {
+      return ApiChangeMagnitude.major;
     }
 
     if (operation == ApiChangeOperation.becameRequired ||
