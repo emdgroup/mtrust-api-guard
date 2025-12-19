@@ -37,6 +37,7 @@ enum ApiChangeOperation {
   added,
   removed,
   renamed,
+  reordered,
   typeChanged,
   // Constructor Parameter changes:
   becameOptional,
@@ -49,11 +50,18 @@ enum ApiChangeOperation {
   becamePublic,
   annotationAdded,
   annotationRemoved,
+  // Dependency changes:
+  dependencyAdded,
+  dependencyRemoved,
+  dependencyChanged,
+  // Platform constraint changes:
+  platformConstraintChanged,
   superClassChanged,
   interfaceAdded,
   interfaceRemoved,
   mixinAdded,
   mixinRemoved,
+  typeParametersChanged,
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -79,6 +87,14 @@ class ApiChange {
       // For now, let's treat annotation changes as patch changes.
       // (We can revisit this decision later if needed.)
       return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.dependencyAdded ||
+        operation == ApiChangeOperation.dependencyRemoved ||
+        operation == ApiChangeOperation.dependencyChanged) {
+      return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.platformConstraintChanged) {
+      return ApiChangeMagnitude.major;
     }
     if (operation == ApiChangeOperation.added ||
         operation == ApiChangeOperation.interfaceAdded ||
@@ -131,6 +147,7 @@ class MethodApiChange extends ApiChange {
     required this.method,
     this.newType,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -167,6 +184,10 @@ abstract class ParameterApiChange extends ApiChange {
 
     if (operation == ApiChangeOperation.renamed) {
       return ApiChangeMagnitude.patch;
+    }
+
+    if (operation == ApiChangeOperation.reordered) {
+      return ApiChangeMagnitude.major;
     }
 
     if (operation == ApiChangeOperation.becameRequired ||

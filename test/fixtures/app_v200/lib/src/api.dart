@@ -29,12 +29,11 @@ class User {
 
   // Method removed: updateEmail
 
-  // Method updated: renamed 'newPhone' param to 'phone', added 'mobilePhone' param
-  // and added optional named param 'notifyUserViaEmail' with default value false.
-  // Also changed return type from void to bool
+  // Method updated: changed order of parameters, added optional named param 'notifyUserViaEmail'
+  // and changed return type to bool
   bool updatePhone(
-    String phone,
-    String mobilePhone, {
+    String mobilePhone, 
+    String phone, {
     bool notifyUserViaEmail = false,
   }) {
     this.phone = phone;
@@ -89,3 +88,13 @@ abstract class InterfaceA {}
 mixin MixinA {}
 
 class ClassWithSuper extends AnotherBaseClass {}
+
+class GenericClass<T extends num> {
+  T value;
+
+  GenericClass(this.value);
+}
+
+V genericMethod<V extends num>(V input) {
+  return input;
+}

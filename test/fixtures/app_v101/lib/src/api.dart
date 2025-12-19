@@ -6,6 +6,11 @@ class User {
   String? email;
 
   User(this.name, this.age, {this.email});
+
+  // Parameter renamed from 'newEmail' to 'email'
+  void updateEmail(String email) {
+    this.email = email;
+  }
 }
 
 class Product {
@@ -28,10 +33,7 @@ mixin TimestampMixin {
   void _updateTimestamp() {}
 }
 
-enum Status {
-  active,
-  inactive,
-}
+enum Status { active, inactive }
 
 typedef UserID = String;
 

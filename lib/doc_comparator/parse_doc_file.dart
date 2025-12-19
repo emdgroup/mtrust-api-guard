@@ -1,7 +1,15 @@
 import 'dart:convert';
-import 'package:mtrust_api_guard/mtrust_api_guard.dart';
+import 'package:mtrust_api_guard/models/doc_items.dart';
+import 'package:mtrust_api_guard/models/package_info.dart';
 
-List<DocComponent> parseDocComponentsFile(String content) {
-  final docComponents = jsonDecode(content) as List<dynamic>;
-  return docComponents.map((e) => DocComponent.fromJson(e)).toList();
+PackageApi parsePackageApiFile(String content) {
+  final json = jsonDecode(content);
+  if (json is List) {
+    // Handle legacy format (List<DocComponent>)
+    return PackageApi(
+      metadata: PackageMetadata(),
+      components: json.map((e) => DocComponent.fromJson(e)).toList(),
+    );
+  }
+  return PackageApi.fromJson(json);
 }

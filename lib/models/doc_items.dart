@@ -15,6 +15,10 @@ enum DocComponentType {
   typedefType,
   @JsonValue('extension')
   extensionType,
+  @JsonValue('dependency')
+  dependencyType,
+  @JsonValue('platform_constraint')
+  platformConstraintType,
 }
 
 @JsonSerializable()
@@ -33,6 +37,7 @@ class DocComponent {
     this.superClass,
     this.interfaces = const [],
     this.mixins = const [],
+    this.typeParameters = const [],
   });
 
   final String? filePath;
@@ -48,10 +53,37 @@ class DocComponent {
   final String? superClass;
   final List<String> interfaces;
   final List<String> mixins;
+  final List<String> typeParameters;
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
+  factory DocComponent.metadata({
+    required String name,
+    required DocComponentType type,
+    required String description,
+    String? filePath,
+  }) {
+    return DocComponent(
+      name: name,
+      type: type,
+      isNullSafe: true,
+      description: description,
+      constructors: const [],
+      properties: const [],
+      methods: const [],
+      filePath: filePath,
+    );
+  }
+
   Map<String, dynamic> toJson() => _$DocComponentToJson(this);
+
+  String get genericName {
+    if (typeParameters.isEmpty) {
+      return name;
+    }
+    final params = typeParameters.join(', ');
+    return '$name<$params>';
+  }
 }
 
 @JsonSerializable()
@@ -128,6 +160,7 @@ class DocMethod {
     required this.features,
     required this.description,
     this.annotations = const [],
+    this.typeParameters = const [],
   });
 
   final String name;
@@ -136,6 +169,7 @@ class DocMethod {
   final List<String> features;
   final String description;
   final List<String> annotations;
+  final List<String> typeParameters;
 
   factory DocMethod.fromJson(Map<String, dynamic> json) => _$DocMethodFromJson(json);
 

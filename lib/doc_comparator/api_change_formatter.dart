@@ -54,7 +54,12 @@ class ApiChangeFormatter {
             (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
 
         changelogBuffer.writeln();
-        changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` $component** ([$filePath]($linkTarget))');
+        if (filePath != null) {
+          changelogBuffer
+              .writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** ([$filePath]($linkTarget))');
+        } else {
+          changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}**');
+        }
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
@@ -147,6 +152,8 @@ class ApiChangeFormatter {
         return '🔠 $prefix became named';
       case ApiChangeOperation.becamePositional:
         return '🔢 $prefix became positional';
+      case ApiChangeOperation.reordered:
+        return '🔢 $prefix reordered';
       case ApiChangeOperation.renamed:
         return '✏️ $prefix renamed';
       case ApiChangeOperation.typeChanged:
@@ -165,6 +172,16 @@ class ApiChangeFormatter {
         return '➕ Mixin added';
       case ApiChangeOperation.mixinRemoved:
         return '➖ Mixin removed';
+      case ApiChangeOperation.typeParametersChanged:
+        return '🔄 Type parameters changed';
+      case ApiChangeOperation.dependencyAdded:
+        return '📦 Dependency added';
+      case ApiChangeOperation.dependencyRemoved:
+        return '📦 Dependency removed';
+      case ApiChangeOperation.dependencyChanged:
+        return '📦 Dependency changed';
+      case ApiChangeOperation.platformConstraintChanged:
+        return '📱 Platform constraint changed';
       default:
         return '';
     }
@@ -202,7 +219,15 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
           final change = c as MethodApiChange;
-          return '`${change.method.name}` (${change.method.returnType} -> ${change.newType})';
+          return '`${change.method.name}` (`${change.method.returnType}` → `${change.newType}`)';
+        }).join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.typeParametersChanged) {
+        final details = changes.map((c) {
+          final change = c as MethodApiChange;
+          return '`${change.method.name}` (${change.changedValue})';
         }).join(', ');
         return '$text: $details';
       }
@@ -237,7 +262,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as ConstructorParameterApiChange;
-          return '`${change.oldName} -> ${change.parameter.name}`';
+          return '`${change.oldName}` → `${change.parameter.name}`';
         }).join(', ');
         return '$text in $constructorLabel: $details';
       }
@@ -286,7 +311,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.renamed) {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
-          return '`${change.oldName} -> ${change.parameter.name}`';
+          return '`${change.oldName}` → `${change.parameter.name}`';
         }).join(', ');
         final method = (changes.first as MethodParameterApiChange).method.name;
         final label = isFunction ? 'function' : 'method';
@@ -350,8 +375,11 @@ class ApiChangeFormatter {
           operation == ApiChangeOperation.interfaceAdded ||
           operation == ApiChangeOperation.interfaceRemoved ||
           operation == ApiChangeOperation.mixinAdded ||
-          operation == ApiChangeOperation.mixinRemoved) {
-        final details = changes.map((c) => '`${(c as ComponentApiChange).changedValue}`').join(', ');
+          operation == ApiChangeOperation.mixinRemoved ||
+          operation == ApiChangeOperation.typeParametersChanged ||
+          operation == ApiChangeOperation.dependencyChanged ||
+          operation == ApiChangeOperation.platformConstraintChanged) {
+        final details = changes.map((c) => '${(c as ComponentApiChange).changedValue}').join(', ');
         return '$text: $details';
       }
 
@@ -377,6 +405,10 @@ class ApiChangeFormatter {
         return 'Typedef';
       case DocComponentType.extensionType:
         return 'Extension';
+      case DocComponentType.dependencyType:
+        return 'Dependency';
+      case DocComponentType.platformConstraintType:
+        return 'Platform Constraint';
     }
   }
 }
