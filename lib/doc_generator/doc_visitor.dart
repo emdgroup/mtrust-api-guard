@@ -170,6 +170,10 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       }
     }
     for (final method in element.methods2) {
+      // Filter out abstract methods in non-abstract classes (likely parser artifacts from invalid code)
+      if (element is ClassElement2 && !element.isAbstract && method.isAbstract) {
+        continue;
+      }
       methodMap[method.name3!] = method;
     }
     return methodMap.values;
