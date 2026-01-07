@@ -44,15 +44,16 @@ Future<VersionResult> version({
   required bool badge,
   required bool generateChangelog,
   required bool cache,
+  required String tagPrefix,
 }) async {
-  final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path)).isNotEmpty;
+  final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
 
   if (baseRef == null && !hasPreviousVersion) {
-    logger.err('No previous version found. Please tag the first version. e.g. git tag v0.0.1');
+    logger.err('No previous version found. Please tag the first version. e.g. git tag ${tagPrefix}0.0.1');
     exit(1);
   }
 
-  final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path);
+  final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix);
 
   final changes = await compare(
     baseRef: effectiveBaseRef,
@@ -63,7 +64,7 @@ Future<VersionResult> version({
   );
 
   final basePubSpec = await GitUtils.gitShow(
-    baseRef ?? await GitUtils.getPreviousRef(gitRoot.path),
+    baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix),
     gitRoot.path,
     'pubspec.yaml',
   );
@@ -74,7 +75,7 @@ Future<VersionResult> version({
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');
 
-  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot);
+  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, tagPrefix);
 
   logger.info('Next version: $nextVersion');
 
@@ -88,7 +89,7 @@ Future<VersionResult> version({
     // If we are not committing (e.g. dry run / PR), we use the current commit hash
     // so the link points to the specific commit.
     if (commit) {
-      changelogNewRef = "v$nextVersion";
+      changelogNewRef = "$tagPrefix$nextVersion";
     } else {
       changelogNewRef = await GitUtils.getCurrentCommitHash(gitRoot.path) ?? "HEAD";
     }
@@ -121,8 +122,8 @@ Future<VersionResult> version({
   }
 
   if (tag) {
-    await GitUtils.gitTag("v$nextVersion", gitRoot.path);
-    logger.info('Tagged version v$nextVersion');
+    await GitUtils.gitTag("$tagPrefix$nextVersion", gitRoot.path);
+    logger.info('Tagged version $tagPrefix$nextVersion');
   }
 
   return VersionResult(

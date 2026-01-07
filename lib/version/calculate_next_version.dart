@@ -10,6 +10,7 @@ Future<String> calculateNextVersion(
   ApiChangeMagnitude highestMagnitudeChange,
   bool isPreRelease,
   Directory gitRoot,
+  String tagPrefix,
 ) async {
   logger.info('Current version: $version');
 
@@ -34,12 +35,12 @@ Future<String> calculateNextVersion(
 
   if (isPreRelease) {
     var preReleaseNum = 1;
-    while (await GitUtils.gitTagExists('$newVersion-dev.$preReleaseNum', gitRoot.path)) {
+    while (await GitUtils.gitTagExists('$tagPrefix$newVersion-dev.$preReleaseNum', gitRoot.path)) {
       preReleaseNum++;
     }
     logger.info('Pre-release version: $newVersion-dev.$preReleaseNum');
     return '$newVersion-dev.$preReleaseNum';
-  } else if (await GitUtils.gitTagExists(newVersion, gitRoot.path)) {
+  } else if (await GitUtils.gitTagExists('$tagPrefix$newVersion', gitRoot.path)) {
     logger.err('Version $newVersion already exists as a git tag');
     throw Exception('Version $newVersion already exists as a git tag');
   }

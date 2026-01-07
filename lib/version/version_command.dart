@@ -62,6 +62,12 @@ class VersionCommand extends Command
         abbr: 'p',
         help: 'Add pre-release suffix (-dev.N)',
         defaultsTo: false,
+      )
+      ..addOption(
+        'tag-prefix',
+        help: 'Prefix for version tags',
+        defaultsTo: 'v',
+        valueHelp: 'prefix',
       );
   }
 
@@ -89,6 +95,10 @@ class VersionCommand extends Command
     return argResults?['json'] as String?;
   }
 
+  String get tagPrefix {
+    return argResults?['tag-prefix'] as String? ?? 'v';
+  }
+
   @override
   FutureOr? run() async {
     // Load config and determine doc file path
@@ -103,6 +113,7 @@ class VersionCommand extends Command
       generateChangelog: generateChangelog,
       cache: cache,
       isPreRelease: preRelease,
+      tagPrefix: tagPrefix,
     );
 
     if (json != null) {
