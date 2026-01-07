@@ -41,8 +41,8 @@ Future<String> calculateNextVersion(
     logger.info('Pre-release version: $newVersion-dev.$preReleaseNum');
     return '$newVersion-dev.$preReleaseNum';
   } else if (await GitUtils.gitTagExists('$tagPrefix$newVersion', gitRoot.path)) {
-    logger.err('Version $newVersion already exists as a git tag');
-    throw Exception('Version $newVersion already exists as a git tag');
+    logger.err('Version tag $tagPrefix$newVersion already exists');
+    throw Exception('Version tag $tagPrefix$newVersion already exists');
   }
 
   return newVersion;

@@ -169,7 +169,7 @@ void main() {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
-      await testSetup.commitChanges('chore!: Initial release release/${TestConstants.initialVersion}');
+      await testSetup.commitChanges('chore!: Initial release ${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'release/${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
