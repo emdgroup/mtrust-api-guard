@@ -137,7 +137,7 @@ class GitUtils {
     return result.stdout.toString().trim().split('\n');
   }
 
-  static Future<List<(String, Version)>> getVersions(String? root) async {
+  static Future<List<(String, Version)>> getVersions(String? root, {String tagPrefix = 'v'}) async {
     final tags = await getTags(root);
     if (tags.isEmpty) {
       throw const GitException('No tags found');
@@ -147,8 +147,8 @@ class GitUtils {
         .where((tag) => tag.isNotEmpty)
         .map((tag) {
           String version = tag;
-          if (tag.startsWith('v')) {
-            version = tag.substring(1);
+          if (tag.startsWith(tagPrefix)) {
+            version = tag.substring(tagPrefix.length);
           }
 
           try {
@@ -211,8 +211,8 @@ class GitUtils {
     }
   }
 
-  static Future<String> getPreviousRef(String? root) async {
-    final tags = await getVersions(root);
+  static Future<String> getPreviousRef(String? root, {String tagPrefix = 'v'}) async {
+    final tags = await getVersions(root, tagPrefix: tagPrefix);
     if (tags.isEmpty) {
       throw const GitException('No tags found');
     }

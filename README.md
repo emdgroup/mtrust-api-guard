@@ -194,6 +194,24 @@ mtrust_api_guard version
     --[no-]generate-changelog    Generate a changelog entry based on API changes
                                  (defaults to on)
 -p, --[no-]pre-release           Add pre-release suffix (-dev.N)
+    --tag-prefix=<prefix>        Prefix for version tags
+                                 (defaults to "v")
+```
+
+### Custom Tag Prefixes
+
+By default, version tags are prefixed with `v` (e.g., `v1.0.0`). You can customize this prefix using the `--tag-prefix` flag:
+
+```sh
+# Use a custom prefix like 'release/'
+mtrust_api_guard version --tag-prefix release/
+
+# This will create tags like: release/1.0.0, release/1.1.0, etc.
+
+# Use no prefix at all
+mtrust_api_guard version --tag-prefix ""
+
+# This will create tags like: 1.0.0, 1.1.0, etc.
 ```
 
 ## Usage in CI
