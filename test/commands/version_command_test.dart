@@ -163,5 +163,34 @@ void main() {
 
       expect(testSetup.getCurrentVersion(), '1.0.0');
     });
+
+    test('custom tag prefix works correctly', () async {
+      // 1. Set up initial tagged version with custom prefix
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await testSetup.commitChanges('chore!: Initial release release/${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'release/${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
+
+      // 2. Apply patch-level changes and use custom prefix
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product');
+
+      await testSetup.runApiGuard('version', ['--tag-prefix', 'release/']);
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+
+      // 3. Verify tag was created with custom prefix
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('release/${TestConstants.initialVersion}'));
+      expect(tags, contains('release/${TestConstants.patchVersion}'));
+      expect(tags, isNot(contains('v${TestConstants.patchVersion}')));
+    });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }
