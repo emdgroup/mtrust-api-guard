@@ -1,3 +1,31 @@
+## 3.0.0
+Released on: 1/7/2026, changelog automatically generated.
+
+
+### Features
+
+- add configurable tag prefix for version command ([#14](issues/14)) ([fa6fbdc](commit/fa6fbdc))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`function` calculateNextVersion** ([lib/version/calculate_next_version.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.1.0..v3.0.0#diff-45f37bc5cce6056e350a9f5f18aa3836326c7cf4e3001bf8b20127dc1d3c08af))
+- ❇️ Param added in function `calculateNextVersion`: `tagPrefix (positional, required)`
+
+**`function` version** ([lib/version/version.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.1.0..v3.0.0#diff-e531c933c8041cbda8d007f2711de3db1d4379a016724f9ef35c18bb06cb50f3))
+- ❇️ Param added in function `version`: `tagPrefix (named, required)`
+
+#### ✨ Minor changes
+
+**`class` GitUtils** ([lib/doc_generator/git_utils.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.1.0..v3.0.0#diff-ac66fa073c89f0f601e8861f270d5d5a6bd3ce8c2fcbbfc804c554c5023653a0))
+- ❇️ Param added in method `getVersions`: `tagPrefix (named, optional, default: 'v')`
+- ❇️ Param added in method `getPreviousRef`: `tagPrefix (named, optional, default: 'v')`
+
+**`class` VersionCommand** ([lib/version/version_command.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.1.0..v3.0.0#diff-1bd91b8c544635bcfb05c7b6fdf3b0661744e925b67a60b606bf8f89f56386fa))
+- ❇️ Property added: `tagPrefix`
+
+
 ## 2.1.0
 Released on: 12/17/2025, changelog automatically generated.
 
