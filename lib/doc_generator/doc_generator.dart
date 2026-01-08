@@ -45,6 +45,8 @@ Future<List<DocComponent>> generateDocs({
   Directory? worktreeDir;
   bool worktreeCreated = false;
 
+  final dartRelativePath = relative(dartRoot.path, from: gitRoot.path);
+
   if (isCurrentHead) {
     logger.info('Analyzing current HEAD ($effectiveRef), using current working directory');
     worktreePath = null; // Use current directory
@@ -54,10 +56,20 @@ Future<List<DocComponent>> generateDocs({
     worktreePath = worktreeDir.path;
 
     logger.info('Creating worktree for ref $gitRef ($effectiveRef) at $worktreePath');
+
     try {
       await GitUtils.createWorktree(repoPath, gitRef, worktreePath);
       worktreeCreated = true;
       logger.info('Successfully created worktree at $worktreePath');
+      final result = Process.runSync(
+        "dart",
+        ["pub", "get"],
+        workingDirectory: join(worktreePath, dartRelativePath),
+      );
+      if (result.exitCode != 0) {
+        logger.err('Failed to run dart pub get: ${result.stderr}');
+        exit(1);
+      }
     } catch (e) {
       logger.err('Failed to create worktree: $e');
       rethrow;

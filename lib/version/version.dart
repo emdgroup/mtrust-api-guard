@@ -137,7 +137,7 @@ Future<VersionResult> version({
     final packageName = PubspecUtils.getPackageName(pubspecContent);
     final camelCasePackageName = ReCase(packageName).camelCase;
     final constantName = '${camelCasePackageName}Version';
-    
+
     final dartFileContent = "const String $constantName = '$nextVersion';\n";
     final dartOutputFile = File(dartFile);
     if (!dartOutputFile.existsSync()) {
