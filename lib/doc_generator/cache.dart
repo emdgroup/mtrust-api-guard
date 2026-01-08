@@ -70,4 +70,13 @@ class Cache {
         .map((file) => basename(file.path).replaceAll('_api.json', ''))
         .toList();
   }
+
+  /// Gets the worktree directory for a specific git ref
+  /// Sanitizes the ref name to be safe for use in file paths
+  Directory getWorktreeDir(String repoPath, String ref) {
+    final repoCacheDir = getRepositoryCacheDir(repoPath);
+    // Sanitize ref name: replace invalid characters with underscores
+    final sanitizedRef = ref.replaceAll(RegExp(r'[<>:"|?*\x00-\x1f]'), '_');
+    return Directory(join(repoCacheDir.path, 'worktrees', sanitizedRef));
+  }
 }

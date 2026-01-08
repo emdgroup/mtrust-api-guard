@@ -6,6 +6,7 @@ import 'package:mtrust_api_guard/changelog_generator/changelog_generator_command
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator_command.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
 import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/version.dart';
 import 'package:mtrust_api_guard/version/version_command.dart';
 
 main(List<String> args) async {
@@ -32,6 +33,13 @@ main(List<String> args) async {
     defaultsTo: false,
   );
 
+  logger.info(" ");
+  logger.info('▄████▄ █████▄ ██    ▄████  ██  ██ ▄████▄ █████▄  ████▄  ');
+  logger.info('██▄▄██ ██▄▄█▀ ██   ██  ▄▄▄ ██  ██ ██▄▄██ ██▄▄██▄ ██  ██ ');
+  logger.info('██  ██ ██     ██    ▀███▀  ▀████▀ ██  ██ ██   ██ ████▀  ');
+  logger.info('mtrust_api_guard version: $mtrustApiGuardVersion');
+  logger.info(" ");
+
   if (args.isEmpty) {
     // ignore: avoid_print
     print(commandRunner.usage);
@@ -44,5 +52,6 @@ main(List<String> args) async {
   if (args.contains('--silent')) {
     logger.level = Level.error;
   }
+
   commandRunner.run(args);
 }
