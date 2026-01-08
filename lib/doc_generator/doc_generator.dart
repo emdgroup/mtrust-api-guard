@@ -28,43 +28,43 @@ Future<List<DocComponent>> generateDocs({
     exit(1);
   }
 
-  // Check for uncommitted changes if we're going to checkout a ref
-  if (gitRef != 'HEAD' && GitUtils.hasUncommittedChanges(gitRoot.path)) {
-    logger.err('Repository has uncommitted changes. Please commit or stash them before proceeding.');
-    logger.err('This prevents potential data loss during ref checkout.');
-    exit(1);
-  }
-
-  final originalRef = await GitUtils.getCurrentRef(gitRoot.path);
-  final originalBranch = await GitUtils.getCurrentBranch(gitRoot.path);
-
-  // If the ref is HEAD, get the current ref (commit hash)
-  if (gitRef == 'HEAD') {
-    gitRef = await GitUtils.getCurrentRef(gitRoot.path);
-  }
-
-  logger.info('Checking out ref: $gitRef');
-  await GitUtils.checkoutRef(gitRef, gitRoot.path);
-  logger.info('Successfully checked out ref: $gitRef');
-  final effectiveRef = await GitUtils.getCurrentRef(gitRoot.path);
-
   final repoPath = GitUtils.getRepositoryRoot(gitRoot.path);
-  final classes = <DocComponent>[];
+  final currentHeadRef = await GitUtils.getCurrentRef(gitRoot.path);
 
-  Future<void> restoreOriginalState() async {
+  // Resolve the target ref to a commit hash
+  String effectiveRef;
+  if (gitRef == 'HEAD') {
+    effectiveRef = currentHeadRef;
+  } else {
+    effectiveRef = await GitUtils.resolveRef(gitRef, gitRoot.path);
+  }
+
+  // Check if we're analyzing the current HEAD - if so, skip worktree creation
+  final isCurrentHead = effectiveRef == currentHeadRef;
+  String? worktreePath;
+  Directory? worktreeDir;
+  bool worktreeCreated = false;
+
+  if (isCurrentHead) {
+    logger.info('Analyzing current HEAD ($effectiveRef), using current working directory');
+    worktreePath = null; // Use current directory
+  } else {
+    // Create worktree in cache directory
+    worktreeDir = cache.getWorktreeDir(repoPath, effectiveRef);
+    worktreePath = worktreeDir.path;
+
+    logger.info('Creating worktree for ref $gitRef ($effectiveRef) at $worktreePath');
     try {
-      logger.info('Restoring original state...');
-      if (originalBranch != null) {
-        await GitUtils.checkoutRef(originalBranch, gitRoot.path);
-      } else {
-        await GitUtils.checkoutRef(originalRef, gitRoot.path);
-      }
-      logger.info('Successfully restored original state');
+      await GitUtils.createWorktree(repoPath, gitRef, worktreePath);
+      worktreeCreated = true;
+      logger.info('Successfully created worktree at $worktreePath');
     } catch (e) {
-      logger.err('Warning: Failed to restore original state: $e');
-      logger.err('Please manually checkout your original branch/ref');
+      logger.err('Failed to create worktree: $e');
+      rethrow;
     }
   }
+
+  final classes = <DocComponent>[];
 
   if (shouldCache) {
     if (cache.hasApiFile(repoPath, effectiveRef)) {
@@ -72,7 +72,16 @@ Future<List<DocComponent>> generateDocs({
       final cachedContent = await cache.retrieveApiFile(repoPath, effectiveRef);
       if (cachedContent != null) {
         logger.success('Using cached API documentation for $effectiveRef');
-        await restoreOriginalState();
+
+        // Clean up worktree if it was created
+        if (worktreeCreated && worktreePath != null) {
+          try {
+            await GitUtils.removeWorktree(repoPath, worktreePath);
+            logger.detail('Cleaned up worktree at $worktreePath');
+          } catch (e) {
+            logger.err('Warning: Failed to clean up worktree: $e');
+          }
+        }
 
         // Write the cached content to file if requested
         if (out != null) {
@@ -88,8 +97,23 @@ Future<List<DocComponent>> generateDocs({
     }
   }
 
+  // Determine the root path to use for analysis
+  // If using a worktree, calculate the dartRoot path relative to the worktree
+  final analysisDartRoot = worktreePath != null
+      ? () {
+          final gitRootAbs = Directory(gitRoot.path).absolute.path;
+          final dartRootAbs = Directory(dartRoot.path).absolute.path;
+          final relativePath = relative(dartRootAbs, from: gitRootAbs);
+          // Handle case where dartRoot == gitRoot (relative path would be ".")
+          if (relativePath == '.' || relativePath.isEmpty) {
+            return Directory(worktreePath!);
+          }
+          return Directory(join(worktreePath!, relativePath));
+        }()
+      : dartRoot;
+
   try {
-    final (dartFiles, exclusions) = evaluateTargetFiles(dartRoot.path);
+    final (dartFiles, exclusions) = evaluateTargetFiles(analysisDartRoot.path);
 
     if (dartFiles.isEmpty) {
       logger.err('No Dart files found in the specified paths. Exiting');
@@ -157,7 +181,17 @@ Future<List<DocComponent>> generateDocs({
       logger.success('Wrote generated documentation to $out');
     }
   } finally {
-    restoreOriginalState();
+    // Clean up worktree if it was created
+    if (worktreeCreated && worktreePath != null) {
+      try {
+        logger.detail('Cleaning up worktree at $worktreePath');
+        await GitUtils.removeWorktree(repoPath, worktreePath);
+        logger.detail('Successfully cleaned up worktree');
+      } catch (e) {
+        logger.err('Warning: Failed to clean up worktree at $worktreePath: $e');
+        logger.err('You may need to manually remove the worktree');
+      }
+    }
   }
 
   return classes;

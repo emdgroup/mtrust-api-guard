@@ -11,6 +11,11 @@ class PubspecUtils {
     return Version.parse(version);
   }
 
+  static String getPackageName(String pubspecContent) {
+    final pubspec = loadYaml(pubspecContent);
+    return pubspec['name'] as String;
+  }
+
   static Future<void> setVersion(File pubspec, Version version) async {
     final pubspecEditor = await _getPubspec(pubspec.path);
     pubspecEditor.update(["version"], version.toString());

@@ -60,14 +60,19 @@ class VersionCommand extends Command
       ..addFlag(
         'pre-release',
         abbr: 'p',
-        help: 'Add pre-release suffix (-dev.N)',
+        help: 'Add pre-release suffix. 3.0.0-dev.1 where dev.1 is the pre-release suffix',
         defaultsTo: false,
       )
       ..addOption(
         'tag-prefix',
-        help: 'Prefix for version tags',
+        help: 'Prefix for version tags useful for mono repos where multiple packages are versioned together',
         defaultsTo: 'v',
         valueHelp: 'prefix',
+      )
+      ..addOption(
+        'dart-file',
+        help: 'Output the version as a Dart constant to the specified file',
+        valueHelp: 'file',
       );
   }
 
@@ -99,6 +104,10 @@ class VersionCommand extends Command
     return argResults?['tag-prefix'] as String? ?? 'v';
   }
 
+  String? get dartFile {
+    return argResults?['dart-file'] as String?;
+  }
+
   @override
   FutureOr? run() async {
     // Load config and determine doc file path
@@ -114,6 +123,7 @@ class VersionCommand extends Command
       cache: cache,
       isPreRelease: preRelease,
       tagPrefix: tagPrefix,
+      dartFile: dartFile,
     );
 
     if (json != null) {

@@ -10,6 +10,7 @@ import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/calculate_next_version.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:recase/recase.dart';
 
 class VersionResult {
   final Version version;
@@ -45,6 +46,7 @@ Future<VersionResult> version({
   required bool generateChangelog,
   required bool cache,
   required String tagPrefix,
+  String? dartFile,
 }) async {
   final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
 
@@ -124,6 +126,25 @@ Future<VersionResult> version({
   if (tag) {
     await GitUtils.gitTag("$tagPrefix$nextVersion", gitRoot.path);
     logger.info('Tagged version $tagPrefix$nextVersion');
+  }
+
+  if (dartFile != null) {
+    final pubspecFile = File(join(dartRoot.path, 'pubspec.yaml'));
+    if (!pubspecFile.existsSync()) {
+      throw Exception('pubspec.yaml not found at ${pubspecFile.path}');
+    }
+    final pubspecContent = await pubspecFile.readAsString();
+    final packageName = PubspecUtils.getPackageName(pubspecContent);
+    final camelCasePackageName = ReCase(packageName).camelCase;
+    final constantName = '${camelCasePackageName}Version';
+    
+    final dartFileContent = "const String $constantName = '$nextVersion';\n";
+    final dartOutputFile = File(dartFile);
+    if (!dartOutputFile.existsSync()) {
+      dartOutputFile.createSync(recursive: true);
+    }
+    await dartOutputFile.writeAsString(dartFileContent);
+    logger.info('Generated Dart file with version constant at $dartFile');
   }
 
   return VersionResult(

@@ -3,7 +3,9 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
+import 'package:recase/recase.dart';
 import 'package:test/test.dart';
+import 'package:yaml/yaml.dart';
 
 import '../helpers/test_setup.dart';
 import '../helpers/test_helpers.dart';
@@ -191,6 +193,44 @@ void main() {
       expect(tags, contains('release/${TestConstants.initialVersion}'));
       expect(tags, contains('release/${TestConstants.patchVersion}'));
       expect(tags, isNot(contains('v${TestConstants.patchVersion}')));
+    });
+
+    test('dart-file option generates version constant file', () async {
+      // 1. Set up initial tagged version
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
+
+      // 2. Get package name from pubspec.yaml
+      final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      final pubspecContent = await pubspecFile.readAsString();
+      final pubspec = loadYaml(pubspecContent) as YamlMap;
+      final packageName = pubspec['name'] as String;
+
+      // 3. Apply patch-level changes and run version command with --dart-file
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product');
+
+      final dartFilePath = p.join(testSetup.tempDir.path, 'lib', 'version_info.dart');
+      await testSetup.runApiGuard('version', ['--dart-file', dartFilePath]);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+
+      // 4. Verify Dart file was created with correct content
+      final dartFile = File(dartFilePath);
+      expect(dartFile.existsSync(), isTrue);
+
+      final dartContent = await dartFile.readAsString();
+      // Convert package name to camelCase using recase (matching implementation)
+      final camelCasePackageName = ReCase(packageName).camelCase;
+      final expectedConstantName = '${camelCasePackageName}Version';
+      final expectedContent = "const String $expectedConstantName = '${TestConstants.patchVersion}';\n";
+
+      expect(dartContent, equals(expectedContent));
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }
