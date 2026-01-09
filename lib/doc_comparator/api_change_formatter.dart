@@ -267,6 +267,14 @@ class ApiChangeFormatter {
         return '$text in $constructorLabel: $details';
       }
 
+      if (operation == ApiChangeOperation.typeChanged) {
+        final details = changes.map((c) {
+          final change = c as ConstructorParameterApiChange;
+          return '`${change.parameter.name}` (`${change.parameter.type}` → `${change.newType}`)';
+        }).join(', ');
+        return '$text in $constructorLabel: $details';
+      }
+
       final params = changes.map((c) {
         final change = c as ConstructorParameterApiChange;
         final param = change.parameter;
@@ -312,6 +320,16 @@ class ApiChangeFormatter {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
           return '`${change.oldName}` → `${change.parameter.name}`';
+        }).join(', ');
+        final method = (changes.first as MethodParameterApiChange).method.name;
+        final label = isFunction ? 'function' : 'method';
+        return '$text in $label `$method`: $details';
+      }
+
+      if (operation == ApiChangeOperation.typeChanged) {
+        final details = changes.map((c) {
+          final change = c as MethodParameterApiChange;
+          return '`${change.parameter.name}` (`${change.parameter.type}` → `${change.newType}`)';
         }).join(', ');
         final method = (changes.first as MethodParameterApiChange).method.name;
         final label = isFunction ? 'function' : 'method';

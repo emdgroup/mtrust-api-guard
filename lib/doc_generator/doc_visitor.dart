@@ -1,6 +1,9 @@
 import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/visitor2.dart';
 import 'package:mtrust_api_guard/models/doc_items.dart';
+import 'package:mtrust_api_guard/models/doc_type.dart';
 
 /// A visitor that traverses the AST to collect documentation components.
 ///
@@ -124,7 +127,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       methods: [
         DocMethod(
           name: element.name3!,
-          returnType: element.returnType.toString(),
+          returnType: _getDocType(element.returnType),
           description: _getDescription(element),
           signature: _mapParameters(element.formalParameters),
           features: [
@@ -217,7 +220,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     return fields
         .map((e) => DocProperty(
               name: e.name3!,
-              type: e.type.toString(),
+              type: _getDocType(e.type),
               description: _getDescription(e),
               features: [
                 if (e.isStatic) "static",
@@ -236,7 +239,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     return methods
         .map((e) => DocMethod(
               name: e.name3!,
-              returnType: e.returnType.toString(),
+              returnType: _getDocType(e.returnType),
               description: _getDescription(e),
               signature: _mapParameters(e.formalParameters),
               features: [
@@ -256,7 +259,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
         .map((param) => DocParameter(
               description: _getDescription(param),
               name: param.name3!,
-              type: param.type.toString(),
+              type: _getDocType(param.type),
               named: param.isNamed,
               required: param.isRequired,
               defaultValue: param.defaultValueCode,
@@ -274,5 +277,19 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       }
       return e.name3!;
     }).toList();
+  }
+
+  DocType _getDocType(DartType type) {
+    final superTypes = <String>[];
+    if (type is InterfaceType) {
+      for (final superType in type.allSupertypes) {
+        superTypes.add(superType.element3.name3!);
+      }
+    }
+    return DocType(
+      name: type.toString(),
+      superTypes: superTypes,
+      isNullable: type.nullabilitySuffix == NullabilitySuffix.question,
+    );
   }
 }

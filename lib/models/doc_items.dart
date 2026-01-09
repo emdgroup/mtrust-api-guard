@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:mtrust_api_guard/models/doc_type.dart';
 
 part 'doc_items.g.dart';
 
@@ -97,7 +98,7 @@ class DocProperty {
   });
 
   final String name;
-  final String type;
+  final DocType type;
   final String description;
   final List<String> features;
   final List<String> annotations;
@@ -140,7 +141,7 @@ class DocParameter {
 
   final String name;
   final String description;
-  final String type;
+  final DocType type;
   final bool named;
   final bool required;
   final String? defaultValue;
@@ -164,7 +165,7 @@ class DocMethod {
   });
 
   final String name;
-  final String returnType;
+  final DocType returnType;
   final List<DocParameter> signature;
   final List<String> features;
   final String description;

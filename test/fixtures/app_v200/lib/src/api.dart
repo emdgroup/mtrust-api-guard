@@ -98,3 +98,7 @@ class GenericClass<T extends num> {
 V genericMethod<V extends num>(V input) {
   return input;
 }
+
+void wideningParams(num a) {}
+
+void narrowingParams(int a) {}

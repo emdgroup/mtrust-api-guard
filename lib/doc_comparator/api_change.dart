@@ -139,7 +139,7 @@ class PropertyApiChange extends ApiChange {
 
 class MethodApiChange extends ApiChange {
   final DocMethod method;
-  final String? newType;
+  final DocType? newType;
 
   MethodApiChange({
     required super.component,
@@ -164,6 +164,7 @@ class MethodApiChange extends ApiChange {
 abstract class ParameterApiChange extends ApiChange {
   final DocParameter parameter;
   final String? oldName;
+  final DocType? newType;
   final String parentName;
 
   ParameterApiChange({
@@ -172,6 +173,7 @@ abstract class ParameterApiChange extends ApiChange {
     required this.parameter,
     required this.parentName,
     this.oldName,
+    this.newType,
     super.annotation,
   }) : super._();
 
@@ -187,6 +189,13 @@ abstract class ParameterApiChange extends ApiChange {
     }
 
     if (operation == ApiChangeOperation.reordered) {
+      return ApiChangeMagnitude.major;
+    }
+
+    if (operation == ApiChangeOperation.typeChanged) {
+      if (newType != null && parameter.type.isAssignableTo(newType!)) {
+        return ApiChangeMagnitude.minor;
+      }
       return ApiChangeMagnitude.major;
     }
 
@@ -217,6 +226,7 @@ class MethodParameterApiChange extends ParameterApiChange {
     required this.method,
     required super.parameter,
     super.oldName,
+    super.newType,
     super.annotation,
   }) : super(parentName: method.name);
 }
@@ -250,6 +260,7 @@ class ConstructorParameterApiChange extends ParameterApiChange {
     required this.constructor,
     required super.parameter,
     super.oldName,
+    super.newType,
     super.annotation,
   }) : super(parentName: constructor.name);
 }

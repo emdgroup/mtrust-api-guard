@@ -97,3 +97,7 @@ class GenericClass<T> {
 void genericMethod<K, V>(K key, V value) {
   // Do something generic
 }
+
+void wideningParams(num a) {}
+
+void narrowingParams(num a) {}

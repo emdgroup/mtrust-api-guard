@@ -2,7 +2,7 @@
   "metadata": {
     "packageName": "api_guard_test",
     "packageVersion": "0.0.1",
-    "sdkVersion": "^3.10.4",
+    "sdkVersion": "^3.10.7",
     "dependencies": [{ "packageName": "flutter", "packageVersion": null }],
     "androidConstraints": null,
     "iosConstraints": null
@@ -20,7 +20,11 @@
             {
               "name": "name",
               "description": "",
-              "type": "String",
+              "type": {
+                "name": "String",
+                "superTypes": ["Object", "Comparable", "Pattern"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -29,7 +33,11 @@
             {
               "name": "age",
               "description": "",
-              "type": "int",
+              "type": {
+                "name": "int",
+                "superTypes": ["num", "Object", "Comparable"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -38,7 +46,11 @@
             {
               "name": "email",
               "description": "",
-              "type": "String?",
+              "type": {
+                "name": "String?",
+                "superTypes": ["Object", "Comparable", "Pattern"],
+                "isNullable": true
+              },
               "named": true,
               "required": false,
               "defaultValue": null,
@@ -52,21 +64,33 @@
       "properties": [
         {
           "name": "name",
-          "type": "String",
+          "type": {
+            "name": "String",
+            "superTypes": ["Object", "Comparable", "Pattern"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["final"],
           "annotations": []
         },
         {
           "name": "age",
-          "type": "int",
+          "type": {
+            "name": "int",
+            "superTypes": ["num", "Object", "Comparable"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["final"],
           "annotations": []
         },
         {
           "name": "email",
-          "type": "String?",
+          "type": {
+            "name": "String?",
+            "superTypes": ["Object", "Comparable", "Pattern"],
+            "isNullable": true
+          },
           "description": "",
           "features": [],
           "annotations": []
@@ -75,12 +99,20 @@
       "methods": [
         {
           "name": "updateEmail",
-          "returnType": "void",
+          "returnType": {
+            "name": "void",
+            "superTypes": [],
+            "isNullable": false
+          },
           "signature": [
             {
               "name": "newEmail",
               "description": "",
-              "type": "String",
+              "type": {
+                "name": "String",
+                "superTypes": ["Object", "Comparable", "Pattern"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -113,7 +145,11 @@
             {
               "name": "id",
               "description": "",
-              "type": "String",
+              "type": {
+                "name": "String",
+                "superTypes": ["Object", "Comparable", "Pattern"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -122,7 +158,11 @@
             {
               "name": "price",
               "description": "",
-              "type": "double",
+              "type": {
+                "name": "double",
+                "superTypes": ["num", "Object", "Comparable"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -136,14 +176,22 @@
       "properties": [
         {
           "name": "id",
-          "type": "String",
+          "type": {
+            "name": "String",
+            "superTypes": ["Object", "Comparable", "Pattern"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["final"],
           "annotations": []
         },
         {
           "name": "price",
-          "type": "double",
+          "type": {
+            "name": "double",
+            "superTypes": ["num", "Object", "Comparable"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["final"],
           "annotations": []
@@ -170,7 +218,11 @@
             {
               "name": "secret",
               "description": "",
-              "type": "String",
+              "type": {
+                "name": "String",
+                "superTypes": ["Object", "Comparable", "Pattern"],
+                "isNullable": false
+              },
               "named": false,
               "required": true,
               "defaultValue": null,
@@ -184,7 +236,11 @@
       "properties": [
         {
           "name": "secret",
-          "type": "String",
+          "type": {
+            "name": "String",
+            "superTypes": ["Object", "Comparable", "Pattern"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["final"],
           "annotations": []
@@ -269,21 +325,39 @@
       "properties": [
         {
           "name": "active",
-          "type": "Status",
+          "type": {
+            "name": "Status",
+            "superTypes": ["Enum", "Object"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["static", "const"],
           "annotations": []
         },
         {
           "name": "inactive",
-          "type": "Status",
+          "type": {
+            "name": "Status",
+            "superTypes": ["Enum", "Object"],
+            "isNullable": false
+          },
           "description": "",
           "features": ["static", "const"],
           "annotations": []
         },
         {
           "name": "values",
-          "type": "List<Status>",
+          "type": {
+            "name": "List<Status>",
+            "superTypes": [
+              "Object",
+              "Iterable",
+              "_ListIterable",
+              "EfficientLengthIterable",
+              "HideEfficientLengthIterable"
+            ],
+            "isNullable": false
+          },
           "description": "",
           "features": ["static", "const"],
           "annotations": []
@@ -307,7 +381,11 @@
       "properties": [
         {
           "name": "isValid",
-          "type": "bool",
+          "type": {
+            "name": "bool",
+            "superTypes": ["Object"],
+            "isNullable": false
+          },
           "description": "",
           "features": [],
           "annotations": []
@@ -331,7 +409,11 @@
       "properties": [
         {
           "name": "createdAt",
-          "type": "DateTime?",
+          "type": {
+            "name": "DateTime?",
+            "superTypes": ["Object", "Comparable"],
+            "isNullable": true
+          },
           "description": "",
           "features": [],
           "annotations": []
@@ -355,6 +437,50 @@
       "properties": [],
       "methods": [],
       "type": "mixin",
+      "aliasedType": null,
+      "annotations": [],
+      "superClass": null,
+      "interfaces": [],
+      "mixins": [],
+      "typeParameters": []
+    },
+    {
+      "filePath": "lib/src/api.dart",
+      "name": "wideningParams",
+      "isNullSafe": true,
+      "description": "",
+      "constructors": [],
+      "properties": [],
+      "methods": [
+        {
+          "name": "wideningParams",
+          "returnType": {
+            "name": "void",
+            "superTypes": [],
+            "isNullable": false
+          },
+          "signature": [
+            {
+              "name": "a",
+              "description": "",
+              "type": {
+                "name": "int",
+                "superTypes": ["num", "Object", "Comparable"],
+                "isNullable": false
+              },
+              "named": false,
+              "required": true,
+              "defaultValue": null,
+              "annotations": []
+            }
+          ],
+          "features": ["static"],
+          "description": "",
+          "annotations": [],
+          "typeParameters": []
+        }
+      ],
+      "type": "function",
       "aliasedType": null,
       "annotations": [],
       "superClass": null,

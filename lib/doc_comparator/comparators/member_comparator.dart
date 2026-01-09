@@ -13,7 +13,9 @@ import 'comparator_helpers.dart';
 void _compareParameters({
   required List<DocParameter> oldParameters,
   required List<DocParameter> newParameters,
-  required void Function(DocParameter param, ApiChangeOperation op, {String? oldName, String? annotation}) onDiff,
+  required void Function(DocParameter param, ApiChangeOperation op,
+          {String? oldName, String? annotation, DocType? newType})
+      onDiff,
 }) {
   final oldParamsCopy = [...oldParameters];
   final newParamsCopy = [...newParameters];
@@ -70,7 +72,7 @@ void _compareParameters({
     }
 
     if (oldParam.type != newParam.type) {
-      onDiff(oldParam, ApiChangeOperation.typeChanged);
+      onDiff(oldParam, ApiChangeOperation.typeChanged, newType: newParam.type);
     }
 
     if (oldParam.required != newParam.required) {
@@ -142,13 +144,14 @@ extension ConstructorApiChangesExt on DocConstructor {
     _compareParameters(
       oldParameters: signature,
       newParameters: newConstructor.signature,
-      onDiff: (param, op, {oldName, annotation}) {
+      onDiff: (param, op, {oldName, annotation, newType}) {
         changes.add(ConstructorParameterApiChange(
           component: component,
           constructor: this,
           operation: op,
           parameter: param,
           oldName: oldName,
+          newType: newType,
           annotation: annotation,
         ));
       },
@@ -320,13 +323,14 @@ extension MethodApiChangesExt on DocMethod {
     _compareParameters(
       oldParameters: signature,
       newParameters: newMethod.signature,
-      onDiff: (param, op, {oldName, annotation}) {
+      onDiff: (param, op, {oldName, annotation, newType}) {
         changes.add(MethodParameterApiChange(
           component: component,
           method: this,
           operation: op,
           parameter: param,
           oldName: oldName,
+          newType: newType,
           annotation: annotation,
         ));
       },

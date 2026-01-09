@@ -44,3 +44,5 @@ abstract class InterfaceA {}
 mixin MixinA {}
 
 class ClassWithSuper extends BaseClass with MixinA implements InterfaceA {}
+
+void wideningParams(int a) {}

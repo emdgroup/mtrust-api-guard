@@ -58,6 +58,9 @@
 - ❌ Params removed in function `genericMethod`: `key (positional, required)`, `value (positional, required)`
 - ❇️ Param added in function `genericMethod`: `input (positional, required)`
 
+**`function` narrowingParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Param type changed in function `narrowingParams`: `a` (`num` → `int`)
+
 **`platform constraint` sdk** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
 - 📱 Platform constraint changed: SDK constraint changed from `>=3.0.0 <4.0.0` to `>=3.2.0 <4.0.0`
 
@@ -123,6 +126,12 @@
 
 **`function` genericMethod<K, V>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Function added: `genericMethod`
+
+**`function` narrowingParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Function added: `narrowingParams`
+
+**`function` wideningParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Param type changed in function `wideningParams`: `a` (`int` → `num`)
 
 #### 👀 Patch changes
 
