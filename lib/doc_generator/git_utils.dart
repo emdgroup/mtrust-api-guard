@@ -28,6 +28,15 @@ class GitUtils {
     }
   }
 
+  /// Finds the git root directory
+  static Future<String> findGitRoot(String? root) async {
+    final result = await Process.run('git', ['rev-parse', '--show-toplevel'], workingDirectory: root);
+    if (result.exitCode != 0) {
+      throw const GitException('Failed to find git root');
+    }
+    return result.stdout.toString().trim();
+  }
+
   /// Gets the current Git branch name
   /// Returns null if in detached HEAD state or throws [GitException] if there's an error.
   static Future<String?> getCurrentBranch(String? root) async {
@@ -225,7 +234,7 @@ class GitUtils {
       'git',
       [
         'show',
-        '$ref:$path',
+        '$ref:${path.startsWith(root ?? '') ? path.substring((root ?? '').length).replaceFirst(RegExp(r'^/'), '') : path}',
       ],
       workingDirectory: root,
     );
