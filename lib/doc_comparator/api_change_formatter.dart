@@ -187,6 +187,16 @@ class ApiChangeFormatter {
     }
   }
 
+  String _formatTypeChange(DocType oldType, DocType newType) {
+    if (oldType.isAssignableTo(newType)) {
+      return '(`$oldType` → `$newType`, widened)';
+    } else if (newType.isAssignableTo(oldType)) {
+      return '(`$oldType` → `$newType`, narrowed)';
+    } else {
+      return '(`$oldType` → `$newType`)';
+    }
+  }
+
   /// Format similar changes into a single line
   String _formatChanges(List<ApiChange> changes) {
     // we can rely that all changes are of the same operation
@@ -219,7 +229,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
           final change = c as MethodApiChange;
-          return '`${change.method.name}` (`${change.method.returnType}` → `${change.newType}`)';
+          return '`${change.method.name}` ${_formatTypeChange(change.method.returnType, change.newType!)}';
         }).join(', ');
         return '$text: $details';
       }
@@ -270,7 +280,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
           final change = c as ConstructorParameterApiChange;
-          return '`${change.parameter.name}` (`${change.parameter.type}` → `${change.newType}`)';
+          return '`${change.parameter.name}` ${_formatTypeChange(change.parameter.type, change.newType!)}';
         }).join(', ');
         return '$text in $constructorLabel: $details';
       }
@@ -329,7 +339,7 @@ class ApiChangeFormatter {
       if (operation == ApiChangeOperation.typeChanged) {
         final details = changes.map((c) {
           final change = c as MethodParameterApiChange;
-          return '`${change.parameter.name}` (`${change.parameter.type}` → `${change.newType}`)';
+          return '`${change.parameter.name}` ${_formatTypeChange(change.parameter.type, change.newType!)}';
         }).join(', ');
         final method = (changes.first as MethodParameterApiChange).method.name;
         final label = isFunction ? 'function' : 'method';
