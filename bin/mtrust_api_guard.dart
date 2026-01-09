@@ -44,5 +44,5 @@ main(List<String> args) async {
   if (args.contains('--silent')) {
     logger.level = Level.error;
   }
-  commandRunner.run(args);
+  await commandRunner.run(args);
 }

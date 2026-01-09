@@ -16,13 +16,17 @@ class User {
   User.fromJson(Map<String, dynamic> json) :
     throw UnimplementedError();
 
-  // New methods:
-  void updateEmail(String newEmail) {
-    email = newEmail;
+  // Updated method: Add some optional named parameters with default values
+  void updateEmail(String email, {
+    bool notifyUserViaEmail = false,
+    bool logChange = true,
+  }) {
+    this.email = email;
   }
 
-  void updatePhone(String newPhone) {
-    phone = newPhone;
+  // New methods:
+  void updatePhone(String phone, String mobilePhone) {
+    this.phone = phone;
   }
 }
 
@@ -83,3 +87,17 @@ mixin MixinA {}
 mixin MixinB {}
 
 class ClassWithSuper extends BaseClass with MixinA, MixinB implements InterfaceA, InterfaceB {}
+
+class GenericClass<T> {
+  T value;
+
+  GenericClass(this.value);
+}
+
+void genericMethod<K, V>(K key, V value) {
+  // Do something generic
+}
+
+void wideningParams(num a) {}
+
+void narrowingParams(num a) {}
