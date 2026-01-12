@@ -1,3 +1,176 @@
+## 4.0.0
+Released on: 1/12/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- filter out abstract methods in non-abstract classes during method collection ([a4764ae](commit/a4764ae))
+### Features
+
+- Semantic Type Analysis, Modifier Support, Pubspec Support, Comparator Refactor ([50d7a2e](commit/50d7a2e))
+- add modifier change detection and enhance changelog formatting ([4db3dd8](commit/4db3dd8))
+- implement semantic type comparison for accurate breaking change detection ([3da35cb](commit/3da35cb))
+- enhance support for parameter reordering detection and update related tests ([528206a](commit/528206a))
+- add SDK constraint comparison and update related tests ([c6f70cf](commit/c6f70cf))
+- add package metadata support and pubspec.yaml analysis ([61a3ea4](commit/61a3ea4))
+- add support for type parameter changes in API documentation ([317e646](commit/317e646))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`class` DocMethod** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- 🔄 Param type changed in default constructor: `returnType` (`String` → `DocType`)
+- 🔄 Property type changed: `returnType`
+
+**`class` DocParameter** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- 🔄 Param type changed in default constructor: `type` (`String` → `DocType`)
+- 🔄 Property type changed: `type`
+
+**`class` DocProperty** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- 🔄 Param type changed in default constructor: `type` (`String` → `DocType`)
+- 🔄 Property type changed: `type`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- 🔄 Param type changed in default constructor: `newType` (`String?` → `DocType?`)
+- 🔄 Property type changed: `newType`
+
+**`function` generateDocs** ([lib/doc_generator/doc_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-afdfca1610f1cf1d0207c15fd5db188b343b0587b9fd463620c69fd0d33f6a08))
+- 🔄 Function type changed: `generateDocs` (`Future<List<DocComponent>>` → `Future<PackageApi>`)
+
+**`function` getRef** ([lib/doc_comparator/get_ref.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-ffc5bf859c0b96b9f37fb39ac0ad356f36068bc654155cf1c2cb95cb3b12af09))
+- 🔄 Function type changed: `getRef` (`Future<List<DocComponent>>` → `Future<PackageApi>`)
+
+**`function` parseDocComponentsFile** ([lib/doc_comparator/parse_doc_file.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-4fd6e8a5d203a523d9c059d876fd9910e088b7c3036cb74134fd735f228f030c))
+- ❌ Function removed: `parseDocComponentsFile`
+
+#### ✨ Minor changes
+
+**`class` AndroidPlatformConstraints** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Class added: `AndroidPlatformConstraints`
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `reordered`, `dependencyAdded`, `dependencyRemoved`, `dependencyChanged`, `platformConstraintChanged`, `typeParametersChanged`, `featureAdded`, `featureRemoved`
+
+**`enum` ApiChangeTarget** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❇️ Enum added: `ApiChangeTarget`
+
+**`class` ConstructorApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `changedValue (named, optional)`
+
+**`class` ConstructorParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `newType (named, optional)`
+- ❇️ Property added: `newType`
+
+**`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `typeParameters (named, optional, default: const [])`
+- ❇️ Constructor added: `metadata`
+- ❇️ Properties added: `typeParameters`, `genericName`
+
+**`enum` DocComponentType** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Properties added: `dependencyType`, `platformConstraintType`
+
+**`class` DocMethod** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Param added in default constructor: `typeParameters (named, optional, default: const [])`
+- ❇️ Property added: `typeParameters`
+
+**`class` DocType** ([lib/models/doc_type.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-552b78d831afb63b4e6dc56eee4088761698a93347afbedcf491d43e5d550fce))
+- ❇️ Class added: `DocType`
+
+**`class` IOSPlatformConstraints** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Class added: `IOSPlatformConstraints`
+
+**`extension` MetadataComparator** ([lib/doc_comparator/comparators/metadata_comparator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-3d6bbcd1d1a259645179a8e3dc9be610d469c9f0232337109dfaad495423e425))
+- ❇️ Extension added: `MetadataComparator`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `changedValue (named, optional)`
+
+**`class` MethodParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `newType (named, optional)`
+- ❇️ Property added: `newType`
+
+**`class` PackageApi** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Class added: `PackageApi`
+
+**`class` PackageDependency** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Class added: `PackageDependency`
+
+**`class` PackageMetadata** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Class added: `PackageMetadata`
+
+**`class` ParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `newType (named, optional)`
+- ❇️ Property added: `newType`
+
+**`class` PropertyApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `changedValue (named, optional)`
+
+**`class` PubspecAnalyzer** ([lib/doc_generator/pubspec_analyzer.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-073160eaf09e5ea3e868ba0a472fce2518be9f4c885b08b0d0d72e39cf6ce9c2))
+- ❇️ Class added: `PubspecAnalyzer`
+
+**`function` compareAnnotations** ([lib/doc_comparator/comparators/comparator_helpers.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-44c3872188cef010a5d519bb6036015cb4b287dfa990f703cbcc5f7a2d67e511))
+- ❇️ Function added: `compareAnnotations`
+
+**`function` compareFeatures** ([lib/doc_comparator/comparators/comparator_helpers.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-44c3872188cef010a5d519bb6036015cb4b287dfa990f703cbcc5f7a2d67e511))
+- ❇️ Function added: `compareFeatures`
+
+**`function` compareLists<T>** ([lib/doc_comparator/comparators/comparator_helpers.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-44c3872188cef010a5d519bb6036015cb4b287dfa990f703cbcc5f7a2d67e511))
+- ❇️ Function added: `compareLists`
+
+**`function` parsePackageApiFile** ([lib/doc_comparator/parse_doc_file.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-4fd6e8a5d203a523d9c059d876fd9910e088b7c3036cb74134fd735f228f030c))
+- ❇️ Function added: `parsePackageApiFile`
+
+#### 👀 Patch changes
+
+**`class` ApiChangeFormatter** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- 🔄 Method type changed: `_groupByChangeCategory` (`Map<int, List<ApiChange>>` → `Map<String, List<ApiChange>>`)
+- ❌ Method removed: `_getOperationText`
+- ❇️ Methods added: `_getOperationDescription`, `_formatTypeChange`
+
+**`class` DocVisitor** ([lib/doc_generator/doc_visitor.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-c5d6dadddbd05895698f77e15f545cf92cae135301f04c0f3c8344a387754c8a))
+- ❇️ Methods added: `_getTypeParameters`, `_getDocType`
+
+**`function` _$AndroidPlatformConstraintsFromJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$AndroidPlatformConstraintsFromJson`
+
+**`function` _$AndroidPlatformConstraintsToJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$AndroidPlatformConstraintsToJson`
+
+**`function` _$DocTypeFromJson** ([lib/models/doc_type.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-552b78d831afb63b4e6dc56eee4088761698a93347afbedcf491d43e5d550fce))
+- ❇️ Function added: `_$DocTypeFromJson`
+
+**`function` _$DocTypeToJson** ([lib/models/doc_type.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-552b78d831afb63b4e6dc56eee4088761698a93347afbedcf491d43e5d550fce))
+- ❇️ Function added: `_$DocTypeToJson`
+
+**`function` _$IOSPlatformConstraintsFromJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$IOSPlatformConstraintsFromJson`
+
+**`function` _$IOSPlatformConstraintsToJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$IOSPlatformConstraintsToJson`
+
+**`function` _$PackageApiFromJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageApiFromJson`
+
+**`function` _$PackageApiToJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageApiToJson`
+
+**`function` _$PackageDependencyFromJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageDependencyFromJson`
+
+**`function` _$PackageDependencyToJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageDependencyToJson`
+
+**`function` _$PackageMetadataFromJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageMetadataFromJson`
+
+**`function` _$PackageMetadataToJson** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Function added: `_$PackageMetadataToJson`
+
+**`function` _compareParameters** ([lib/doc_comparator/comparators/member_comparator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-4772c3af431b3a73e98ddca164add4c5c83ca88afe4433ada26a477be5e0185e))
+- ❇️ Function added: `_compareParameters`
+
+
 ## 3.0.0
 Released on: 1/7/2026, changelog automatically generated.
 
