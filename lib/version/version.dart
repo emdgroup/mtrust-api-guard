@@ -46,14 +46,47 @@ Future<VersionResult> version({
   required bool cache,
   required String tagPrefix,
 }) async {
-  final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
+  logger.success("Starting versioning...");
+  logger.info("--------------------------------");
+  logger.info('Git root:    ${gitRoot.path}');
+  logger.info('Dart root:   ${dartRoot.path}');
+  logger.info('Base ref:    ${baseRef ?? "Auto"}');
+  logger.info('New ref:     $newRef');
+  logger.info('Pre-release: $isPreRelease');
+  logger.info('Commit:      $commit');
+  logger.info('Badge:       $badge');
+  logger.info('Changelog:   $generateChangelog');
+  logger.info('Cache:       $cache');
+  logger.info('Tag prefix:  $tagPrefix');
+  logger.info("--------------------------------");
 
-  if (baseRef == null && !hasPreviousVersion) {
-    logger.err('No previous version found. Please tag the first version. e.g. git tag ${tagPrefix}0.0.1');
-    exit(1);
+  String? effectiveBaseRef;
+
+  if (baseRef != null) {
+    effectiveBaseRef = baseRef;
+  } else {
+    logger.info("No base ref provided, finding previous version...");
+    var versions = await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix);
+    logger.info('Versions: ');
+    for (var version in versions) {
+      logger.info("\t- ${version.$1}");
+    }
+
+    // We need to filter out pre-releases if we are not running in pre-release mode to ensure, that we compare with the last stable version.
+    if (!isPreRelease) {
+      versions = versions.where((version) => !version.$2.isPreRelease).toList();
+      logger.info("Filtered out pre-releases, remaining versions: ");
+      for (var version in versions) {
+        logger.info("\t- ${version.$1}");
+      }
+    }
+    if (versions.isEmpty) {
+      logger.err('No previous version found. Please tag the first version. e.g. git tag ${tagPrefix}0.0.1');
+      exit(1);
+    }
+    effectiveBaseRef = versions.last.$1;
+    logger.info("Previous version: $effectiveBaseRef");
   }
-
-  final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix);
 
   final changes = await compare(
     baseRef: effectiveBaseRef,
@@ -64,9 +97,9 @@ Future<VersionResult> version({
   );
 
   final basePubSpec = await GitUtils.gitShow(
-    baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix),
+    effectiveBaseRef,
     gitRoot.path,
-    'pubspec.yaml',
+    dartRoot.path + '/pubspec.yaml',
   );
 
   final baseVersion = PubspecUtils.getVersion(basePubSpec);
