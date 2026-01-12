@@ -10,16 +10,32 @@
 
 #### 💣 Breaking changes
 
+**`class` AbstractModifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Modifier `abstract` added to method: `willBecomeAbstract`
+
 **`class` ClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- 🔄 Superclass changed: `BaseClass -> AnotherBaseClass`
-- ➖ Interface removed: `InterfaceA`, `InterfaceB`
-- ➖ Mixin removed: `MixinA`, `MixinB`
+- 🔄 Superclass changed: `BaseClass` → `AnotherBaseClass`
+- ➖ Interface removed: InterfaceA, InterfaceB
+- ➖ Mixin removed: MixinA, MixinB
+
+**`class` GenericClass<T>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Type parameters changed: `T` → `T extends num`
+- ❇️ Modifier `final` added to property: `value`
 
 **`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `InterfaceB`
 
 **`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Mixin removed: `MixinB`
+
+**`class` Modifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Modifier `const` removed from constructor: `named`
+- ❇️ Modifier `static` added to property: `willBecomeStatic`
+- ❌ Modifier `static` removed from property: `willLoseStatic`
+- ❇️ Modifier `final` added to property: `willBecomeFinal`
+- ❌ Modifier `const` removed from property: `willLoseConst`
+- ❇️ Modifier `static` added to method: `willBecomeStaticMethod`
+- ❌ Modifier `static` removed from method: `willLoseStaticMethod`
 
 **`class` Product** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `Product`
@@ -36,20 +52,49 @@
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ⚠️ Param became required in default constructor: `_internalId (named, optional)`
 - 🔢 Param became positional in default constructor: `_internalId (named, optional)`
+- ❇️ Modifier `final` added to property: `email`
 - ❌ Method removed: `updateEmail`
-- 🔄 Method type changed: `updatePhone` (void -> bool)
-- ❇️ Param added in method `updatePhone`: `mobilePhone (positional, required)`
+- 🔄 Method type changed: `updatePhone` (`void` → `bool`)
+- 🔢 Params reordered in method `updatePhone`: `phone (positional, required)`, `mobilePhone (positional, required)`
 
 **`typedef` UserID** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - 🔄 Typedef type changed: `UserID`
 
+**`platform constraint` android:minSdkVersion** ([android/app/build.gradle](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-9526ccfd1d1813ed49c39f8c54dbeb512607376a007d824b905bc8b4e4d202d9))
+- 📱 Platform constraint changed: Android minSdkVersion changed from `19` to `21`
+
 **`function` formatUserInfo** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Function removed: `formatUserInfo`
 
+**`function` genericMethod<K, V>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Function type changed: `genericMethod` (`void` → `V`)
+- 🔄 Type parameters changed: `genericMethod` (`K, V` → `V extends num`)
+- ❌ Params removed in function `genericMethod`: `key (positional, required)`, `value (positional, required)`
+- ❇️ Param added in function `genericMethod`: `input (positional, required)`
+
+**`function` narrowingParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Param type changed in function `narrowingParams`: `a` (`num` → `int`, narrowed)
+
+**`platform constraint` sdk** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📱 Platform constraint changed: SDK constraint changed from `>=3.0.0 <4.0.0` to `>=3.2.0 <4.0.0`
+
 #### ✨ Minor changes
+
+**`class` AbstractModifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Modifier `abstract` removed from method: `willLoseAbstract`
 
 **`class` AnotherBaseClass** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `AnotherBaseClass`
+
+**`class` GenericClass<T>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Modifier `const` added to constructor: `new`
+
+**`class` Modifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Modifier `const` added to constructor: `new`
+- ❌ Modifier `final` removed from property: `willLoseFinal`
+- ❇️ Modifier `const` added to property: `willBecomeConst`
+- ❇️ Modifier `late` added to property: `willBecomeLate`
+- ❌ Modifier `late` removed from property: `willLoseLate`
 
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Param added in default constructor: `mobilePhone (named, optional)`
@@ -60,11 +105,6 @@
 **`function` calculateDiscount** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Param added in function `calculateDiscount`: `roundUp (named, optional, default: false)`
 
-#### 👀 Patch changes
-
-**`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ✏️ Param renamed in method `updatePhone`: `newPhone -> phone`
-
 
 ## 0.1.0
 
@@ -73,15 +113,24 @@
 
 #### ✨ Minor changes
 
+**`class` AbstractModifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `AbstractModifiers`
+
 **`class` ClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ➕ Interface added: `InterfaceB`
-- ➕ Mixin added: `MixinB`
+- ➕ Interface added: InterfaceB
+- ➕ Mixin added: MixinB
+
+**`class` GenericClass<T>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `GenericClass`
 
 **`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `InterfaceB`
 
 **`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Mixin added: `MixinB`
+
+**`class` Modifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `Modifiers`
 
 **`class` Order** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `Order`
@@ -99,13 +148,23 @@
 - ❇️ Params added in default constructor: `_internalId (named, optional)`, `phone (named, optional)`
 - ❇️ Constructor added: `fromJson`
 - ❇️ Property added: `phone`
-- ❇️ Methods added: `UnimplementedError`, `updateEmail`, `updatePhone`
+- ❇️ Params added in method `updateEmail`: `notifyUserViaEmail (named, optional, default: false)`, `logChange (named, optional, default: true)`
+- ❇️ Method added: `updatePhone`
 
 **`function` calculateDiscount** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Function added: `calculateDiscount`
 
 **`function` formatUserInfo** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Function added: `formatUserInfo`
+
+**`function` genericMethod<K, V>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Function added: `genericMethod`
+
+**`function` narrowingParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Function added: `narrowingParams`
+
+**`function` wideningParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- 🔄 Param type changed in function `wideningParams`: `a` (`int` → `num`, widened)
 
 #### 👀 Patch changes
 
@@ -123,6 +182,9 @@
 
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Property added: `_internalId`
+
+**`dependency` path** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency removed: `path`
 
 
 ## 0.0.2
@@ -147,8 +209,14 @@
 **`mixin` TimestampMixin** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Method added: `_updateTimestamp`
 
+**`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ✏️ Param renamed in method `updateEmail`: `newEmail` → `email`
+
 **`class` _PrivateClass** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `_PrivateClass`
+
+**`dependency` path** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.1..v0.0.2#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency added: `path`
 
 
 ## 0.0.1

@@ -6,6 +6,10 @@ class User {
   String? email;
 
   User(this.name, this.age, {this.email});
+
+  void updateEmail(String newEmail) {
+    email = newEmail;
+  }
 }
 
 class Product {
@@ -25,10 +29,7 @@ mixin TimestampMixin {
   DateTime? createdAt;
 }
 
-enum Status {
-  active,
-  inactive,
-}
+enum Status { active, inactive }
 
 typedef UserID = String;
 
@@ -43,3 +44,5 @@ abstract class InterfaceA {}
 mixin MixinA {}
 
 class ClassWithSuper extends BaseClass with MixinA implements InterfaceA {}
+
+void wideningParams(int a) {}

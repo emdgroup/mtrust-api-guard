@@ -37,6 +37,7 @@ enum ApiChangeOperation {
   added,
   removed,
   renamed,
+  reordered,
   typeChanged,
   // Constructor Parameter changes:
   becameOptional,
@@ -49,11 +50,20 @@ enum ApiChangeOperation {
   becamePublic,
   annotationAdded,
   annotationRemoved,
+  // Dependency changes:
+  dependencyAdded,
+  dependencyRemoved,
+  dependencyChanged,
+  // Platform constraint changes:
+  platformConstraintChanged,
   superClassChanged,
   interfaceAdded,
   interfaceRemoved,
   mixinAdded,
   mixinRemoved,
+  typeParametersChanged,
+  featureAdded,
+  featureRemoved,
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -79,6 +89,14 @@ class ApiChange {
       // For now, let's treat annotation changes as patch changes.
       // (We can revisit this decision later if needed.)
       return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.dependencyAdded ||
+        operation == ApiChangeOperation.dependencyRemoved ||
+        operation == ApiChangeOperation.dependencyChanged) {
+      return ApiChangeMagnitude.patch;
+    }
+    if (operation == ApiChangeOperation.platformConstraintChanged) {
+      return ApiChangeMagnitude.major;
     }
     if (operation == ApiChangeOperation.added ||
         operation == ApiChangeOperation.interfaceAdded ||
@@ -109,6 +127,7 @@ class PropertyApiChange extends ApiChange {
     required super.operation,
     required this.property,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -117,13 +136,28 @@ class PropertyApiChange extends ApiChange {
       // if the property is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      if (changedValue == 'final' || changedValue == 'static') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'static' || changedValue == 'const' || changedValue == 'covariant') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }
 
 class MethodApiChange extends ApiChange {
   final DocMethod method;
-  final String? newType;
+  final DocType? newType;
 
   MethodApiChange({
     required super.component,
@@ -131,6 +165,7 @@ class MethodApiChange extends ApiChange {
     required this.method,
     this.newType,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -139,6 +174,21 @@ class MethodApiChange extends ApiChange {
       // if the method is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      if (changedValue == 'static' || changedValue == 'abstract') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'static') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }
@@ -147,6 +197,7 @@ class MethodApiChange extends ApiChange {
 abstract class ParameterApiChange extends ApiChange {
   final DocParameter parameter;
   final String? oldName;
+  final DocType? newType;
   final String parentName;
 
   ParameterApiChange({
@@ -155,6 +206,7 @@ abstract class ParameterApiChange extends ApiChange {
     required this.parameter,
     required this.parentName,
     this.oldName,
+    this.newType,
     super.annotation,
   }) : super._();
 
@@ -167,6 +219,17 @@ abstract class ParameterApiChange extends ApiChange {
 
     if (operation == ApiChangeOperation.renamed) {
       return ApiChangeMagnitude.patch;
+    }
+
+    if (operation == ApiChangeOperation.reordered) {
+      return ApiChangeMagnitude.major;
+    }
+
+    if (operation == ApiChangeOperation.typeChanged) {
+      if (newType != null && parameter.type.isAssignableTo(newType!)) {
+        return ApiChangeMagnitude.minor;
+      }
+      return ApiChangeMagnitude.major;
     }
 
     if (operation == ApiChangeOperation.becameRequired ||
@@ -196,6 +259,7 @@ class MethodParameterApiChange extends ParameterApiChange {
     required this.method,
     required super.parameter,
     super.oldName,
+    super.newType,
     super.annotation,
   }) : super(parentName: method.name);
 }
@@ -208,6 +272,7 @@ class ConstructorApiChange extends ApiChange {
     required super.operation,
     required this.constructor,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -216,6 +281,18 @@ class ConstructorApiChange extends ApiChange {
       // if the constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'const') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }
@@ -229,6 +306,7 @@ class ConstructorParameterApiChange extends ParameterApiChange {
     required this.constructor,
     required super.parameter,
     super.oldName,
+    super.newType,
     super.annotation,
   }) : super(parentName: constructor.name);
 }

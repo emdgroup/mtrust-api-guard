@@ -1,4 +1,6 @@
 // Version 2 of the API
+// This fixture represents the "Before" state of the API for testing the diff tool.
+// It contains various definitions that will be modified, removed, or kept in the "After" state (app_v200).
 
 // Removed Product class (should be detected as removed)
 
@@ -6,23 +8,29 @@ class User {
   final String name;
   final int age;
   final String _internalId; // new private property (should be detected as added, private)
-  String? email;
+  String? email; // will become final in v200
   String? phone; // new property (should be detected as added)
 
   // Changed constructor: added required _internalId, phone is now optional named
+  // in v200: _internalId becomes positional
   User(this.name, this.age, {this._internalId, this.email, this.phone});
 
   // Added factory constructor:
   User.fromJson(Map<String, dynamic> json) :
     throw UnimplementedError();
 
-  // New methods:
-  void updateEmail(String newEmail) {
-    email = newEmail;
+  // Updated method: Add some optional named parameters with default values
+  void updateEmail(String email, {
+    bool notifyUserViaEmail = false,
+    bool logChange = true,
+  }) {
+    this.email = email;
   }
 
-  void updatePhone(String newPhone) {
-    phone = newPhone;
+  // New methods:
+  // in v200: return type changes to bool, params reordered
+  void updatePhone(String phone, String mobilePhone) {
+    this.phone = phone;
   }
 }
 
@@ -83,3 +91,53 @@ mixin MixinA {}
 mixin MixinB {}
 
 class ClassWithSuper extends BaseClass with MixinA, MixinB implements InterfaceA, InterfaceB {}
+
+// in v200: GenericClass will constrain T to extend num, make value final, and constructor const
+class GenericClass<T> {
+  T value;
+
+  GenericClass(this.value);
+}
+
+// in v200: signature changes significantly
+void genericMethod<K, V>(K key, V value) {
+  // Do something generic
+}
+
+// Test scenarios for parameter type changes
+void wideningParams(num a) {}
+
+void narrowingParams(num a) {}
+
+// Test scenarios for modifier changes
+// This class demonstrates various modifier changes (static, final, const, late) on fields and methods.
+class Modifiers {
+  // Static
+  int willBecomeStatic = 1;
+  static int willLoseStatic = 1;
+
+  // Final
+  int willBecomeFinal = 1;
+  final int willLoseFinal = 1;
+
+  // Const
+  static int willBecomeConst = 1;
+  static const int willLoseConst = 1;
+
+  // Late
+  int willBecomeLate = 1;
+  late int willLoseLate = 1;
+
+  // Methods
+  void willBecomeStaticMethod() {}
+  static void willLoseStaticMethod() {}
+  
+  // Constructors
+  Modifiers();
+  const Modifiers.named();
+}
+
+abstract class AbstractModifiers {
+  void willBecomeAbstract() {}
+  abstract void willLoseAbstract();
+}

@@ -4,9 +4,9 @@ import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator.dart';
 import 'package:mtrust_api_guard/logger.dart';
-import 'package:mtrust_api_guard/models/doc_items.dart';
+import 'package:mtrust_api_guard/models/package_info.dart';
 
-Future<List<DocComponent>> getRef({
+Future<PackageApi> getRef({
   required String ref,
   required Directory dartRoot,
   required Directory gitRoot,
@@ -17,7 +17,7 @@ Future<List<DocComponent>> getRef({
   if (file.existsSync()) {
     logger.info('Reading API documentation from local file: $ref');
     final content = await file.readAsString();
-    return parseDocComponentsFile(content);
+    return parsePackageApiFile(content);
   }
 
   // Handle git refs
@@ -28,7 +28,7 @@ Future<List<DocComponent>> getRef({
       logger.success('Using cached API documentation for $ref');
       final cachedContent = await cache.retrieveApiFile(gitRoot.path, ref);
       if (cachedContent != null) {
-        return parseDocComponentsFile(cachedContent);
+        return parsePackageApiFile(cachedContent);
       }
     } else {
       logger.info("Cache miss for $ref");
