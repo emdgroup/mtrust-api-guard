@@ -141,6 +141,23 @@ extension ConstructorApiChangesExt on DocConstructor {
       )),
     );
 
+    compareFeatures(
+      oldFeatures: features,
+      newFeatures: newConstructor.features,
+      onRemoved: (f) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: this,
+        operation: ApiChangeOperation.featureRemoved,
+        changedValue: f,
+      )),
+      onAdded: (f) => changes.add(ConstructorApiChange(
+        component: component,
+        constructor: this,
+        operation: ApiChangeOperation.featureAdded,
+        changedValue: f,
+      )),
+    );
+
     _compareParameters(
       oldParameters: signature,
       newParameters: newConstructor.signature,
@@ -223,6 +240,23 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           ));
         }
 
+        compareFeatures(
+          oldFeatures: oldP.features,
+          newFeatures: newP.features,
+          onRemoved: (f) => changes.add(PropertyApiChange(
+            component: component,
+            property: oldP,
+            operation: ApiChangeOperation.featureRemoved,
+            changedValue: f,
+          )),
+          onAdded: (f) => changes.add(PropertyApiChange(
+            component: component,
+            property: oldP,
+            operation: ApiChangeOperation.featureAdded,
+            changedValue: f,
+          )),
+        );
+
         compareAnnotations(
           oldAnnotations: oldP.annotations,
           newAnnotations: newP.annotations,
@@ -302,6 +336,23 @@ extension MethodApiChangesExt on DocMethod {
         changedValue: '`${typeParameters.join(', ')}` → `${newMethod.typeParameters.join(', ')}`',
       ));
     }
+
+    compareFeatures(
+      oldFeatures: features,
+      newFeatures: newMethod.features,
+      onRemoved: (f) => changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.featureRemoved,
+        changedValue: f,
+      )),
+      onAdded: (f) => changes.add(MethodApiChange(
+        component: component,
+        method: this,
+        operation: ApiChangeOperation.featureAdded,
+        changedValue: f,
+      )),
+    );
 
     compareAnnotations(
       oldAnnotations: annotations,

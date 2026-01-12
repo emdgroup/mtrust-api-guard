@@ -1,6 +1,33 @@
 import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 
+enum ApiChangeTarget {
+  property,
+  method,
+  function,
+  constructor,
+  parameter,
+  component, // For generic component
+  ;
+
+  String text({bool isPlural = false}) {
+    switch (this) {
+      case ApiChangeTarget.property:
+        return isPlural ? 'Properties' : 'Property';
+      case ApiChangeTarget.method:
+        return isPlural ? 'Methods' : 'Method';
+      case ApiChangeTarget.function:
+        return isPlural ? 'Functions' : 'Function';
+      case ApiChangeTarget.constructor:
+        return isPlural ? 'Constructors' : 'Constructor';
+      case ApiChangeTarget.parameter:
+        return isPlural ? 'Params' : 'Param';
+      case ApiChangeTarget.component:
+        return isPlural ? 'Components' : 'Component';
+    }
+  }
+}
+
 /// Formatter to display API changes in a hierarchical format
 class ApiChangeFormatter {
   final List<ApiChange> changes;
@@ -86,19 +113,24 @@ class ApiChangeFormatter {
 
   // Group changes by generating a change category that considers the type,
   // operation (and other properties if needed)
-  Map<int, List<ApiChange>> _groupByChangeCategory(List<ApiChange> changes) {
+  Map<String, List<ApiChange>> _groupByChangeCategory(List<ApiChange> changes) {
     return groupBy(
       changes,
       // calculate the "change category key" based on the change type, operation
       // and, for parameter changes, the parent (constructor/method) name
       (change) {
-        var hashCode = change.runtimeType.hashCode ^ change.operation.hashCode;
+        var key = '${change.runtimeType}-${change.operation}';
         if (change is ConstructorParameterApiChange) {
-          hashCode ^= change.constructor.name.hashCode;
+          key += '-${change.constructor.name}';
         } else if (change is MethodParameterApiChange) {
-          hashCode ^= change.method.name.hashCode;
+          key += '-${change.method.name}';
+        } else if (change.operation == ApiChangeOperation.featureAdded ||
+            change.operation == ApiChangeOperation.featureRemoved) {
+          if (change.changedValue != null) {
+            key += '-${change.changedValue}';
+          }
         }
-        return hashCode;
+        return key;
       },
     );
   }
@@ -131,37 +163,42 @@ class ApiChangeFormatter {
 
   /// Get the text representation of an operation using a prefix (e.g.
   /// "Properties", "Params", etc. depending on the type of change)
-  String _getOperationText(
-    ApiChangeOperation operation, {
-    required String prefix,
+  String _getOperationDescription(
+    ApiChangeOperation operation,
+    ApiChangeTarget target, {
+    bool isPlural = false,
+    String? changedValue,
+    String? componentLabel,
   }) {
+    final label = componentLabel ?? target.text(isPlural: isPlural);
+
     switch (operation) {
       case ApiChangeOperation.added:
-        return '❇️ $prefix added';
+        return '❇️ $label added';
       case ApiChangeOperation.removed:
-        return '❌ $prefix removed';
+        return '❌ $label removed';
       case ApiChangeOperation.becameOptional:
-        return '✅ $prefix became optional';
+        return '✅ $label became optional';
       case ApiChangeOperation.becameNullSafe:
-        return '✅ $prefix became null safe';
+        return '✅ $label became null safe';
       case ApiChangeOperation.becameRequired:
-        return '⚠️ $prefix became required';
+        return '⚠️ $label became required';
       case ApiChangeOperation.becameNullUnsafe:
-        return '⚠️ $prefix became null unsafe';
+        return '⚠️ $label became null unsafe';
       case ApiChangeOperation.becameNamed:
-        return '🔠 $prefix became named';
+        return '🔠 $label became named';
       case ApiChangeOperation.becamePositional:
-        return '🔢 $prefix became positional';
+        return '🔢 $label became positional';
       case ApiChangeOperation.reordered:
-        return '🔢 $prefix reordered';
+        return '🔢 $label reordered';
       case ApiChangeOperation.renamed:
-        return '✏️ $prefix renamed';
+        return '✏️ $label renamed';
       case ApiChangeOperation.typeChanged:
-        return '🔄 $prefix type changed';
+        return '🔄 $label type changed';
       case ApiChangeOperation.annotationAdded:
-        return '➕ $prefix annotation added';
+        return '➕ $label annotation added';
       case ApiChangeOperation.annotationRemoved:
-        return '➖ $prefix annotation removed';
+        return '➖ $label annotation removed';
       case ApiChangeOperation.superClassChanged:
         return '🔄 Superclass changed';
       case ApiChangeOperation.interfaceAdded:
@@ -182,6 +219,10 @@ class ApiChangeFormatter {
         return '📦 Dependency changed';
       case ApiChangeOperation.platformConstraintChanged:
         return '📱 Platform constraint changed';
+      case ApiChangeOperation.featureAdded:
+        return '❇️ Modifier `$changedValue` added to ${label.toLowerCase()}';
+      case ApiChangeOperation.featureRemoved:
+        return '❌ Modifier `$changedValue` removed from ${label.toLowerCase()}';
       default:
         return '';
     }
@@ -202,11 +243,21 @@ class ApiChangeFormatter {
     // we can rely that all changes are of the same operation
     final operation = changes.first.operation;
     if (changes.every((c) => c is PropertyApiChange)) {
-      final prefix = changes.length > 1 ? 'Properties' : 'Property';
-      final text = _getOperationText(operation, prefix: prefix);
+      final isPlural = changes.length > 1;
+      final text = _getOperationDescription(
+        operation,
+        ApiChangeTarget.property,
+        isPlural: isPlural,
+        changedValue: changes.first.changedValue,
+      );
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
+        final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}`').join(', ');
         return '$text: $details';
       }
 
@@ -217,12 +268,23 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is MethodApiChange)) {
       final firstChange = changes.first as MethodApiChange;
       final isFunction = firstChange.component.type == DocComponentType.functionType;
-      final prefix =
-          isFunction ? (changes.length > 1 ? 'Functions' : 'Function') : (changes.length > 1 ? 'Methods' : 'Method');
-      final text = _getOperationText(operation, prefix: prefix);
+      final isPlural = changes.length > 1;
+      final target = isFunction ? ApiChangeTarget.function : ApiChangeTarget.method;
+
+      final text = _getOperationDescription(
+        operation,
+        target,
+        isPlural: isPlural,
+        changedValue: firstChange.changedValue,
+      );
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details = changes.map((c) => '`${(c as MethodApiChange).method.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
+        final details = changes.map((c) => '`${(c as MethodApiChange).method.name}`').join(', ');
         return '$text: $details';
       }
 
@@ -247,8 +309,8 @@ class ApiChangeFormatter {
     }
 
     if (changes.every((c) => c is ConstructorParameterApiChange)) {
-      final prefix = changes.length > 1 ? 'Params' : 'Param';
-      final text = _getOperationText(operation, prefix: prefix);
+      final isPlural = changes.length > 1;
+      final text = _getOperationDescription(operation, ApiChangeTarget.parameter, isPlural: isPlural);
 
       final constructor = (changes.first as ConstructorParameterApiChange).constructor.name;
       String constructorLabel;
@@ -313,8 +375,8 @@ class ApiChangeFormatter {
     if (changes.every((c) => c is MethodParameterApiChange)) {
       final firstChange = changes.first as MethodParameterApiChange;
       final isFunction = firstChange.component.type == DocComponentType.functionType;
-      final prefix = changes.length > 1 ? 'Params' : 'Param';
-      final text = _getOperationText(operation, prefix: prefix);
+      final isPlural = changes.length > 1;
+      final text = _getOperationDescription(operation, ApiChangeTarget.parameter, isPlural: isPlural);
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details = changes.map((c) {
@@ -375,11 +437,22 @@ class ApiChangeFormatter {
 
     if (changes.every((c) => c is ConstructorApiChange)) {
       // This should always be a single change, so we use singular:
-      final text = _getOperationText(operation, prefix: 'Constructor');
+      final isPlural = changes.length > 1;
+      final text = _getOperationDescription(
+        operation,
+        ApiChangeTarget.constructor,
+        isPlural: isPlural,
+        changedValue: changes.first.changedValue,
+      );
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details =
             changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}` (${c.annotation})').join(', ');
+        return '$text: $details';
+      }
+
+      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
+        final details = changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}`').join(', ');
         return '$text: $details';
       }
 
@@ -391,7 +464,9 @@ class ApiChangeFormatter {
       // This should always be a single change, so we use singular:
       final component = (changes.first as ComponentApiChange).component;
       final prefix = _getComponentTypeLabel(component.type);
-      final text = _getOperationText(operation, prefix: prefix);
+      final isPlural = changes.length > 1;
+      final text =
+          _getOperationDescription(operation, ApiChangeTarget.component, isPlural: isPlural, componentLabel: prefix);
 
       if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
         final details =

@@ -62,6 +62,8 @@ enum ApiChangeOperation {
   mixinAdded,
   mixinRemoved,
   typeParametersChanged,
+  featureAdded,
+  featureRemoved,
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -125,6 +127,7 @@ class PropertyApiChange extends ApiChange {
     required super.operation,
     required this.property,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -133,6 +136,21 @@ class PropertyApiChange extends ApiChange {
       // if the property is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      if (changedValue == 'final' || changedValue == 'static') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'static' || changedValue == 'const' || changedValue == 'covariant') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }
@@ -156,6 +174,21 @@ class MethodApiChange extends ApiChange {
       // if the method is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      if (changedValue == 'static' || changedValue == 'abstract') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'static') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }
@@ -239,6 +272,7 @@ class ConstructorApiChange extends ApiChange {
     required super.operation,
     required this.constructor,
     super.annotation,
+    super.changedValue,
   }) : super._();
 
   @override
@@ -247,6 +281,18 @@ class ConstructorApiChange extends ApiChange {
       // if the constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
+
+    if (operation == ApiChangeOperation.featureRemoved) {
+      if (changedValue == 'const') {
+        return ApiChangeMagnitude.major;
+      }
+      return ApiChangeMagnitude.minor;
+    }
+
+    if (operation == ApiChangeOperation.featureAdded) {
+      return ApiChangeMagnitude.minor;
+    }
+
     return super.getMagnitude();
   }
 }

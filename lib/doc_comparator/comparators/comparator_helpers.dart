@@ -36,6 +36,29 @@ void compareLists<T>({
   }
 }
 
+/// Compares two lists of features (modifiers) and invokes callbacks for added and removed features.
+void compareFeatures({
+  required List<String> oldFeatures,
+  required List<String> newFeatures,
+  required void Function(String feature) onRemoved,
+  required void Function(String feature) onAdded,
+}) {
+  final oldSet = oldFeatures.toSet();
+  final newSet = newFeatures.toSet();
+
+  for (final feature in oldSet) {
+    if (!newSet.contains(feature)) {
+      onRemoved(feature);
+    }
+  }
+
+  for (final feature in newSet) {
+    if (!oldSet.contains(feature)) {
+      onAdded(feature);
+    }
+  }
+}
+
 /// Compares two lists of annotations and invokes callbacks for added and removed annotations.
 ///
 /// [oldAnnotations] The list of annotations from the old version.

@@ -2,7 +2,7 @@
   "metadata": {
     "packageName": "api_guard_test",
     "packageVersion": "0.0.1",
-    "sdkVersion": "^3.10.4",
+    "sdkVersion": "^3.10.7",
     "dependencies": [
       {
         "packageName": "flutter",
