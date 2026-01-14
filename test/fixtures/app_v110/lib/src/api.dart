@@ -1,4 +1,4 @@
-// Version 2 of the API
+// Version 0.1.0 of the API
 // This fixture represents the "Before" state of the API for testing the diff tool.
 // It contains various definitions that will be modified, removed, or kept in the "After" state (app_v200).
 

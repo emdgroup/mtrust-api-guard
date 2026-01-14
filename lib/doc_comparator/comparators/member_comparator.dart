@@ -68,50 +68,50 @@ void _compareParameters({
     final newParam = allMatches[oldParam]!;
 
     if (oldParam.name != newParam.name) {
-      onDiff(newParam, ApiChangeOperation.renamed, oldName: oldParam.name);
+      onDiff(newParam, ApiChangeOperation.renaming, oldName: oldParam.name);
     }
 
     if (oldParam.type != newParam.type) {
-      onDiff(oldParam, ApiChangeOperation.typeChanged, newType: newParam.type);
+      onDiff(oldParam, ApiChangeOperation.typeChange, newType: newParam.type);
     }
 
     if (oldParam.required != newParam.required) {
       onDiff(
         oldParam,
-        oldParam.required ? ApiChangeOperation.becameOptional : ApiChangeOperation.becameRequired,
+        oldParam.required ? ApiChangeOperation.becomingOptional : ApiChangeOperation.becomingRequired,
       );
     }
 
     if (oldParam.named != newParam.named) {
       onDiff(
         oldParam,
-        oldParam.named ? ApiChangeOperation.becamePositional : ApiChangeOperation.becameNamed,
+        oldParam.named ? ApiChangeOperation.becomingPositional : ApiChangeOperation.becomingNamed,
       );
     } else if (!oldParam.named) {
       // Check for reordering (only for positional parameters)
       final oldIndex = oldPositional.indexOf(oldParam);
       final newIndex = newPositional.indexOf(newParam);
       if (oldIndex != -1 && newIndex != -1 && oldIndex != newIndex) {
-        onDiff(oldParam, ApiChangeOperation.reordered);
+        onDiff(oldParam, ApiChangeOperation.reordering);
       }
     }
 
     compareAnnotations(
       oldAnnotations: oldParam.annotations,
       newAnnotations: newParam.annotations,
-      onRemoved: (a) => onDiff(oldParam, ApiChangeOperation.annotationRemoved, annotation: a),
-      onAdded: (a) => onDiff(oldParam, ApiChangeOperation.annotationAdded, annotation: a),
+      onRemoved: (a) => onDiff(oldParam, ApiChangeOperation.annotationRemoval, annotation: a),
+      onAdded: (a) => onDiff(oldParam, ApiChangeOperation.annotationAddition, annotation: a),
     );
   }
 
   // Process removed
   for (final oldParam in oldParamsCopy) {
-    onDiff(oldParam, ApiChangeOperation.removed);
+    onDiff(oldParam, ApiChangeOperation.removal);
   }
 
   // Process added
   for (final newParam in newParamsCopy) {
-    onDiff(newParam, ApiChangeOperation.added);
+    onDiff(newParam, ApiChangeOperation.addition);
   }
 }
 
@@ -130,13 +130,13 @@ extension ConstructorApiChangesExt on DocConstructor {
       onRemoved: (a) => changes.add(ConstructorApiChange(
         component: component,
         constructor: this,
-        operation: ApiChangeOperation.annotationRemoved,
+        operation: ApiChangeOperation.annotationRemoval,
         annotation: a,
       )),
       onAdded: (a) => changes.add(ConstructorApiChange(
         component: component,
         constructor: this,
-        operation: ApiChangeOperation.annotationAdded,
+        operation: ApiChangeOperation.annotationAddition,
         annotation: a,
       )),
     );
@@ -147,13 +147,13 @@ extension ConstructorApiChangesExt on DocConstructor {
       onRemoved: (f) => changes.add(ConstructorApiChange(
         component: component,
         constructor: this,
-        operation: ApiChangeOperation.featureRemoved,
+        operation: ApiChangeOperation.featureRemoval,
         changedValue: f,
       )),
       onAdded: (f) => changes.add(ConstructorApiChange(
         component: component,
         constructor: this,
-        operation: ApiChangeOperation.featureAdded,
+        operation: ApiChangeOperation.featureAddition,
         changedValue: f,
       )),
     );
@@ -194,12 +194,12 @@ extension ConstructorListApiChangesExt on List<DocConstructor> {
       onRemoved: (c) => changes.add(ConstructorApiChange(
         component: component,
         constructor: c,
-        operation: ApiChangeOperation.removed,
+        operation: ApiChangeOperation.removal,
       )),
       onAdded: (c) => changes.add(ConstructorApiChange(
         component: component,
         constructor: c,
-        operation: ApiChangeOperation.added,
+        operation: ApiChangeOperation.addition,
       )),
       onMatched: (oldC, newC) => changes.addAll(oldC.compareTo(newC, component: component)),
     );
@@ -224,19 +224,19 @@ extension PropertyListApiChangesExt on List<DocProperty> {
       onRemoved: (p) => changes.add(PropertyApiChange(
         component: component,
         property: p,
-        operation: ApiChangeOperation.removed,
+        operation: ApiChangeOperation.removal,
       )),
       onAdded: (p) => changes.add(PropertyApiChange(
         component: component,
         property: p,
-        operation: ApiChangeOperation.added,
+        operation: ApiChangeOperation.addition,
       )),
       onMatched: (oldP, newP) {
         if (oldP.type != newP.type) {
           changes.add(PropertyApiChange(
             component: component,
             property: oldP,
-            operation: ApiChangeOperation.typeChanged,
+            operation: ApiChangeOperation.typeChange,
           ));
         }
 
@@ -246,13 +246,13 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           onRemoved: (f) => changes.add(PropertyApiChange(
             component: component,
             property: oldP,
-            operation: ApiChangeOperation.featureRemoved,
+            operation: ApiChangeOperation.featureRemoval,
             changedValue: f,
           )),
           onAdded: (f) => changes.add(PropertyApiChange(
             component: component,
             property: oldP,
-            operation: ApiChangeOperation.featureAdded,
+            operation: ApiChangeOperation.featureAddition,
             changedValue: f,
           )),
         );
@@ -263,13 +263,13 @@ extension PropertyListApiChangesExt on List<DocProperty> {
           onRemoved: (a) => changes.add(PropertyApiChange(
             component: component,
             property: oldP,
-            operation: ApiChangeOperation.annotationRemoved,
+            operation: ApiChangeOperation.annotationRemoval,
             annotation: a,
           )),
           onAdded: (a) => changes.add(PropertyApiChange(
             component: component,
             property: oldP,
-            operation: ApiChangeOperation.annotationAdded,
+            operation: ApiChangeOperation.annotationAddition,
             annotation: a,
           )),
         );
@@ -296,12 +296,12 @@ extension MethodListApiChangesExt on List<DocMethod> {
       onRemoved: (m) => changes.add(MethodApiChange(
         component: component,
         method: m,
-        operation: ApiChangeOperation.removed,
+        operation: ApiChangeOperation.removal,
       )),
       onAdded: (m) => changes.add(MethodApiChange(
         component: component,
         method: m,
-        operation: ApiChangeOperation.added,
+        operation: ApiChangeOperation.addition,
       )),
       onMatched: (oldM, newM) => changes.addAll(oldM.compareTo(newM, component: component)),
     );
@@ -323,7 +323,7 @@ extension MethodApiChangesExt on DocMethod {
       changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.typeChanged,
+        operation: ApiChangeOperation.typeChange,
         newType: newMethod.returnType,
       ));
     }
@@ -332,7 +332,7 @@ extension MethodApiChangesExt on DocMethod {
       changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.typeParametersChanged,
+        operation: ApiChangeOperation.typeParametersChange,
         changedValue: '`${typeParameters.join(', ')}` → `${newMethod.typeParameters.join(', ')}`',
       ));
     }
@@ -343,13 +343,13 @@ extension MethodApiChangesExt on DocMethod {
       onRemoved: (f) => changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.featureRemoved,
+        operation: ApiChangeOperation.featureRemoval,
         changedValue: f,
       )),
       onAdded: (f) => changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.featureAdded,
+        operation: ApiChangeOperation.featureAddition,
         changedValue: f,
       )),
     );
@@ -360,13 +360,13 @@ extension MethodApiChangesExt on DocMethod {
       onRemoved: (a) => changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.annotationRemoved,
+        operation: ApiChangeOperation.annotationRemoval,
         annotation: a,
       )),
       onAdded: (a) => changes.add(MethodApiChange(
         component: component,
         method: this,
-        operation: ApiChangeOperation.annotationAdded,
+        operation: ApiChangeOperation.annotationAddition,
         annotation: a,
       )),
     );

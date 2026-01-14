@@ -16,17 +16,14 @@ enum DocComponentType {
   typedefType,
   @JsonValue('extension')
   extensionType,
-  @JsonValue('dependency')
-  dependencyType,
-  @JsonValue('platform_constraint')
-  platformConstraintType,
+  @JsonValue('meta')
+  metaType,
 }
 
 @JsonSerializable()
 class DocComponent {
   const DocComponent({
     required this.name,
-    required this.isNullSafe,
     required this.description,
     required this.constructors,
     required this.properties,
@@ -43,7 +40,6 @@ class DocComponent {
 
   final String? filePath;
   final String name;
-  final bool isNullSafe;
   final String description;
   final List<DocConstructor> constructors;
   final List<DocProperty> properties;
@@ -58,16 +54,14 @@ class DocComponent {
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
-  factory DocComponent.metadata({
+  factory DocComponent.meta({
     required String name,
-    required DocComponentType type,
     required String description,
     String? filePath,
   }) {
     return DocComponent(
       name: name,
-      type: type,
-      isNullSafe: true,
+      type: DocComponentType.metaType,
       description: description,
       constructors: const [],
       properties: const [],

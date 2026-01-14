@@ -13,11 +13,11 @@ extension DocComponentListApiChangesExt on List<DocComponent> {
       keyExtractor: (c) => c.name,
       onRemoved: (c) => changes.add(ComponentApiChange(
         component: c,
-        operation: ApiChangeOperation.removed,
+        operation: ApiChangeOperation.removal,
       )),
       onAdded: (c) => changes.add(ComponentApiChange(
         component: c,
-        operation: ApiChangeOperation.added,
+        operation: ApiChangeOperation.addition,
       )),
       onMatched: (oldC, newC) => changes.addAll(oldC.compareTo(newC)),
     );
@@ -30,20 +30,11 @@ extension DocComponentApiChangesExt on DocComponent {
   List<ApiChange> compareTo(DocComponent newComponent) {
     final changes = <ApiChange>[];
 
-    if (isNullSafe != newComponent.isNullSafe) {
-      changes.add(
-        ComponentApiChange(
-          component: this,
-          operation: newComponent.isNullSafe ? ApiChangeOperation.becameNullSafe : ApiChangeOperation.becameNullUnsafe,
-        ),
-      );
-    }
-
     if (aliasedType != newComponent.aliasedType) {
       changes.add(
         ComponentApiChange(
           component: this,
-          operation: ApiChangeOperation.typeChanged,
+          operation: ApiChangeOperation.typeChange,
         ),
       );
     }
@@ -53,12 +44,12 @@ extension DocComponentApiChangesExt on DocComponent {
       newAnnotations: newComponent.annotations,
       onRemoved: (a) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.annotationRemoved,
+        operation: ApiChangeOperation.annotationRemoval,
         annotation: a,
       )),
       onAdded: (a) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.annotationAdded,
+        operation: ApiChangeOperation.annotationAddition,
         annotation: a,
       )),
     );
@@ -66,7 +57,7 @@ extension DocComponentApiChangesExt on DocComponent {
     if (superClass != newComponent.superClass) {
       changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.superClassChanged,
+        operation: ApiChangeOperation.superClassChange,
         changedValue: '`${superClass ?? 'null'}` → `${newComponent.superClass ?? 'null'}`',
       ));
     }
@@ -77,12 +68,12 @@ extension DocComponentApiChangesExt on DocComponent {
       keyExtractor: (i) => i,
       onRemoved: (i) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.interfaceRemoved,
+        operation: ApiChangeOperation.interfaceRemoval,
         changedValue: i,
       )),
       onAdded: (i) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.interfaceAdded,
+        operation: ApiChangeOperation.interfaceImplementation,
         changedValue: i,
       )),
       onMatched: (_, __) {},
@@ -94,12 +85,12 @@ extension DocComponentApiChangesExt on DocComponent {
       keyExtractor: (m) => m,
       onRemoved: (m) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.mixinRemoved,
+        operation: ApiChangeOperation.mixinRemoval,
         changedValue: m,
       )),
       onAdded: (m) => changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.mixinAdded,
+        operation: ApiChangeOperation.mixinApplication,
         changedValue: m,
       )),
       onMatched: (_, __) {},
@@ -111,7 +102,7 @@ extension DocComponentApiChangesExt on DocComponent {
         !const ListEquality().equals(typeParameters, newComponent.typeParameters)) {
       changes.add(ComponentApiChange(
         component: this,
-        operation: ApiChangeOperation.typeParametersChanged,
+        operation: ApiChangeOperation.typeParametersChange,
         changedValue: '`${typeParameters.join(', ')}` → `${newComponent.typeParameters.join(', ')}`',
       ));
     }

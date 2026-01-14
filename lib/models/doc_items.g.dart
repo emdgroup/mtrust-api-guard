@@ -8,7 +8,6 @@ part of 'doc_items.dart';
 
 DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
       name: json['name'] as String,
-      isNullSafe: json['isNullSafe'] as bool,
       description: json['description'] as String,
       constructors: (json['constructors'] as List<dynamic>)
           .map((e) => DocConstructor.fromJson(e as Map<String, dynamic>))
@@ -29,7 +28,6 @@ DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) => <String, dynamic>{
       'filePath': instance.filePath,
       'name': instance.name,
-      'isNullSafe': instance.isNullSafe,
       'description': instance.description,
       'constructors': instance.constructors,
       'properties': instance.properties,
@@ -50,8 +48,7 @@ const _$DocComponentTypeEnumMap = {
   DocComponentType.enumType: 'enum',
   DocComponentType.typedefType: 'typedef',
   DocComponentType.extensionType: 'extension',
-  DocComponentType.dependencyType: 'dependency',
-  DocComponentType.platformConstraintType: 'platform_constraint',
+  DocComponentType.metaType: 'meta',
 };
 
 DocProperty _$DocPropertyFromJson(Map<String, dynamic> json) => DocProperty(

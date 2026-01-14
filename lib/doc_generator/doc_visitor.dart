@@ -22,7 +22,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
@@ -45,7 +44,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
@@ -64,7 +62,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(element.fields2),
@@ -82,7 +79,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],
@@ -101,7 +97,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3 ?? 'extension',
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(element.fields2),
@@ -120,7 +115,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],

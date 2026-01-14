@@ -1,4 +1,4 @@
-// Version 3 of the API
+// Version 1.0.0 of the API
 // This fixture represents the "After" state of the API for testing the diff tool.
 // It contains changes relative to app_v110 (Version 2).
 
