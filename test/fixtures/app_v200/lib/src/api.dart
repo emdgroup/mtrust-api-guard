@@ -140,3 +140,9 @@ abstract class AbstractModifiers {
   abstract void willBecomeAbstract();
   void willLoseAbstract() {}
 }
+
+class MagnitudeOverrideTest {
+  // removed fields
+
+  void paramWillBeRenamedAsBreaking(String newName) {}
+}

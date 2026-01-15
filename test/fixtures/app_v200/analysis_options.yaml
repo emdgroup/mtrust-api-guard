@@ -1,0 +1,18 @@
+api_guard:
+  magnitude_overrides:
+    # Example: Renaming a parameter will be considered magnitude major (instead of minor)
+    - rule: renaming
+      magnitude: major
+
+    # Example: Treat preoperty removals as patch changes
+    - rule: removal
+      selection:
+        element_kind:
+          - property
+      magnitude: patch
+
+    # Example: Ignore removals of private elements entirely
+    - rule: removal
+      magnitude: ignore
+      selection:
+        is_public: false

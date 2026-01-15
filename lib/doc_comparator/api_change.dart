@@ -6,6 +6,7 @@ import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 /// backwards-compatible changes.
 /// A [major] change is a change that breaks the API or removes features.
 enum ApiChangeMagnitude {
+  ignore,
   patch,
   minor,
   major;
@@ -101,7 +102,15 @@ class ApiChange {
     this.changedValue,
   });
 
+  ApiChangeMagnitude? _overriddenMagnitude;
+
+  void overrideMagnitude(ApiChangeMagnitude magnitude) {
+    _overriddenMagnitude = magnitude;
+  }
+
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     if (component.name.startsWith('_')) {
       // if the component is private, it's a patch change
       return ApiChangeMagnitude.patch;
@@ -227,6 +236,8 @@ class PropertyApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     // Check privacy first - private members are always patch changes
     if (property.name.startsWith('_')) {
       return ApiChangeMagnitude.patch;
@@ -281,6 +292,8 @@ class MethodApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     // Check privacy first - private methods are always patch changes
     if (method.name.startsWith('_')) {
       return ApiChangeMagnitude.patch;
@@ -301,6 +314,10 @@ class MethodApiChange extends ApiChange {
     }
 
     return super.getMagnitude();
+  }
+
+  bool isFunctionChange() {
+    return component.type == DocComponentType.functionType;
   }
 }
 
@@ -341,6 +358,8 @@ abstract class ParameterApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     if (parentName.startsWith('_')) {
       // if the parent method/constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
@@ -419,6 +438,8 @@ class ConstructorApiChange extends ApiChange {
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     // Check privacy first - private constructors are always patch changes
     if (constructor.name.startsWith('_')) {
       return ApiChangeMagnitude.patch;

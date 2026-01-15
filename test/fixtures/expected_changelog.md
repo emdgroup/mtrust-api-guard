@@ -25,6 +25,9 @@
 **`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `InterfaceB`
 
+**`class` MagnitudeOverrideTest** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ✏️ Param renamed in method `paramWillBeRenamedAsBreaking`: `name` → `newName`
+
 **`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Mixin removed: `MixinB`
 
@@ -40,22 +43,13 @@
 **`class` Product** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `Product`
 
-**`enum` Status** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ❌ Property removed: `inactive`
-
-**`extension` StringExt** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ❌ Property removed: `isValid`
-
-**`mixin` TimestampMixin** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ❌ Property removed: `createdAt`
-
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ⚠️ Param became required in default constructor: `_internalId` (named, optional)
 - 🔢 Param became positional in default constructor: `_internalId` (named, optional)
 - ❇️ Modifier `final` added to property: `email`
 - ❌ Method removed: `updateEmail`
 - 🔄 Method type changed: `updatePhone` (`void` → `bool`)
-- 🔢 Paramss reordered in method `updatePhone`: `phone` (positional, required), `mobilePhone` (positional, required)
+- 🔢 Params reordered in method `updatePhone`: `phone` (positional, required), `mobilePhone` (positional, required)
 
 **`typedef` UserID** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - 🔄 Typedef type changed: UserID
@@ -105,6 +99,20 @@
 **`function` calculateDiscount** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Param added in function `calculateDiscount`: `roundUp` (named, optional, default: false)
 
+#### 👀 Patch changes
+
+**`class` MagnitudeOverrideTest** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Properties removed: `willBeRemovedAsNonBreaking`, `_willNotBeReportedInChangelog`
+
+**`enum` Status** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Property removed: `inactive`
+
+**`extension` StringExt** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Property removed: `isValid`
+
+**`mixin` TimestampMixin** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Property removed: `createdAt`
+
 
 ## 0.1.0
 
@@ -125,6 +133,9 @@
 
 **`class` InterfaceB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `InterfaceB`
+
+**`class` MagnitudeOverrideTest** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `MagnitudeOverrideTest`
 
 **`mixin` MixinB** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Mixin added: `MixinB`
@@ -175,13 +186,6 @@
 - ➕ Class annotation added: `Product` (@deprecated)
 - ➕ Properties annotation added: `id` (@deprecated), `price` (@deprecated)
 - ❌ Property removed: `_internalId`
-- ❌ Method removed: `_generateInternalId`
-
-**`extension` StringExt** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ❌ Method removed: `_isInternal`
-
-**`mixin` TimestampMixin** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
-- ❌ Method removed: `_updateTimestamp`
 
 **`class` User** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Property added: `_internalId`

@@ -132,6 +132,8 @@ class ApiChangeFormatter {
         return '${'#' * markdownHeaderLevel} ✨ Minor changes';
       case ApiChangeMagnitude.patch:
         return '${'#' * markdownHeaderLevel} 👀 Patch changes';
+      default:
+        return '';
     }
   }
 

@@ -1,6 +1,9 @@
 import 'dart:io';
 
+import 'package:mtrust_api_guard/logger.dart';
 import 'package:yaml/yaml.dart';
+
+import 'package:mtrust_api_guard/config/magnitude_override.dart';
 
 /// Configuration of the api guard. Can be placed in the analysis_options.yaml
 /// file.
@@ -14,10 +17,14 @@ class ApiGuardConfig {
   /// Whether to generate a badge for the version.
   final bool generateBadge;
 
+  /// Overrides for the magnitude of changes.
+  final List<MagnitudeOverride> magnitudeOverrides;
+
   ApiGuardConfig({
     required this.include,
     required this.exclude,
     required this.generateBadge,
+    this.magnitudeOverrides = const [],
   });
 
   factory ApiGuardConfig.defaultConfig() {
@@ -25,6 +32,7 @@ class ApiGuardConfig {
       include: {'lib/**.dart'},
       exclude: {},
       generateBadge: true,
+      magnitudeOverrides: [],
     );
   }
 
@@ -32,11 +40,13 @@ class ApiGuardConfig {
     bool? generateBadge,
     Set<String>? include,
     Set<String>? exclude,
+    List<MagnitudeOverride>? magnitudeOverrides,
   }) {
     return ApiGuardConfig(
       include: include ?? this.include,
       exclude: exclude ?? this.exclude,
       generateBadge: generateBadge ?? this.generateBadge,
+      magnitudeOverrides: magnitudeOverrides ?? this.magnitudeOverrides,
     );
   }
 
@@ -58,10 +68,40 @@ class ApiGuardConfig {
       return ApiGuardConfig.defaultConfig();
     }
 
+    final magnitudeOverrides = (apiGuard['magnitude_overrides'] as YamlList?)
+            ?.map((e) => MagnitudeOverride.fromMap(Map<String, dynamic>.from(e as Map)))
+            .toList() ??
+        [];
+
+    logger.info('Loaded ${magnitudeOverrides.length} magnitude overrides from analysis_options.yaml');
+    logger.detail('Magnitude Overrides: $magnitudeOverrides');
+
     return defaultConfig.copyWith(
       include: (apiGuard["include"] as YamlList?)?.map((e) => e.toString()).toSet(),
       exclude: (apiGuard["exclude"] as YamlList?)?.map((e) => e.toString()).toSet(),
       generateBadge: apiGuard['generateBadge'],
+      magnitudeOverrides: magnitudeOverrides,
     );
+  }
+
+  /// Loads the configuration from the `analysis_options.yaml` file in the
+  /// provided [root] directory. Returns the default configuration if the file
+  /// does not exist or if the `api_guard` section is missing.
+  static ApiGuardConfig load(Directory root) {
+    final configFile = File('${root.path}/analysis_options.yaml');
+    if (configFile.existsSync()) {
+      try {
+        return ApiGuardConfig.fromYaml(configFile);
+      } catch (e) {
+        // We can't use the logger here easily without creating a dependency
+        // loop or passing it in. It's safe to throw or print if needed,
+        // but for now let's just return default and maybe log outside.
+        // Actually, let's rethrow or let the caller handle.
+        // But to keep it simple as a helper:
+        logger.warn('Warning: Failed to load analysis_options.yaml: $e');
+        return ApiGuardConfig.defaultConfig();
+      }
+    }
+    return ApiGuardConfig.defaultConfig();
   }
 }
