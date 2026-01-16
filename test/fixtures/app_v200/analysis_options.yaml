@@ -1,14 +1,14 @@
 api_guard:
   magnitude_overrides:
     # Example: Ignore removals of private elements entirely
-    - rule: removal
+    - operation: removal
       magnitude: ignore
       selection:
         name_pattern: "^_.*"
 
-    # We can also use the "rule" field as a way to describe the override
-    - rule: Adding internal or experimental elements are considered as patch
-      operation: addition # Use 'operation' instead of 'rule' to match ApiChange operations
+    # We can also use the "description" field as a way to describe the override
+    - description: Adding internal or experimental elements are considered as patch
+      operation: addition
       magnitude: patch
       selection:
         has_annotation:
@@ -16,26 +16,26 @@ api_guard:
           - "experimental"
 
     # Example: Renaming a parameter will be considered as a major change
-    - rule: renaming
+    - operation: renaming
       magnitude: major
       selection:
-        element_kind:
+        entity:
           - parameter
         enclosing:
           enclosing:
             name_pattern: "^MagnitudeOverrideTest$"
 
     # Example: Treat property removals in mixins as patch changes
-    - rule: removal
+    - operation: removal
       magnitude: patch
       selection:
-        element_kind:
+        entity:
           - property
         enclosing:
-          element_kind: mixin
+          entity: mixin
 
     # Example: All changes to classes extending MagnitudeOverrideTest are minor
-    - rule: "*"
+    - operation: "*"
       magnitude: minor
       selection:
         subtype_of:

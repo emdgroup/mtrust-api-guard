@@ -18,7 +18,7 @@ void applyMagnitudeOverrides(List<ApiChange> changes, ApiGuardConfig config) {
           logger.detail(
             'Overriding magnitude for ${change.component.name} '
             '(${change.operation.name}) from ${originalMagnitude.name} '
-            'to ${magnitude.name} (Rule: ${override.rule})',
+            'to ${magnitude.name} (Rule: ${override.description ?? override.operations.join(", ")})',
           );
         }
         break; // Stop after the first matching override
@@ -31,14 +31,10 @@ bool _matches(MagnitudeOverride override, ApiChange change) {
   final operationName = change.operation.name;
   bool operationMatched = false;
 
-  if (override.operations != null) {
-    if (override.operations!.contains(operationName)) {
-      operationMatched = true;
-    }
-  } else {
-    if (override.rule == '*' || override.rule == operationName) {
-      operationMatched = true;
-    }
+  if (override.operations.contains('*') || override.operations.contains('all')) {
+    operationMatched = true;
+  } else if (override.operations.contains(operationName)) {
+    operationMatched = true;
   }
 
   if (!operationMatched) return false;
@@ -52,9 +48,9 @@ bool _matches(MagnitudeOverride override, ApiChange change) {
 }
 
 bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
-  if (selection.elementKind != null) {
+  if (selection.entity != null) {
     // Check if any of the kinds match (case-insensitive)
-    if (!selection.elementKind!.any((k) => k.toLowerCase() == context.kind)) {
+    if (!selection.entity!.any((k) => k.toLowerCase() == context.kind)) {
       return false;
     }
   }

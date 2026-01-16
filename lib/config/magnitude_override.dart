@@ -1,44 +1,46 @@
 /// Represents a configured override for a specific rule.
 class MagnitudeOverride {
-  final String rule;
+  final List<String> operations;
   final String magnitude;
-  final List<String>? operations;
   final OverrideSelection? selection;
+  final String? description;
 
   MagnitudeOverride({
-    required this.rule,
+    required this.operations,
     required this.magnitude,
-    this.operations,
     this.selection,
+    this.description,
   });
 
   factory MagnitudeOverride.fromMap(Map<String, dynamic> map) {
+    var ops = OverrideSelection._parseListOrString(map['operation']);
+
     return MagnitudeOverride(
-      rule: map['rule'] as String,
+      operations: ops ?? ['*'], // Default to wildcard if missing
       magnitude: map['magnitude'] as String,
-      operations: OverrideSelection._parseListOrString(map['operation']),
       selection: map['selection'] != null
           ? OverrideSelection.fromMap(Map<String, dynamic>.from(map['selection'] as Map))
           : null,
+      description: map['description'] as String?,
     );
   }
 
   @override
   toString() {
-    return 'MagnitudeOverride(rule: $rule, magnitude: $magnitude, operations: $operations, selection: $selection)';
+    return 'MagnitudeOverride(operations: $operations, magnitude: $magnitude, selection: $selection, description: $description)';
   }
 }
 
 /// Defines criteria for selecting elements (e.g., public methods in mixins).
 class OverrideSelection {
-  final List<String>? elementKind;
+  final List<String>? entity;
   final String? namePattern;
   final List<String>? hasAnnotation;
   final List<String>? subtypeOf;
   final OverrideSelection? enclosing;
 
   OverrideSelection({
-    this.elementKind,
+    this.entity,
     this.namePattern,
     this.hasAnnotation,
     this.subtypeOf,
@@ -47,7 +49,7 @@ class OverrideSelection {
 
   factory OverrideSelection.fromMap(Map<String, dynamic> map) {
     return OverrideSelection(
-      elementKind: _parseListOrString(map['element_kind']),
+      entity: _parseListOrString(map['entity']) ?? _parseListOrString(map['element_kind']),
       namePattern: map['name_pattern'] as String?,
       hasAnnotation: _parseListOrString(map['has_annotation']),
       subtypeOf: _parseListOrString(map['subtype_of']),
@@ -66,6 +68,6 @@ class OverrideSelection {
 
   @override
   String toString() {
-    return 'OverrideSelection(elementKind: $elementKind, namePattern: $namePattern, hasAnnotation: $hasAnnotation, subtypeOf: $subtypeOf, enclosing: $enclosing)';
+    return 'OverrideSelection(entity: $entity, namePattern: $namePattern, hasAnnotation: $hasAnnotation, subtypeOf: $subtypeOf, enclosing: $enclosing)';
   }
 }
