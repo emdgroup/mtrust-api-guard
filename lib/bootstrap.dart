@@ -28,7 +28,7 @@ import 'package:path/path.dart';
 
   // Detect the files to analyze
 
-  final analysisOptionsFile = File('$rootDir.path/analysis_options.yaml');
+  final analysisOptionsFile = File('${rootDir.path}/analysis_options.yaml');
 
   ApiGuardConfig config;
 

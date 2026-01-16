@@ -10,38 +10,17 @@ extension MetadataComparator on PackageMetadata {
       oldList: dependencies,
       newList: newMeta.dependencies,
       keyExtractor: (d) => d.packageName,
-      onRemoved: (d) => changes.add(ComponentApiChange(
-        component: DocComponent.metadata(
-          name: d.packageName,
-          type: DocComponentType.dependencyType,
-          description: 'Dependency',
-          filePath: 'pubspec.yaml',
-        ),
-        operation: ApiChangeOperation.dependencyRemoved,
-        changedValue: 'Dependency `${d.packageName}` removed',
-      )),
-      onAdded: (d) => changes.add(ComponentApiChange(
-        component: DocComponent.metadata(
-          name: d.packageName,
-          type: DocComponentType.dependencyType,
-          description: 'Dependency',
-          filePath: 'pubspec.yaml',
-        ),
-        operation: ApiChangeOperation.dependencyAdded,
-        changedValue: 'Dependency `${d.packageName}` added',
+      onRemoved: (d) => changes.add(MetaApiChange.dependencyRemoved(dependencyName: d.packageName)),
+      onAdded: (d) => changes.add(MetaApiChange.dependencyAdded(
+        dependencyName: d.packageName,
+        version: d.packageVersion,
       )),
       onMatched: (oldD, newD) {
         if (oldD.packageVersion != newD.packageVersion) {
-          changes.add(ComponentApiChange(
-            component: DocComponent.metadata(
-              name: oldD.packageName,
-              type: DocComponentType.dependencyType,
-              description: 'Dependency',
-              filePath: 'pubspec.yaml',
-            ),
-            operation: ApiChangeOperation.dependencyChanged,
-            changedValue:
-                'Dependency `${oldD.packageName}` changed from `${oldD.packageVersion}` to `${newD.packageVersion}`',
+          changes.add(MetaApiChange.dependencyVersionChange(
+            dependencyName: oldD.packageName,
+            version: newD.packageVersion,
+            previousVersion: oldD.packageVersion,
           ));
         }
       },
@@ -50,13 +29,12 @@ extension MetadataComparator on PackageMetadata {
     // Compare SDK constraints
     if (sdkVersion != newMeta.sdkVersion) {
       changes.add(ComponentApiChange(
-        component: DocComponent.metadata(
+        component: DocComponent.meta(
           name: 'sdk',
-          type: DocComponentType.platformConstraintType,
           description: 'Dart SDK Constraint',
           filePath: 'pubspec.yaml',
         ),
-        operation: ApiChangeOperation.platformConstraintChanged,
+        operation: ApiChangeOperation.platformConstraintChange,
         changedValue: 'SDK constraint changed from `$sdkVersion` to `${newMeta.sdkVersion}`',
       ));
     }
@@ -67,13 +45,12 @@ extension MetadataComparator on PackageMetadata {
       final newMin = newMeta.androidConstraints?.minSdkVersion;
       if (baseMin != newMin) {
         changes.add(ComponentApiChange(
-          component: DocComponent.metadata(
+          component: DocComponent.meta(
             name: 'android:minSdkVersion',
-            type: DocComponentType.platformConstraintType,
             description: 'Android minSdkVersion',
             filePath: 'android/app/build.gradle',
           ),
-          operation: ApiChangeOperation.platformConstraintChanged,
+          operation: ApiChangeOperation.platformConstraintChange,
           changedValue: 'Android minSdkVersion changed from `$baseMin` to `$newMin`',
         ));
       }
@@ -86,13 +63,12 @@ extension MetadataComparator on PackageMetadata {
       final newMin = newMeta.iosConstraints?.minimumOsVersion;
       if (baseMin != newMin) {
         changes.add(ComponentApiChange(
-          component: DocComponent.metadata(
+          component: DocComponent.meta(
             name: 'ios:minimumOsVersion',
-            type: DocComponentType.platformConstraintType,
             description: 'iOS minimumOsVersion',
             filePath: 'ios/Runner.xcodeproj/project.pbxproj',
           ),
-          operation: ApiChangeOperation.platformConstraintChanged,
+          operation: ApiChangeOperation.platformConstraintChange,
           changedValue: 'iOS minimumOsVersion changed from `$baseMin` to `$newMin`',
         ));
       }

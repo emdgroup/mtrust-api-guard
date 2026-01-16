@@ -1,4 +1,4 @@
-// Version 1 of the API
+// Version 0.0.1 of the API
 
 class User {
   final String name;

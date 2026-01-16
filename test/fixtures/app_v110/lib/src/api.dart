@@ -1,4 +1,4 @@
-// Version 2 of the API
+// Version 0.1.0 of the API
 // This fixture represents the "Before" state of the API for testing the diff tool.
 // It contains various definitions that will be modified, removed, or kept in the "After" state (app_v200).
 
@@ -141,3 +141,18 @@ abstract class AbstractModifiers {
   void willBecomeAbstract() {}
   abstract void willLoseAbstract();
 }
+
+// Test scenarios for magnitude overrides, see analysis_options.yaml in app_v200
+mixin MagnitudeOverrideTest {
+  String willBeRemovedAsNonBreaking;
+  String _willNotBeReportedInChangelog;
+
+  void paramWillBeRenamedAsBreaking(String name) {}
+
+  class InnerClass {
+    void innerMethod() {}
+  }
+}
+
+// Removal of this subclass will be considered minor change due to override
+class ClassRemovalWillBeMinorBecauseExtendsClassWithSuper extends ClassWithSuper {}
