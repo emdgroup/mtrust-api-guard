@@ -2,13 +2,13 @@
 class MagnitudeOverride {
   final String rule;
   final String magnitude;
-  final String? operation;
+  final List<String>? operations;
   final OverrideSelection? selection;
 
   MagnitudeOverride({
     required this.rule,
     required this.magnitude,
-    this.operation,
+    this.operations,
     this.selection,
   });
 
@@ -16,7 +16,7 @@ class MagnitudeOverride {
     return MagnitudeOverride(
       rule: map['rule'] as String,
       magnitude: map['magnitude'] as String,
-      operation: map['operation'] as String?,
+      operations: OverrideSelection._parseListOrString(map['operation']),
       selection: map['selection'] != null
           ? OverrideSelection.fromMap(Map<String, dynamic>.from(map['selection'] as Map))
           : null,
@@ -25,7 +25,7 @@ class MagnitudeOverride {
 
   @override
   toString() {
-    return 'MagnitudeOverride(rule: $rule, magnitude: $magnitude, operation: $operation, selection: $selection)';
+    return 'MagnitudeOverride(rule: $rule, magnitude: $magnitude, operations: $operations, selection: $selection)';
   }
 }
 

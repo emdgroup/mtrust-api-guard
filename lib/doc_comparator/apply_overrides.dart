@@ -31,12 +31,12 @@ bool _matches(MagnitudeOverride override, ApiChange change) {
   final operationName = change.operation.name;
   bool operationMatched = false;
 
-  if (override.operation != null) {
-    if (override.operation == operationName) {
+  if (override.operations != null) {
+    if (override.operations!.contains(operationName)) {
       operationMatched = true;
     }
   } else {
-    if (override.rule == operationName) {
+    if (override.rule == '*' || override.rule == operationName) {
       operationMatched = true;
     }
   }
