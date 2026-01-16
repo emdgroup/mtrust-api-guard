@@ -74,6 +74,19 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
     if (!anyAnnotationMatched) return false;
   }
 
+  if (selection.subtypeOf != null) {
+    bool subtypeMatched = false;
+    for (final parentType in selection.subtypeOf!) {
+      // Direct types check (extends, implements, with)
+      // Note: This is an exact string check against the type names in the code
+      if (context.superTypes.contains(parentType)) {
+        subtypeMatched = true;
+        break;
+      }
+    }
+    if (!subtypeMatched) return false;
+  }
+
   if (selection.enclosing != null) {
     if (context.enclosing == null) return false;
     if (!_matchesSelection(selection.enclosing!, context.enclosing!)) {
@@ -88,39 +101,62 @@ class _SelectionContext {
   final String name;
   final String kind;
   final List<String> annotations;
+  final List<String> superTypes;
   final _SelectionContext? enclosing;
 
   _SelectionContext({
     required this.name,
     required this.kind,
     required this.annotations,
+    required this.superTypes,
     this.enclosing,
   });
+
+  @override
+  String toString() {
+    return 'SelectionContext(name: $name, kind: $kind, annotations: $annotations, superTypes: $superTypes, enclosing: $enclosing)';
+  }
 }
 
 _SelectionContext _createContext(ApiChange change) {
   // Component context (usually the enclosing class/mixin/etc.)
   final componentKind = _getComponentKind(change.component.type);
+
+  final superTypes = <String>[];
+  superTypes.addAll(change.component.superClasses);
+  superTypes.addAll(change.component.interfaces);
+  superTypes.addAll(change.component.mixins);
+
   final componentContext = _SelectionContext(
     name: change.component.name,
     kind: componentKind,
     annotations: change.component.annotations,
+    superTypes: superTypes,
     enclosing: null,
   );
 
   if (change is PropertyApiChange) {
+    // Add the property type and its supertypes to the check
+    final propertySupertypes = [change.property.type.name, ...change.property.type.superTypes];
+
     return _SelectionContext(
       name: change.property.name,
       kind: 'property',
       annotations: change.property.annotations,
+      superTypes: propertySupertypes,
       enclosing: componentContext,
     );
   } else if (change is MethodApiChange) {
     final kind = change.isFunctionChange() ? 'function' : 'method';
+
+    // For methods, we consider the return type as the primary type for checking
+    final returnTypeSupertypes = [change.method.returnType.name, ...change.method.returnType.superTypes];
+
     return _SelectionContext(
       name: change.method.name,
       kind: kind,
       annotations: change.method.annotations,
+      superTypes: returnTypeSupertypes,
       enclosing: componentContext,
     );
   } else if (change is ParameterApiChange) {
@@ -131,10 +167,12 @@ _SelectionContext _createContext(ApiChange change) {
     // Check methods
     final parentMethod = change.component.methods.firstWhereOrNull((m) => m.name == parentName);
     if (parentMethod != null) {
+      final returnTypeSupertypes = [parentMethod.returnType.name, ...parentMethod.returnType.superTypes];
       methodContext = _SelectionContext(
         name: parentMethod.name,
         kind: 'method',
         annotations: parentMethod.annotations,
+        superTypes: returnTypeSupertypes,
         enclosing: componentContext,
       );
     } else {
@@ -145,6 +183,7 @@ _SelectionContext _createContext(ApiChange change) {
           name: parentConstructor.name,
           kind: 'constructor',
           annotations: parentConstructor.annotations,
+          superTypes: [],
           enclosing: componentContext,
         );
       } else {
@@ -153,15 +192,19 @@ _SelectionContext _createContext(ApiChange change) {
           name: parentName,
           kind: 'method', // assume method/constructor
           annotations: [],
+          superTypes: [],
           enclosing: componentContext,
         );
       }
     }
 
+    final parameterSupertypes = [change.parameter.type.name, ...change.parameter.type.superTypes];
+
     return _SelectionContext(
       name: change.parameter.name,
       kind: 'parameter',
       annotations: change.parameter.annotations,
+      superTypes: parameterSupertypes,
       enclosing: methodContext,
     );
   } else {

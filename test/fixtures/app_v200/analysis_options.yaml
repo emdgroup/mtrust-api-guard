@@ -33,3 +33,10 @@ api_guard:
           - property
         enclosing:
           element_kind: mixin
+
+    # Example: All changes to classes extending MagnitudeOverrideTest are minor
+    - rule: "*"
+      magnitude: minor
+      selection:
+        subtype_of:
+          - ClassWithSuper

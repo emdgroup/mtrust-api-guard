@@ -32,7 +32,7 @@ class DocComponent {
     this.type = DocComponentType.classType,
     this.aliasedType,
     this.annotations = const [],
-    this.superClass,
+    this.superClasses = const [],
     this.interfaces = const [],
     this.mixins = const [],
     this.typeParameters = const [],
@@ -47,7 +47,7 @@ class DocComponent {
   final DocComponentType type;
   final String? aliasedType;
   final List<String> annotations;
-  final String? superClass;
+  final List<String> superClasses;
   final List<String> interfaces;
   final List<String> mixins;
   final List<String> typeParameters;

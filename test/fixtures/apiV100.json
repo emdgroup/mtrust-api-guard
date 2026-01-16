@@ -128,7 +128,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -201,7 +201,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -250,7 +250,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -268,7 +268,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -286,7 +286,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -304,7 +304,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": "BaseClass",
+      "superClasses": ["BaseClass"],
       "interfaces": ["InterfaceA"],
       "mixins": ["MixinA"],
       "typeParameters": []
@@ -367,7 +367,7 @@
       "type": "enum",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -395,7 +395,7 @@
       "type": "extension",
       "aliasedType": "String",
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -423,7 +423,7 @@
       "type": "mixin",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -439,7 +439,7 @@
       "type": "mixin",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -483,7 +483,7 @@
       "type": "function",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -499,7 +499,7 @@
       "type": "typedef",
       "aliasedType": "String",
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []

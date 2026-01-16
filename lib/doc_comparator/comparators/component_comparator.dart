@@ -54,11 +54,13 @@ extension DocComponentApiChangesExt on DocComponent {
       )),
     );
 
-    if (superClass != newComponent.superClass) {
+    final oldSuperClass = superClasses.firstOrNull;
+    final newSuperClass = newComponent.superClasses.firstOrNull;
+    if (oldSuperClass != newSuperClass) {
       changes.add(ComponentApiChange(
         component: this,
         operation: ApiChangeOperation.superClassChange,
-        changedValue: '`${superClass ?? 'null'}` → `${newComponent.superClass ?? 'null'}`',
+        changedValue: '`${oldSuperClass ?? 'Object'}` → `${newSuperClass ?? 'Object'}`',
       ));
     }
 

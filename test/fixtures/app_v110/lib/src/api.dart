@@ -142,6 +142,7 @@ abstract class AbstractModifiers {
   abstract void willLoseAbstract();
 }
 
+// Test scenarios for magnitude overrides, see analysis_options.yaml in app_v200
 mixin MagnitudeOverrideTest {
   String willBeRemovedAsNonBreaking;
   String _willNotBeReportedInChangelog;
@@ -152,3 +153,6 @@ mixin MagnitudeOverrideTest {
     void innerMethod() {}
   }
 }
+
+// Removal of this subclass will be considered minor change due to override
+class ClassRemovalWillBeMinorBecauseExtendsClassWithSuper extends ClassWithSuper {}

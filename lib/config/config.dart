@@ -74,7 +74,6 @@ class ApiGuardConfig {
         [];
 
     logger.info('Loaded ${magnitudeOverrides.length} magnitude overrides from analysis_options.yaml');
-    logger.detail('Magnitude Overrides: $magnitudeOverrides');
 
     return defaultConfig.copyWith(
       include: (apiGuard["include"] as YamlList?)?.map((e) => e.toString()).toSet(),
