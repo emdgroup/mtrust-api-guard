@@ -3,12 +3,7 @@
     "packageName": "api_guard_test",
     "packageVersion": "0.0.1",
     "sdkVersion": "^3.10.7",
-    "dependencies": [
-      {
-        "packageName": "flutter",
-        "packageVersion": null
-      }
-    ],
+    "dependencies": [{ "packageName": "flutter", "packageVersion": null }],
     "androidConstraints": null,
     "iosConstraints": null
   },
@@ -27,11 +22,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -44,11 +35,7 @@
               "description": "",
               "type": {
                 "name": "int",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -61,11 +48,7 @@
               "description": "",
               "type": {
                 "name": "String?",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": true
               },
               "named": true,
@@ -83,45 +66,29 @@
           "name": "name",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "age",
           "type": {
             "name": "int",
-            "superTypes": [
-              "num",
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["num", "Object", "Comparable"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "email",
           "type": {
             "name": "String?",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": true
           },
           "description": "",
@@ -143,11 +110,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -184,11 +147,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -201,11 +160,7 @@
               "description": "",
               "type": {
                 "name": "double",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -223,34 +178,22 @@
           "name": "id",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "price",
           "type": {
             "name": "double",
-            "superTypes": [
-              "num",
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["num", "Object", "Comparable"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         }
       ],
@@ -277,11 +220,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -299,17 +238,11 @@
           "name": "secret",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         }
       ],
@@ -328,12 +261,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
@@ -351,12 +279,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
@@ -374,12 +297,7 @@
       "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
@@ -387,12 +305,8 @@
       "aliasedType": null,
       "annotations": [],
       "superClass": "BaseClass",
-      "interfaces": [
-        "InterfaceA"
-      ],
-      "mixins": [
-        "MixinA"
-      ],
+      "interfaces": ["InterfaceA"],
+      "mixins": ["MixinA"],
       "typeParameters": []
     },
     {
@@ -404,9 +318,7 @@
         {
           "name": "new",
           "signature": [],
-          "features": [
-            "const"
-          ],
+          "features": ["const"],
           "annotations": []
         }
       ],
@@ -415,34 +327,22 @@
           "name": "active",
           "type": {
             "name": "Status",
-            "superTypes": [
-              "Enum",
-              "Object"
-            ],
+            "superTypes": ["Enum", "Object"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         },
         {
           "name": "inactive",
           "type": {
             "name": "Status",
-            "superTypes": [
-              "Enum",
-              "Object"
-            ],
+            "superTypes": ["Enum", "Object"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         },
         {
@@ -459,10 +359,7 @@
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         }
       ],
@@ -486,9 +383,7 @@
           "name": "isValid",
           "type": {
             "name": "bool",
-            "superTypes": [
-              "Object"
-            ],
+            "superTypes": ["Object"],
             "isNullable": false
           },
           "description": "",
@@ -516,10 +411,7 @@
           "name": "createdAt",
           "type": {
             "name": "DateTime?",
-            "superTypes": [
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["Object", "Comparable"],
             "isNullable": true
           },
           "description": "",
@@ -573,11 +465,7 @@
               "description": "",
               "type": {
                 "name": "int",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -586,9 +474,7 @@
               "annotations": []
             }
           ],
-          "features": [
-            "static"
-          ],
+          "features": ["static"],
           "description": "",
           "annotations": [],
           "typeParameters": []

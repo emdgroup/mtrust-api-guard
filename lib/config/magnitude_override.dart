@@ -31,18 +31,38 @@ class MagnitudeOverride {
 
 /// Defines criteria for selecting elements (e.g., public methods in mixins).
 class OverrideSelection {
-  final bool? isPublic;
   final List<String>? elementKind;
+  final String? namePattern;
+  final List<String>? hasAnnotation;
+  final OverrideSelection? enclosing;
 
   OverrideSelection({
-    this.isPublic,
     this.elementKind,
+    this.namePattern,
+    this.hasAnnotation,
+    this.enclosing,
   });
 
   factory OverrideSelection.fromMap(Map<String, dynamic> map) {
     return OverrideSelection(
-      isPublic: map['is_public'] as bool?,
-      elementKind: (map['element_kind'] as List?)?.cast<String>(),
+      elementKind: _parseListOrString(map['element_kind']),
+      namePattern: map['name_pattern'] as String?,
+      hasAnnotation: _parseListOrString(map['has_annotation']),
+      enclosing: map['enclosing'] != null
+          ? OverrideSelection.fromMap(Map<String, dynamic>.from(map['enclosing'] as Map))
+          : null,
     );
+  }
+
+  static List<String>? _parseListOrString(dynamic value) {
+    if (value == null) return null;
+    if (value is String) return [value];
+    if (value is List) return value.map((e) => e.toString()).toList();
+    return null;
+  }
+
+  @override
+  String toString() {
+    return 'OverrideSelection(elementKind: $elementKind, namePattern: $namePattern, hasAnnotation: $hasAnnotation, enclosing: $enclosing)';
   }
 }

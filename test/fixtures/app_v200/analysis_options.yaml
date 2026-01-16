@@ -1,18 +1,35 @@
 api_guard:
   magnitude_overrides:
-    # Example: Renaming a parameter will be considered magnitude major (instead of minor)
-    - rule: renaming
-      magnitude: major
-
-    # Example: Treat preoperty removals as patch changes
-    - rule: removal
-      selection:
-        element_kind:
-          - property
-      magnitude: patch
-
     # Example: Ignore removals of private elements entirely
     - rule: removal
       magnitude: ignore
       selection:
-        is_public: false
+        name_pattern: "^_.*"
+
+    # We can also use the "rule" field as a way to describe the override
+    - rule: Adding internal or experimental elements are considered as patch
+      operation: addition # Use 'operation' instead of 'rule' to match ApiChange operations
+      magnitude: patch
+      selection:
+        has_annotation:
+          - "internal"
+          - "experimental"
+
+    # Example: Renaming a parameter will be considered as a major change
+    - rule: renaming
+      magnitude: major
+      selection:
+        element_kind:
+          - parameter
+        enclosing:
+          enclosing:
+            name_pattern: "^MagnitudeOverrideTest$"
+
+    # Example: Treat property removals in mixins as patch changes
+    - rule: removal
+      magnitude: patch
+      selection:
+        element_kind:
+          - property
+        enclosing:
+          element_kind: mixin

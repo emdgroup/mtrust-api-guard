@@ -29,19 +29,13 @@ void applyMagnitudeOverrides(List<ApiChange> changes, ApiGuardConfig config) {
 
 bool _matches(MagnitudeOverride override, ApiChange change) {
   final operationName = change.operation.name;
-
-  // Determine if we should check 'rule' or 'operation' against the change operation
   bool operationMatched = false;
 
-  // If 'operation' is explicitly provided, it must match.
-  // We treat 'rule' as just a label in this case.
-  // But strictly, if operation is provided, we use it for matching the op.
   if (override.operation != null) {
     if (override.operation == operationName) {
       operationMatched = true;
     }
   } else {
-    // If no operation provided, 'rule' must match the operation
     if (override.rule == operationName) {
       operationMatched = true;
     }
@@ -50,31 +44,130 @@ bool _matches(MagnitudeOverride override, ApiChange change) {
   if (!operationMatched) return false;
 
   if (override.selection != null) {
-    String? elementKind;
-    bool? isPublic;
+    final context = _createContext(change);
+    if (!_matchesSelection(override.selection!, context)) return false;
+  }
 
-    if (change is PropertyApiChange) {
-      elementKind = 'property';
-      isPublic = !change.property.name.startsWith('_');
-    } else if (change is MethodApiChange) {
-      elementKind = change.isFunctionChange() ? 'function' : 'method';
-      isPublic = !change.method.name.startsWith('_');
-    } else {
-      // Top level component change
-      elementKind = _getComponentKind(change.component.type);
-      isPublic = !change.component.name.startsWith('_');
+  return true;
+}
+
+bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
+  if (selection.elementKind != null) {
+    // Check if any of the kinds match (case-insensitive)
+    if (!selection.elementKind!.any((k) => k.toLowerCase() == context.kind)) {
+      return false;
     }
+  }
 
-    final sel = override.selection!;
+  if (selection.namePattern != null) {
+    if (!RegExp(selection.namePattern!).hasMatch(context.name)) return false;
+  }
 
-    if (sel.isPublic != null && sel.isPublic != isPublic) return false;
+  if (selection.hasAnnotation != null) {
+    bool anyAnnotationMatched = false;
+    for (final required in selection.hasAnnotation!) {
+      if (context.annotations.any((a) => a.contains(required))) {
+        anyAnnotationMatched = true;
+        break;
+      }
+    }
+    if (!anyAnnotationMatched) return false;
+  }
 
-    if (sel.elementKind != null) {
-      if (!sel.elementKind!.contains(elementKind.toLowerCase())) return false;
+  if (selection.enclosing != null) {
+    if (context.enclosing == null) return false;
+    if (!_matchesSelection(selection.enclosing!, context.enclosing!)) {
+      return false;
     }
   }
 
   return true;
+}
+
+class _SelectionContext {
+  final String name;
+  final String kind;
+  final List<String> annotations;
+  final _SelectionContext? enclosing;
+
+  _SelectionContext({
+    required this.name,
+    required this.kind,
+    required this.annotations,
+    this.enclosing,
+  });
+}
+
+_SelectionContext _createContext(ApiChange change) {
+  // Component context (usually the enclosing class/mixin/etc.)
+  final componentKind = _getComponentKind(change.component.type);
+  final componentContext = _SelectionContext(
+    name: change.component.name,
+    kind: componentKind,
+    annotations: change.component.annotations,
+    enclosing: null,
+  );
+
+  if (change is PropertyApiChange) {
+    return _SelectionContext(
+      name: change.property.name,
+      kind: 'property',
+      annotations: change.property.annotations,
+      enclosing: componentContext,
+    );
+  } else if (change is MethodApiChange) {
+    final kind = change.isFunctionChange() ? 'function' : 'method';
+    return _SelectionContext(
+      name: change.method.name,
+      kind: kind,
+      annotations: change.method.annotations,
+      enclosing: componentContext,
+    );
+  } else if (change is ParameterApiChange) {
+    // Try to resolve the parent method/constructor context
+    _SelectionContext? methodContext;
+    final parentName = change.parentName;
+
+    // Check methods
+    final parentMethod = change.component.methods.firstWhereOrNull((m) => m.name == parentName);
+    if (parentMethod != null) {
+      methodContext = _SelectionContext(
+        name: parentMethod.name,
+        kind: 'method',
+        annotations: parentMethod.annotations,
+        enclosing: componentContext,
+      );
+    } else {
+      // Check constructors
+      final parentConstructor = change.component.constructors.firstWhereOrNull((c) => c.name == parentName);
+      if (parentConstructor != null) {
+        methodContext = _SelectionContext(
+          name: parentConstructor.name,
+          kind: 'constructor',
+          annotations: parentConstructor.annotations,
+          enclosing: componentContext,
+        );
+      } else {
+        // Fallback for unknown parent (should not happen normally)
+        methodContext = _SelectionContext(
+          name: parentName,
+          kind: 'method', // assume method/constructor
+          annotations: [],
+          enclosing: componentContext,
+        );
+      }
+    }
+
+    return _SelectionContext(
+      name: change.parameter.name,
+      kind: 'parameter',
+      annotations: change.parameter.annotations,
+      enclosing: methodContext,
+    );
+  } else {
+    // Top-level component change
+    return componentContext;
+  }
 }
 
 String _getComponentKind(DocComponentType type) {

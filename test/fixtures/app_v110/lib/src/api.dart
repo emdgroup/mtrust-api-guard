@@ -142,9 +142,13 @@ abstract class AbstractModifiers {
   abstract void willLoseAbstract();
 }
 
-class MagnitudeOverrideTest {
+mixin MagnitudeOverrideTest {
   String willBeRemovedAsNonBreaking;
   String _willNotBeReportedInChangelog;
 
   void paramWillBeRenamedAsBreaking(String name) {}
+
+  class InnerClass {
+    void innerMethod() {}
+  }
 }

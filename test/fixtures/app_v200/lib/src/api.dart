@@ -144,5 +144,11 @@ abstract class AbstractModifiers {
 class MagnitudeOverrideTest {
   // removed fields
 
+  @internal
+  String internalField; // new field with @internal annotation
+
+  @experimental
+  String experimentalField; // new field with @experimental annotation
+
   void paramWillBeRenamedAsBreaking(String newName) {}
 }
