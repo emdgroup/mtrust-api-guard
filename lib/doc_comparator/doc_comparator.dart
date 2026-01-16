@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:mtrust_api_guard/doc_comparator/comparators/component_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/comparators/metadata_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/get_ref.dart';
-import 'package:mtrust_api_guard/logger.dart';
 
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 

@@ -2,7 +2,6 @@ import 'package:analyzer/dart/element/element2.dart';
 import 'package:analyzer/dart/element/nullability_suffix.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/visitor2.dart';
-import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/models/doc_items.dart';
 import 'package:mtrust_api_guard/models/doc_type.dart';
 
