@@ -145,7 +145,10 @@ Future<PackageApi> generateDocs({
       String filePath = library.uri.toString();
       try {
         if (library.uri.isScheme('package')) {
-          // Attempt to resolve to relative path if within project
+          // Attempt to resolve to relative path if within project.
+          // For external packages (e.g. Flutter), we keep the package: URI
+          // as the file path, as it provides a stable reference compared to
+          // local pub-cache paths.
           final sourcePath = library.firstFragment.source.fullName;
           if (isWithin(dartRoot.path, sourcePath)) {
             filePath = relative(sourcePath, from: dartRoot.path);
