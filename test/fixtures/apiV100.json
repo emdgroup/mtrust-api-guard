@@ -310,7 +310,7 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": ["BaseClass"],
-      "superClassPackages": ["test_package_v1"],
+      "superClassPackages": ["api_guard_test"],
       "interfaces": ["InterfaceA"],
       "mixins": ["MixinA"],
       "typeParameters": []
