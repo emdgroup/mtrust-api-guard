@@ -1,4 +1,7 @@
 api_guard:
+  entry_points:
+    - lib/src/api.dart
+
   magnitude_overrides:
     # Example: Ignore removals of private elements entirely
     - operation: removal
@@ -52,3 +55,9 @@ api_guard:
           entity: constructor
           enclosing:
             subtype_of: Widget
+
+    # Example: Ignore classes that extend the 'dart:core' package entirely
+    - operation: "*"
+      magnitude: ignore
+      selection:
+        from_package: "dart:core"

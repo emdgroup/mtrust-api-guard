@@ -29,16 +29,22 @@ class DocComponent {
     required this.properties,
     required this.methods,
     this.filePath,
+    this.entryPoint,
     this.type = DocComponentType.classType,
     this.aliasedType,
     this.annotations = const [],
     this.superClasses = const [],
+    this.superClassPackages = const [],
     this.interfaces = const [],
     this.mixins = const [],
     this.typeParameters = const [],
   });
 
+  /// The relative path to the file that defines this component.
   final String? filePath;
+
+  /// The entry point that exposed this component (optional).
+  final String? entryPoint;
   final String name;
   final String description;
   final List<DocConstructor> constructors;
@@ -48,6 +54,7 @@ class DocComponent {
   final String? aliasedType;
   final List<String> annotations;
   final List<String> superClasses;
+  final List<String> superClassPackages;
   final List<String> interfaces;
   final List<String> mixins;
   final List<String> typeParameters;

@@ -12,23 +12,28 @@ import 'package:mtrust_api_guard/models/doc_type.dart';
 /// type aliases, extensions, and top-level functions.
 class DocVisitor extends RecursiveElementVisitor2<void> {
   final String filePath;
+  final String? entryPoint;
   final List<DocComponent> components = [];
 
-  DocVisitor({required this.filePath});
+  DocVisitor({required this.filePath, this.entryPoint});
 
   /// Visits a class element and extracts its documentation.
   @override
   void visitClassElement(ClassElement2 element) {
+    final superTypeInfo = _getSuperTypeInfo(element);
+
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
+      entryPoint: entryPoint,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.classType,
       annotations: _getAnnotations(element),
-      superClasses: _getSuperClasses(element),
+      superClasses: superTypeInfo.superClasses,
+      superClassPackages: superTypeInfo.superClassPackages,
       interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
       mixins: element.mixins.map((e) => e.element3.name3!).toList(),
       typeParameters: _getTypeParameters(element.typeParameters2),
@@ -285,13 +290,28 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     );
   }
 
-  List<String> _getSuperClasses(ClassElement2 element) {
+  ({List<String> superClasses, List<String> superClassPackages}) _getSuperTypeInfo(ClassElement2 element) {
     var superClasses = <String>[];
+    var superClassPackages = <String>[];
     var current = element.supertype;
+
     while (current != null && !current.isDartCoreObject) {
+      // 1. Add Class Name
       superClasses.add(current.element3.name3!);
+
+      // 2. Add Package Name
+      final uri = current.element3.library2.uri;
+      if (uri.isScheme('package')) {
+        superClassPackages.add(uri.pathSegments.first);
+      } else if (uri.isScheme('dart')) {
+        superClassPackages.add(uri.toString().split('/').first);
+      } else {
+        superClassPackages.add('project');
+      }
+
       current = current.superclass;
     }
-    return superClasses;
+
+    return (superClasses: superClasses, superClassPackages: superClassPackages);
   }
 }

@@ -134,6 +134,9 @@
 **`class` AbstractModifiers** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `AbstractModifiers`
 
+**`class` ClassExtendingFromDartPackage** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `ClassExtendingFromDartPackage`
+
 **`class` ClassRemovalWillBeMinorBecauseExtendsClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `ClassRemovalWillBeMinorBecauseExtendsClassWithSuper`
 
