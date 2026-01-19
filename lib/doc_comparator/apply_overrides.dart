@@ -20,6 +20,11 @@ void applyMagnitudeOverrides(List<ApiChange> changes, ApiGuardConfig config) {
             '(${change.operation.name}) from ${originalMagnitude.name} '
             'to ${magnitude.name} (Rule: ${override.description ?? override.operations.join(", ")})',
           );
+        } else {
+          logger.detail(
+            'WARNING: Invalid magnitude "${override.magnitude}" in override for '
+            '${change.component.name} (${change.operation.name}). Skipping magnitude override.',
+          );
         }
         break; // Stop after the first matching override
       }
@@ -56,7 +61,15 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
   }
 
   if (selection.namePattern != null) {
-    if (!RegExp(selection.namePattern!).hasMatch(context.name)) return false;
+    try {
+      final regex = RegExp(selection.namePattern!);
+      if (!regex.hasMatch(context.name)) return false;
+    } on FormatException catch (e) {
+      // Provide a clearer error message when an invalid regex pattern is configured.
+      throw FormatException(
+        'Invalid namePattern regex "${selection.namePattern}": ${e.message}',
+      );
+    }
   }
 
   if (selection.hasAnnotation != null) {
