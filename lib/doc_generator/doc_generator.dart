@@ -181,7 +181,10 @@ Future<PackageApi> generateDocs({
         }
 
         if (useRecursiveAnalysis) {
-          visitLibraryRecursive(libraryResult.element2, file);
+          visitLibraryRecursive(
+            libraryResult.element2,
+            relative(file, from: dartRoot.path),
+          );
         } else {
           // Legacy / Glob mode: non-recursive, just the file
           final visitor = DocVisitor(

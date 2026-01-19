@@ -10,6 +10,7 @@
   "components": [
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "User",
       "description": "",
       "constructors": [
@@ -135,6 +136,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "Product",
       "description": "",
       "constructors": [
@@ -208,6 +210,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "_PrivateClass",
       "description": "",
       "constructors": [
@@ -257,6 +260,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "BaseClass",
       "description": "",
       "constructors": [
@@ -275,6 +279,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "InterfaceA",
       "description": "",
       "constructors": [
@@ -293,6 +298,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "ClassWithSuper",
       "description": "",
       "constructors": [
@@ -311,6 +317,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "Status",
       "description": "",
       "constructors": [
@@ -374,6 +381,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "StringExt",
       "description": "",
       "constructors": [],
@@ -402,6 +410,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "TimestampMixin",
       "description": "",
       "constructors": [],
@@ -430,6 +439,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "MixinA",
       "description": "",
       "constructors": [],
@@ -446,6 +456,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "wideningParams",
       "description": "",
       "constructors": [],
@@ -490,6 +501,7 @@
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "UserID",
       "description": "",
       "constructors": [],
