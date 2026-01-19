@@ -152,3 +152,10 @@ class MagnitudeOverrideTest {
 
   void paramWillBeRenamedAsBreaking(String newName) {}
 }
+
+// Mock, so we can test override based on superclass
+class Widget {}
+
+class CustomWidget extends Widget {
+  CustomWidget({required String title}); // removed 'key' parameter
+}

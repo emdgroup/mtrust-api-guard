@@ -40,3 +40,15 @@ api_guard:
       selection:
         subtype_of:
           - ClassWithSuper
+
+    # Example: Allow removing parameters named 'key' from constructors of Widget subclasses as non-breaking
+    - operation: removal
+      magnitude: minor
+      description: "Widget keys are optional"
+      selection:
+        entity: parameter
+        name_pattern: "^key$"
+        enclosing:
+          entity: constructor
+          enclosing:
+            subtype_of: Widget

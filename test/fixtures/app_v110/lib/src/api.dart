@@ -156,3 +156,10 @@ mixin MagnitudeOverrideTest {
 
 // Removal of this subclass will be considered minor change due to override
 class ClassRemovalWillBeMinorBecauseExtendsClassWithSuper extends ClassWithSuper {}
+
+// Mock, so we can test override based on superclass
+class Widget {}
+
+class CustomWidget extends Widget {
+  CustomWidget({required Object key, required String title});
+}

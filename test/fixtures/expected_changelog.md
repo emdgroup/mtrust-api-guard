@@ -89,6 +89,9 @@
 **`class` ClassRemovalWillBeMinorBecauseExtendsClassWithSuper** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❌ Class removed: `ClassRemovalWillBeMinorBecauseExtendsClassWithSuper`
 
+**`class` CustomWidget** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❌ Param removed in default constructor: `key` (named, required)
+
 **`class` GenericClass<T>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Modifier `const` added to constructor: `new`
 
@@ -138,6 +141,9 @@
 - ➕ Interface added: InterfaceB
 - ➕ Mixin added: MixinB
 
+**`class` CustomWidget** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `CustomWidget`
+
 **`class` GenericClass<T>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Class added: `GenericClass`
 
@@ -171,6 +177,9 @@
 - ❇️ Property added: `phone`
 - ❇️ Params added in method `updateEmail`: `notifyUserViaEmail` (named, optional, default: false), `logChange` (named, optional, default: true)
 - ❇️ Method added: `updatePhone`
+
+**`class` Widget** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
+- ❇️ Class added: `Widget`
 
 **`function` calculateDiscount** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.0.2..v0.1.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - ❇️ Function added: `calculateDiscount`
