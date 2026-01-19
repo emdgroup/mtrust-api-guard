@@ -1,3 +1,149 @@
+## 5.0.0
+Released on: 1/19/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- update link to ApiChangeOperation documentation in README ([302d88a](commit/302d88a))
+- correct entity name formatting in removal operation and update changelog parameter removal description ([e86651d](commit/e86651d))
+### Features
+
+- add support for granular magnitude overrides configuration ([1e8628a](commit/1e8628a))
+- collect all super classes for components and enhance magnitude override configuration ([b3e81a8](commit/b3e81a8))
+- collect all super classes for components and enhance magnitude override configuration ([6c5e162](commit/6c5e162))
+- update MagnitudeOverride to support multiple operations and enhance matching logic ([f399fbb](commit/f399fbb))
+- enhance magnitude override configuration with selection criteria ([d5e4d72](commit/d5e4d72))
+- implement magnitude override configuration ([da4629c](commit/da4629c))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Param added in default constructor: `defaultMagnitude` (positional, required)
+- ❌ Properties removed: `added`, `removed`, `renamed`, `reordered`, `typeChanged`, `becameOptional`, `becameRequired`, `becameNamed`, `becamePositional`, `becameNullUnsafe`, `becameNullSafe`, `becamePrivate`, `becamePublic`, `annotationAdded`, `annotationRemoved`, `dependencyAdded`, `dependencyRemoved`, `dependencyChanged`, `platformConstraintChanged`, `superClassChanged`, `interfaceAdded`, `interfaceRemoved`, `mixinAdded`, `mixinRemoved`, `typeParametersChanged`, `featureAdded`, `featureRemoved`
+
+**`enum` ApiChangeTarget** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❌ Enum removed: `ApiChangeTarget`
+
+**`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❌ Param removed in default constructor: `isNullSafe` (named, required)
+- ❌ Constructor removed: `metadata`
+- ❌ Properties removed: `isNullSafe`, `superClass`
+
+**`enum` DocComponentType** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❌ Properties removed: `dependencyType`, `platformConstraintType`
+
+#### ✨ Minor changes
+
+**`class` ApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`extension` ApiChangeFormattingHelpers** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❇️ Extension added: `ApiChangeFormattingHelpers`
+
+**`enum` ApiChangeMagnitude** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Property added: `ignore`
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `addition`, `removal`, `renaming`, `typeChange`, `typeParametersChange`, `becomingPrivate`, `becomingPublic`, `becomingOptional`, `becomingRequired`, `becomingNullable`, `becomingNonNullable`, `becomingNamed`, `becomingPositional`, `reordering`, `annotationAddition`, `annotationRemoval`, `superClassChange`, `interfaceImplementation`, `interfaceRemoval`, `mixinApplication`, `mixinRemoval`, `dependencyVersionChange`, `dependencyAddition`, `dependencyRemoval`, `platformConstraintChange`, `featureAddition`, `featureRemoval`, `defaultMagnitude`
+
+**`class` ApiGuardConfig** ([lib/config/config.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-5bead1ff1803e084ead45182f2afeb584cbd1abf4ad02df44870848c9b6ae360))
+- ❇️ Param added in default constructor: `magnitudeOverrides` (named, optional, default: const [])
+- ❇️ Property added: `magnitudeOverrides`
+- ❇️ Param added in method `copyWith`: `magnitudeOverrides` (named, optional)
+- ❇️ Method added: `load`
+
+**`class` ComponentApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`class` ConstructorApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`class` ConstructorParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❌ Param removed in default constructor: `superClass` (named, optional)
+- ❇️ Param added in default constructor: `superClasses` (named, optional, default: const [])
+- ❇️ Constructor added: `meta`
+- ❇️ Property added: `superClasses`
+
+**`enum` DocComponentType** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Property added: `metaType`
+
+**`class` MagnitudeOverride** ([lib/config/magnitude_override.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-d6970f79c8574689443872ccb954dbc839bd4bae899cf88ef5588bfdb9262e24))
+- ❇️ Class added: `MagnitudeOverride`
+
+**`class` MetaApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Class added: `MetaApiChange`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Methods added: `overrideMagnitude`, `isFunctionChange`
+
+**`class` MethodParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`class` OverrideSelection** ([lib/config/magnitude_override.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-d6970f79c8574689443872ccb954dbc839bd4bae899cf88ef5588bfdb9262e24))
+- ❇️ Class added: `OverrideSelection`
+
+**`class` ParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`class` PropertyApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `overrideMagnitude`
+
+**`function` applyMagnitudeOverrides** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Function added: `applyMagnitudeOverrides`
+
+#### 👀 Patch changes
+
+**`class` ApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Property added: `_overriddenMagnitude`
+
+**`class` ApiChangeFormatter** ([lib/doc_comparator/api_change_formatter.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-815909143c779039396d475a38df7855c72b6e9b4fafffeed5dcf7f0bf313b00))
+- ❌ Methods removed: `_getOperationDescription`, `_formatTypeChange`, `_getComponentTypeLabel`
+
+**`class` ComponentApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `_overriddenMagnitude`, `_allowedOperations`
+
+**`class` ConstructorApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `_overriddenMagnitude`, `_disallowedConstructorOperations`
+
+**`class` ConstructorParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Property added: `_overriddenMagnitude`
+
+**`class` DocVisitor** ([lib/doc_generator/doc_visitor.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-c5d6dadddbd05895698f77e15f545cf92cae135301f04c0f3c8344a387754c8a))
+- ❇️ Method added: `_getSuperClasses`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `_overriddenMagnitude`, `_allowedOperations`
+
+**`class` MethodParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Property added: `_overriddenMagnitude`
+
+**`class` ParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `_overriddenMagnitude`, `_allowedParameterOperations`
+
+**`class` PropertyApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `_overriddenMagnitude`, `_allowedOperations`
+
+**`class` _SelectionContext** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Class added: `_SelectionContext`
+
+**`function` _createContext** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Function added: `_createContext`
+
+**`function` _getComponentKind** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Function added: `_getComponentKind`
+
+**`function` _matches** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Function added: `_matches`
+
+**`function` _matchesSelection** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
+- ❇️ Function added: `_matchesSelection`
+
+
 ## 4.0.0
 Released on: 1/12/2026, changelog automatically generated.
 
