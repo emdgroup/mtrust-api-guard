@@ -29,7 +29,7 @@ extension ApiChangeFormattingHelpers on List<ApiChange> {
 
       case ApiChangeOperation.removal:
         if (change is ParameterApiChange) {
-          return '❌ ${entityName}s removed ${_formatParent()}: ${_formatChanges()}';
+          return '❌ $entityName removed ${_formatParent()}: ${_formatChanges()}';
         }
         return '❌ $entityName removed: ${_formatChanges()}';
 

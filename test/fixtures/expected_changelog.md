@@ -69,7 +69,7 @@
 **`function` genericMethod<K, V>** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
 - 🔄 Function type changed: `genericMethod` (`void` → `V`)
 - 🔄 Type parameters changed: `K, V` → `V extends num`
-- ❌ Paramss removed in function `genericMethod`: `key` (positional, required), `value` (positional, required)
+- ❌ Params removed in function `genericMethod`: `key` (positional, required), `value` (positional, required)
 - ❇️ Param added in function `genericMethod`: `input` (positional, required)
 
 **`function` narrowingParams** ([lib/src/api.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v0.1.0..v1.0.0#diff-c816f176d594247f8735cee6e4679acac26e0c901ad6d693562f1f173244fd54))
