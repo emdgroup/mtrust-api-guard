@@ -144,8 +144,8 @@ abstract class AbstractModifiers {
 
 // Test scenarios for magnitude overrides, see analysis_options.yaml in app_v200
 mixin MagnitudeOverrideTest {
-  String willBeRemovedAsNonBreaking;
-  String _willNotBeReportedInChangelog;
+  String? willBeRemovedAsNonBreaking;
+  String? _willNotBeReportedInChangelog;
 
   void paramWillBeRenamedAsBreaking(String name) {}
 
