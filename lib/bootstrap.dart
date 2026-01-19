@@ -7,7 +7,7 @@ import 'package:mtrust_api_guard/find_project_root.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 
-(Set<String> files, Set<String> exclusions) evaluateTargetFiles(String? root) {
+(ApiGuardConfig config, Set<String> files) evaluateTargetFiles(String? root) {
   late Directory rootDir;
 
   // Find the root directory to base the analysis on
@@ -55,5 +55,5 @@ import 'package:path/path.dart';
     );
   }
 
-  return (targetFiles.difference(exclusions), exclusions);
+  return (config, targetFiles.difference(exclusions));
 }

@@ -50,16 +50,15 @@ class ApiChangeFormatter {
         final componentObj = firstChange.component;
         final typeLabel = componentObj.type.name.replaceAll("Type", "").toLowerCase();
         final filePath = componentObj.filePath;
+
         final linkTarget =
             (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
 
         changelogBuffer.writeln();
-        if (filePath != null) {
-          changelogBuffer
-              .writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** ([$filePath]($linkTarget))');
-        } else {
-          changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}**');
-        }
+        changelogBuffer.writeln(
+          '**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** '
+          '${filePath != null ? '([$filePath]($linkTarget))' : ''}',
+        );
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);

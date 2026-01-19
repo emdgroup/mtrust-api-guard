@@ -113,7 +113,7 @@ class TestSetup {
   Future<void> setupFlutterPackage() async {
     await runProcess(
       'flutter',
-      ['create', '.', '--template', 'package'],
+      ['create', '.', '--template', 'package', '--project-name', 'api_guard_test'],
       workingDir: tempDir.path,
     );
 

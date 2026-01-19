@@ -96,6 +96,18 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
     if (!subtypeMatched) return false;
   }
 
+  if (selection.fromPackage != null) {
+    bool packageMatched = false;
+    for (final package in selection.fromPackage!) {
+      // Direct package check
+      if (context.superClassPackages.contains(package)) {
+        packageMatched = true;
+        break;
+      }
+    }
+    if (!packageMatched) return false;
+  }
+
   if (selection.enclosing != null) {
     if (context.enclosing == null) return false;
     if (!_matchesSelection(selection.enclosing!, context.enclosing!)) {
@@ -111,6 +123,7 @@ class _SelectionContext {
   final String kind;
   final List<String> annotations;
   final List<String> superTypes;
+  final List<String> superClassPackages;
   final _SelectionContext? enclosing;
 
   _SelectionContext({
@@ -118,12 +131,13 @@ class _SelectionContext {
     required this.kind,
     required this.annotations,
     required this.superTypes,
+    this.superClassPackages = const [],
     this.enclosing,
   });
 
   @override
   String toString() {
-    return 'SelectionContext(name: $name, kind: $kind, annotations: $annotations, superTypes: $superTypes, enclosing: $enclosing)';
+    return 'SelectionContext(name: $name, kind: $kind, annotations: $annotations, superTypes: $superTypes, superClassPackages: $superClassPackages, enclosing: $enclosing)';
   }
 }
 
@@ -141,6 +155,7 @@ _SelectionContext _createContext(ApiChange change) {
     kind: componentKind,
     annotations: change.component.annotations,
     superTypes: superTypes,
+    superClassPackages: change.component.superClassPackages,
     enclosing: null,
   );
 

@@ -14,6 +14,9 @@ class ApiGuardConfig {
   /// Files to exclude from the API documentation.
   final Set<String> exclude;
 
+  /// Entry points for the API analysis.
+  final List<String> entryPoints;
+
   /// Whether to generate a badge for the version.
   final bool generateBadge;
 
@@ -23,6 +26,7 @@ class ApiGuardConfig {
   ApiGuardConfig({
     required this.include,
     required this.exclude,
+    this.entryPoints = const [],
     required this.generateBadge,
     this.magnitudeOverrides = const [],
   });
@@ -31,6 +35,7 @@ class ApiGuardConfig {
     return ApiGuardConfig(
       include: {'lib/**.dart'},
       exclude: {},
+      entryPoints: [],
       generateBadge: true,
       magnitudeOverrides: [],
     );
@@ -40,11 +45,13 @@ class ApiGuardConfig {
     bool? generateBadge,
     Set<String>? include,
     Set<String>? exclude,
+    List<String>? entryPoints,
     List<MagnitudeOverride>? magnitudeOverrides,
   }) {
     return ApiGuardConfig(
       include: include ?? this.include,
       exclude: exclude ?? this.exclude,
+      entryPoints: entryPoints ?? this.entryPoints,
       generateBadge: generateBadge ?? this.generateBadge,
       magnitudeOverrides: magnitudeOverrides ?? this.magnitudeOverrides,
     );
@@ -78,6 +85,7 @@ class ApiGuardConfig {
     return defaultConfig.copyWith(
       include: (apiGuard["include"] as YamlList?)?.map((e) => e.toString()).toSet(),
       exclude: (apiGuard["exclude"] as YamlList?)?.map((e) => e.toString()).toSet(),
+      entryPoints: (apiGuard["entry_points"] as YamlList?)?.map((e) => e.toString()).toList(),
       generateBadge: apiGuard['generateBadge'],
       magnitudeOverrides: magnitudeOverrides,
     );

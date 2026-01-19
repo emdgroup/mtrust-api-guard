@@ -10,6 +10,7 @@
   "components": [
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "User",
       "description": "",
       "constructors": [
@@ -128,12 +129,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "Product",
       "description": "",
       "constructors": [
@@ -200,12 +203,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "_PrivateClass",
       "description": "",
       "constructors": [
@@ -248,12 +253,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "BaseClass",
       "description": "",
       "constructors": [
@@ -265,12 +272,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "InterfaceA",
       "description": "",
       "constructors": [
@@ -282,12 +291,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": "lib/src/api.dart",
       "name": "ClassWithSuper",
       "description": "",
       "constructors": [
@@ -299,12 +310,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": ["BaseClass"],
+      "superClassPackages": ["api_guard_test"],
       "interfaces": ["InterfaceA"],
       "mixins": ["MixinA"],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "Status",
       "description": "",
       "constructors": [
@@ -361,12 +374,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "StringExt",
       "description": "",
       "constructors": [],
@@ -388,12 +403,14 @@
       "aliasedType": "String",
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "TimestampMixin",
       "description": "",
       "constructors": [],
@@ -415,12 +432,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "MixinA",
       "description": "",
       "constructors": [],
@@ -430,12 +449,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "wideningParams",
       "description": "",
       "constructors": [],
@@ -473,12 +494,14 @@
       "aliasedType": null,
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
+      "entryPoint": null,
       "name": "UserID",
       "description": "",
       "constructors": [],
@@ -488,6 +511,7 @@
       "aliasedType": "String",
       "annotations": [],
       "superClasses": [],
+      "superClassPackages": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []

@@ -37,6 +37,7 @@ class OverrideSelection {
   final String? namePattern;
   final List<String>? hasAnnotation;
   final List<String>? subtypeOf;
+  final List<String>? fromPackage;
   final OverrideSelection? enclosing;
 
   OverrideSelection({
@@ -44,6 +45,7 @@ class OverrideSelection {
     this.namePattern,
     this.hasAnnotation,
     this.subtypeOf,
+    this.fromPackage,
     this.enclosing,
   });
 
@@ -53,6 +55,7 @@ class OverrideSelection {
       namePattern: map['name_pattern'] as String?,
       hasAnnotation: _parseListOrString(map['has_annotation']),
       subtypeOf: _parseListOrString(map['subtype_of']),
+      fromPackage: _parseListOrString(map['from_package']),
       enclosing: map['enclosing'] != null
           ? OverrideSelection.fromMap(Map<String, dynamic>.from(map['enclosing'] as Map))
           : null,
@@ -68,6 +71,6 @@ class OverrideSelection {
 
   @override
   String toString() {
-    return 'OverrideSelection(entity: $entity, namePattern: $namePattern, hasAnnotation: $hasAnnotation, subtypeOf: $subtypeOf, enclosing: $enclosing)';
+    return 'OverrideSelection(entity: $entity, namePattern: $namePattern, hasAnnotation: $hasAnnotation, subtypeOf: $subtypeOf, fromPackage: $fromPackage, enclosing: $enclosing)';
   }
 }

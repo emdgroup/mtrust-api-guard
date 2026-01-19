@@ -49,7 +49,14 @@ You can configure the api_guard using the analysis_options.yaml file as we treat
 api_guard:
   include: # defaults to lib/**.dart
   exclude: # ignore files from being tracked by api_guard. Note that files in analyzer.exclude are always ignored.
+
+  # Specify entry points to only analyze files reachable from these files (and not internal implementation details)
+  entry_points:
+    - lib/main.dart
+    - lib/another_entry_point.dart
 ```
+
+> ⚠️ **Note**: If `entry_points` are configured, the `include` option is ignored. The analyzer will start at the entry points and recursively visit all exported elements. If no entry points are specified, the analyzer will include all files matching the `include` patterns. If neither `entry_points` nor `include` are specified, it defaults to `lib/**.dart`.
 
 ### Magnitude Overrides
 
@@ -99,6 +106,14 @@ api_guard:
           entity: constructor
           enclosing:
             subtype_of: Widget
+
+    # Example: Ignore changes in classes that extend Widgets from the Flutter package
+    - operation: "*"
+      magnitude: ignore
+      description: "Ignore changes in Flutter Widgets"
+      selection:
+        from_package:
+          - flutter
 ```
 
 #### Override Options
@@ -111,6 +126,9 @@ api_guard:
   - `entity`: The type of element to match. One or more of: `class`, `mixin`, `enum`, `extension`, `method`, `function`, `property`, `constructor`, `parameter`, `typedef`.
   - `has_annotation`: List of annotation names (e.g. `deprecated`, `visibleForTesting`).
   - `subtype_of`: Matches if the element (or its parent) extends, implements, or mixes in any of the specified types. For parameters, matches if the parameter type is a subtype. For properties, matches if the property type is a subtype. For methods, matches if the return type is a subtype.
+  - `from_package`: Matches if the element (or its parent) extends a class from the specified package.
+    - For external packages, use the package name (e.g. `flutter`, `provider`).
+    - For the Dart SDK, use the library uri (e.g. `dart:core`, `dart:async`).
   - `enclosing`: Recursive selection for the parent element (e.g. match a method only if it's within a specific class).
 
 ## Working with Git References

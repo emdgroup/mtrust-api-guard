@@ -163,3 +163,12 @@ class Widget {}
 class CustomWidget extends Widget {
   CustomWidget({required Object key, required String title});
 }
+
+// Removal of this class will be ignored due to override
+class ClassExtendingFromDartPackage extends DateTime {
+  bool get isInLeapYear() {
+    return (month == 2 && day == 29);
+  }
+
+  ClassExtendingFromDartPackage(int year, int month, int day) : super(year, month, day);
+}
