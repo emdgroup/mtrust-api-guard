@@ -10,7 +10,6 @@ class ApiChangeFormatter {
   final int markdownHeaderLevel;
 
   final String? Function(String filePath)? fileUrlBuilder;
-  final String Function(String filePath)? pathFormatter;
 
   ApiChangeFormatter(
     this.changes, {
@@ -21,7 +20,6 @@ class ApiChangeFormatter {
       ApiChangeMagnitude.patch,
     },
     this.fileUrlBuilder,
-    this.pathFormatter,
   });
 
   bool get hasRelevantChanges => changes.any(
@@ -53,18 +51,12 @@ class ApiChangeFormatter {
         final typeLabel = componentObj.type.name.replaceAll("Type", "").toLowerCase();
         final filePath = componentObj.filePath;
 
-        final displayPath = (pathFormatter != null && filePath != null) ? pathFormatter!(filePath) : filePath;
-
         final linkTarget =
             (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
 
         changelogBuffer.writeln();
-        if (displayPath != null) {
-          changelogBuffer
-              .writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** ([$displayPath]($linkTarget))');
-        } else {
-          changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}**');
-        }
+        changelogBuffer.writeln('**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** ' +
+            (filePath != null ? '([$filePath]($linkTarget))' : ''));
 
         // Group by category (i.e. type, operation, etc.) and process them
         final categorizedChanges = _groupByChangeCategory(componentChanges[component]!);
