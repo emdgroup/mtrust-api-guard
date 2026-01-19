@@ -1,3 +1,21 @@
+## 5.1.0
+Released on: 1/19/2026, changelog automatically generated.
+
+
+### Features
+
+- support entry point analysis and package selection for magnitude overrides ([2a25b12](commit/2a25b12))
+- enhance API guard configuration with entry points and package selection for magnitude overrides ([fb31d32](commit/fb31d32))
+
+### API Changes
+
+#### ✨ Minor changes
+
+**`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.0.0..v5.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
+- ❇️ Params added in default constructor: `entryPoint` (named, optional), `superClassPackages` (named, optional, default: const [])
+- ❇️ Properties added: `entryPoint`, `superClassPackages`
+
+
 ## 5.0.0
 Released on: 1/19/2026, changelog automatically generated.
 

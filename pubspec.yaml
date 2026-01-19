@@ -1,7 +1,7 @@
 name: mtrust_api_guard
 description: A package to generate and compare API docs
 homepage: https://github.com/emdgroup/mtrust-api-guard/
-version: 5.0.0
+version: 5.1.0
 environment:
   sdk: ">=3.0.0 <4.0.0"
 dependencies:
