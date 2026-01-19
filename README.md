@@ -103,7 +103,7 @@ api_guard:
 
 #### Override Options
 
-- **operation**: The `ApiChangeOperation` to match (e.g., `addition`, `removal`, `renaming`, `typeChange`, or `*` for all). See [ApiChangeOperation](lib/doc_comparator/changes/api_change_operation.dart) for all options.
+- **operation**: The `ApiChangeOperation` to match (e.g., `addition`, `removal`, `renaming`, `typeChange`, or `*` for all). See [ApiChangeOperation](lib/doc_comparator/api_change.dart) for all options.
 - **magnitude**: The target magnitude to apply: `major`, `minor`, `patch`, or `ignore`.
 - **description** (optional): A human-readable description of why this override is in place.
 - **selection**: Criteria to select the API elements to apply the rule to:
