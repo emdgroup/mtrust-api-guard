@@ -137,13 +137,10 @@ Future<PackageApi> generateDocs({
       if (visitedLibraries.contains(library.uri.toString())) return;
       visitedLibraries.add(library.uri.toString());
 
-      // Only visit libraries within the package (host package)
-      // or should we visit re-exported arbitrary packages?
-      // Usually we only document our own package API.
-      // But if we re-export a 3rd party class, it becomes part of OUR api.
-      // So we should visit it.
-      // But we must attribute it correctly.
-      // For now, let's just visit everything that is exported.
+      // Visit all libraries exported from this library, including any
+      // re-exported libraries from dependencies. Re-exported symbols are
+      // considered part of this package's public API and must be included
+      // in the generated documentation.
 
       String filePath = library.uri.toString();
       try {
