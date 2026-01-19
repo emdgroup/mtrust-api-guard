@@ -6,6 +6,7 @@ import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 /// backwards-compatible changes.
 /// A [major] change is a change that breaks the API or removes features.
 enum ApiChangeMagnitude {
+  ignore,
   patch,
   minor,
   major;
@@ -34,36 +35,57 @@ ApiChangeMagnitude getHighestMagnitude(List<ApiChange> changes) {
 }
 
 enum ApiChangeOperation {
-  added,
-  removed,
-  renamed,
-  reordered,
-  typeChanged,
-  // Constructor Parameter changes:
-  becameOptional,
-  becameRequired,
-  becameNamed,
-  becamePositional,
-  becameNullUnsafe,
-  becameNullSafe,
-  becamePrivate,
-  becamePublic,
-  annotationAdded,
-  annotationRemoved,
-  // Dependency changes:
-  dependencyAdded,
-  dependencyRemoved,
-  dependencyChanged,
-  // Platform constraint changes:
-  platformConstraintChanged,
-  superClassChanged,
-  interfaceAdded,
-  interfaceRemoved,
-  mixinAdded,
-  mixinRemoved,
-  typeParametersChanged,
-  featureAdded,
-  featureRemoved,
+  // General changes if something is added or removed
+  // This operation can be used for classes, mixins, interfaces, methods, properties, etc.
+  addition(ApiChangeMagnitude.minor),
+  removal(ApiChangeMagnitude.major),
+  // Renaming is usually difficult to detect automatically.
+  renaming(ApiChangeMagnitude.major),
+
+  // Type changes
+  typeChange(ApiChangeMagnitude.major),
+
+  // Generics changes
+  typeParametersChange(ApiChangeMagnitude.major),
+
+  // Privacy changes
+  becomingPrivate(ApiChangeMagnitude.major),
+  becomingPublic(ApiChangeMagnitude.major),
+
+  // Parameter changes
+  becomingOptional(ApiChangeMagnitude.minor),
+  becomingRequired(ApiChangeMagnitude.major),
+  becomingNullable(ApiChangeMagnitude.minor),
+  becomingNonNullable(ApiChangeMagnitude.major),
+  becomingNamed(ApiChangeMagnitude.major),
+  becomingPositional(ApiChangeMagnitude.major),
+  reordering(ApiChangeMagnitude.major),
+
+  // Annotation changes
+  annotationAddition(ApiChangeMagnitude.patch),
+  annotationRemoval(ApiChangeMagnitude.patch),
+
+  // Inheritance changes
+  superClassChange(ApiChangeMagnitude.major),
+  interfaceImplementation(ApiChangeMagnitude.minor),
+  interfaceRemoval(ApiChangeMagnitude.major),
+  mixinApplication(ApiChangeMagnitude.minor),
+  mixinRemoval(ApiChangeMagnitude.major),
+
+  // Pubspec-specific changes
+  dependencyVersionChange(ApiChangeMagnitude.patch),
+  dependencyAddition(ApiChangeMagnitude.patch),
+  dependencyRemoval(ApiChangeMagnitude.minor),
+  platformConstraintChange(ApiChangeMagnitude.major),
+
+  // Feature changes
+  featureAddition(ApiChangeMagnitude.minor),
+  featureRemoval(ApiChangeMagnitude.minor);
+
+  const ApiChangeOperation(this.defaultMagnitude);
+
+  /// The default magnitude associated with this operation.
+  final ApiChangeMagnitude defaultMagnitude;
 }
 
 /// A change description in the API that belongs to a specific component.
@@ -80,45 +102,113 @@ class ApiChange {
     this.changedValue,
   });
 
+  ApiChangeMagnitude? _overriddenMagnitude;
+
+  void overrideMagnitude(ApiChangeMagnitude magnitude) {
+    _overriddenMagnitude = magnitude;
+  }
+
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     if (component.name.startsWith('_')) {
       // if the component is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
-    if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-      // For now, let's treat annotation changes as patch changes.
-      // (We can revisit this decision later if needed.)
-      return ApiChangeMagnitude.patch;
-    }
-    if (operation == ApiChangeOperation.dependencyAdded ||
-        operation == ApiChangeOperation.dependencyRemoved ||
-        operation == ApiChangeOperation.dependencyChanged) {
-      return ApiChangeMagnitude.patch;
-    }
-    if (operation == ApiChangeOperation.platformConstraintChanged) {
-      return ApiChangeMagnitude.major;
-    }
-    if (operation == ApiChangeOperation.added ||
-        operation == ApiChangeOperation.interfaceAdded ||
-        operation == ApiChangeOperation.mixinAdded) {
-      // if a parameter, class or property was added, it's usually a minor
-      // change (unless it's private)
-      return ApiChangeMagnitude.minor;
-    }
-    // if we don't know the magnitude, we default to major (better to be safe)
-    return ApiChangeMagnitude.major;
+
+    // Use the operation's default magnitude by default. Subclasses may
+    // override this to refine the magnitude depending on context.
+    return operation.defaultMagnitude;
   }
 }
 
+class MetaApiChange extends ApiChange {
+  MetaApiChange({
+    required super.operation,
+    required String title,
+    required String description,
+    String filePath = 'pubspec.yaml',
+  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for pubspec changes'),
+        super._(
+          component: DocComponent.meta(
+            name: title,
+            description: description,
+            filePath: filePath,
+          ),
+          changedValue: description,
+        );
+
+  static const Set<ApiChangeOperation> _allowedOperations = {
+    ApiChangeOperation.dependencyVersionChange,
+    ApiChangeOperation.dependencyAddition,
+    ApiChangeOperation.dependencyRemoval,
+    ApiChangeOperation.platformConstraintChange,
+  };
+
+  factory MetaApiChange.dependencyVersionChange({
+    required String dependencyName,
+    required String? version,
+    required String? previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.dependencyVersionChange,
+      title: "dependency `$dependencyName`",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.dependencyAdded({
+    required String dependencyName,
+    required String? version,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.dependencyAddition,
+      title: "dependency `$dependencyName`",
+      description: 'with version `$version`',
+    );
+  }
+
+  factory MetaApiChange.dependencyRemoved({
+    required String dependencyName,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.dependencyRemoval,
+      title: "dependency `$dependencyName`",
+      description: 'removed',
+    );
+  }
+}
+
+/// A change that belongs to a specific component.
+/// A component can be a class, mixin, interface or typedef.
 class ComponentApiChange extends ApiChange {
   ComponentApiChange({
     required super.component,
     required super.operation,
     super.annotation,
     super.changedValue,
-  }) : super._();
+  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for component changes'),
+        super._();
+
+  static const Set<ApiChangeOperation> _allowedOperations = {
+    ApiChangeOperation.addition,
+    ApiChangeOperation.removal,
+    ApiChangeOperation.renaming,
+    ApiChangeOperation.typeChange,
+    ApiChangeOperation.typeParametersChange,
+    ApiChangeOperation.becomingPrivate,
+    ApiChangeOperation.becomingPublic,
+    ApiChangeOperation.annotationAddition,
+    ApiChangeOperation.annotationRemoval,
+    ApiChangeOperation.interfaceImplementation,
+    ApiChangeOperation.interfaceRemoval,
+    ApiChangeOperation.mixinApplication,
+    ApiChangeOperation.mixinRemoval,
+    ApiChangeOperation.superClassChange,
+  };
 }
 
+/// A change that belongs to a specific property of a component.
 class PropertyApiChange extends ApiChange {
   final DocProperty property;
 
@@ -128,23 +218,39 @@ class PropertyApiChange extends ApiChange {
     required this.property,
     super.annotation,
     super.changedValue,
-  }) : super._();
+  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for property changes'),
+        super._();
+
+  static const Set<ApiChangeOperation> _allowedOperations = {
+    ApiChangeOperation.addition,
+    ApiChangeOperation.removal,
+    ApiChangeOperation.renaming,
+    ApiChangeOperation.typeChange,
+    ApiChangeOperation.featureAddition,
+    ApiChangeOperation.featureRemoval,
+    ApiChangeOperation.becomingPrivate,
+    ApiChangeOperation.becomingPublic,
+    ApiChangeOperation.annotationAddition,
+    ApiChangeOperation.annotationRemoval,
+  };
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
+    // Check privacy first - private members are always patch changes
     if (property.name.startsWith('_')) {
-      // if the property is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
 
-    if (operation == ApiChangeOperation.featureAdded) {
+    if (operation == ApiChangeOperation.featureAddition) {
       if (changedValue == 'final' || changedValue == 'static') {
         return ApiChangeMagnitude.major;
       }
       return ApiChangeMagnitude.minor;
     }
 
-    if (operation == ApiChangeOperation.featureRemoved) {
+    if (operation == ApiChangeOperation.featureRemoval) {
       if (changedValue == 'static' || changedValue == 'const' || changedValue == 'covariant') {
         return ApiChangeMagnitude.major;
       }
@@ -155,6 +261,7 @@ class PropertyApiChange extends ApiChange {
   }
 }
 
+/// A change that belongs to a specific method of a component or a top-level function.
 class MethodApiChange extends ApiChange {
   final DocMethod method;
   final DocType? newType;
@@ -166,23 +273,40 @@ class MethodApiChange extends ApiChange {
     this.newType,
     super.annotation,
     super.changedValue,
-  }) : super._();
+  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for method changes'),
+        super._();
+
+  static const Set<ApiChangeOperation> _allowedOperations = {
+    ApiChangeOperation.addition,
+    ApiChangeOperation.removal,
+    ApiChangeOperation.renaming,
+    ApiChangeOperation.typeChange,
+    ApiChangeOperation.typeParametersChange,
+    ApiChangeOperation.featureAddition,
+    ApiChangeOperation.featureRemoval,
+    ApiChangeOperation.becomingPrivate,
+    ApiChangeOperation.becomingPublic,
+    ApiChangeOperation.annotationAddition,
+    ApiChangeOperation.annotationRemoval,
+  };
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
+    // Check privacy first - private methods are always patch changes
     if (method.name.startsWith('_')) {
-      // if the method is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
 
-    if (operation == ApiChangeOperation.featureAdded) {
+    if (operation == ApiChangeOperation.featureAddition) {
       if (changedValue == 'static' || changedValue == 'abstract') {
         return ApiChangeMagnitude.major;
       }
       return ApiChangeMagnitude.minor;
     }
 
-    if (operation == ApiChangeOperation.featureRemoved) {
+    if (operation == ApiChangeOperation.featureRemoval) {
       if (changedValue == 'static') {
         return ApiChangeMagnitude.major;
       }
@@ -190,6 +314,10 @@ class MethodApiChange extends ApiChange {
     }
 
     return super.getMagnitude();
+  }
+
+  bool isFunctionChange() {
+    return component.type == DocComponentType.functionType;
   }
 }
 
@@ -208,42 +336,61 @@ abstract class ParameterApiChange extends ApiChange {
     this.oldName,
     this.newType,
     super.annotation,
-  }) : super._();
+  })  : assert(
+            _allowedParameterOperations.contains(operation), 'Operation $operation not allowed for parameter changes'),
+        super._();
+
+  static const Set<ApiChangeOperation> _allowedParameterOperations = {
+    ApiChangeOperation.addition,
+    ApiChangeOperation.removal,
+    ApiChangeOperation.renaming,
+    ApiChangeOperation.reordering,
+    ApiChangeOperation.typeChange,
+    ApiChangeOperation.becomingOptional,
+    ApiChangeOperation.becomingRequired,
+    ApiChangeOperation.becomingNullable,
+    ApiChangeOperation.becomingNonNullable,
+    ApiChangeOperation.becomingNamed,
+    ApiChangeOperation.becomingPositional,
+    ApiChangeOperation.annotationAddition,
+    ApiChangeOperation.annotationRemoval,
+  };
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
     if (parentName.startsWith('_')) {
       // if the parent method/constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
-
-    if (operation == ApiChangeOperation.renamed) {
+    if (operation == ApiChangeOperation.renaming) {
       return ApiChangeMagnitude.patch;
     }
 
-    if (operation == ApiChangeOperation.reordered) {
+    if (operation == ApiChangeOperation.reordering) {
       return ApiChangeMagnitude.major;
     }
 
-    if (operation == ApiChangeOperation.typeChanged) {
+    if (operation == ApiChangeOperation.typeChange) {
       if (newType != null && parameter.type.isAssignableTo(newType!)) {
         return ApiChangeMagnitude.minor;
       }
       return ApiChangeMagnitude.major;
     }
 
-    if (operation == ApiChangeOperation.becameRequired ||
-        operation == ApiChangeOperation.becamePositional ||
-        operation == ApiChangeOperation.becameNullUnsafe ||
-        (operation == ApiChangeOperation.removed && parameter.required) ||
-        (operation == ApiChangeOperation.added && parameter.required)) {
+    if (operation == ApiChangeOperation.becomingRequired ||
+        operation == ApiChangeOperation.becomingPositional ||
+        operation == ApiChangeOperation.becomingNonNullable ||
+        (operation == ApiChangeOperation.removal && parameter.required) ||
+        (operation == ApiChangeOperation.addition && parameter.required)) {
       return ApiChangeMagnitude.major;
     }
 
-    if (operation == ApiChangeOperation.becameNullSafe ||
-        operation == ApiChangeOperation.becameOptional ||
-        (operation == ApiChangeOperation.removed && !parameter.required) ||
-        (operation == ApiChangeOperation.added && !parameter.required)) {
+    if (operation == ApiChangeOperation.becomingNullable ||
+        operation == ApiChangeOperation.becomingOptional ||
+        (operation == ApiChangeOperation.removal && !parameter.required) ||
+        (operation == ApiChangeOperation.addition && !parameter.required)) {
       return ApiChangeMagnitude.minor;
     }
     return super.getMagnitude();
@@ -273,23 +420,39 @@ class ConstructorApiChange extends ApiChange {
     required this.constructor,
     super.annotation,
     super.changedValue,
-  }) : super._();
+  })  : assert(
+            !_disallowedConstructorOperations.contains(operation), 'Operation $operation not allowed for constructors'),
+        super._();
+
+  static const Set<ApiChangeOperation> _disallowedConstructorOperations = {
+    ApiChangeOperation.mixinApplication,
+    ApiChangeOperation.mixinRemoval,
+    ApiChangeOperation.superClassChange,
+    ApiChangeOperation.interfaceImplementation,
+    ApiChangeOperation.interfaceRemoval,
+    ApiChangeOperation.dependencyAddition,
+    ApiChangeOperation.dependencyRemoval,
+    ApiChangeOperation.dependencyVersionChange,
+    ApiChangeOperation.platformConstraintChange,
+  };
 
   @override
   ApiChangeMagnitude getMagnitude() {
+    if (_overriddenMagnitude != null) return _overriddenMagnitude!;
+
+    // Check privacy first - private constructors are always patch changes
     if (constructor.name.startsWith('_')) {
-      // if the constructor is private, it's a patch change
       return ApiChangeMagnitude.patch;
     }
 
-    if (operation == ApiChangeOperation.featureRemoved) {
+    if (operation == ApiChangeOperation.featureRemoval) {
       if (changedValue == 'const') {
         return ApiChangeMagnitude.major;
       }
       return ApiChangeMagnitude.minor;
     }
 
-    if (operation == ApiChangeOperation.featureAdded) {
+    if (operation == ApiChangeOperation.featureAddition) {
       return ApiChangeMagnitude.minor;
     }
 

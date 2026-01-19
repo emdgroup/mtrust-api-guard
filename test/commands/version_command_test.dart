@@ -85,7 +85,7 @@ android {
 
       // 5. Commit and run version command to detect patch change
       await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
-      await testSetup.runApiGuard('version', []);
+      await testSetup.runApiGuard('version', ["--verbose"]);
 
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
 
@@ -104,7 +104,7 @@ android {
       // 7. Commit and run version command to detect minor change
       await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
 
-      await testSetup.runApiGuard('version', []);
+      await testSetup.runApiGuard('version', ["--verbose"]);
 
       expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
 
@@ -134,7 +134,7 @@ android {
 
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
 
-      await testSetup.runApiGuard('version', []);
+      await testSetup.runApiGuard('version', ["--verbose"]);
 
       expect(testSetup.getCurrentVersion(), TestConstants.majorVersion);
 

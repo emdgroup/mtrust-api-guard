@@ -7,6 +7,8 @@ import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
+import 'package:mtrust_api_guard/config/config.dart';
+import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 
@@ -67,6 +69,10 @@ class DocComparatorCommand extends Command
       gitRoot: Directory.current,
       cache: cache,
     );
+
+    // Load config
+    final config = ApiGuardConfig.load(root);
+    applyMagnitudeOverrides(changes, config);
 
     final formatter = ApiChangeFormatter(
       changes,

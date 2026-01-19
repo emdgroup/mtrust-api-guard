@@ -22,16 +22,13 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.classType,
       annotations: _getAnnotations(element),
-      superClass: (element.supertype != null && !element.supertype!.isDartCoreObject)
-          ? element.supertype!.element3.name3
-          : null,
+      superClasses: _getSuperClasses(element),
       interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
       mixins: element.mixins.map((e) => e.element3.name3!).toList(),
       typeParameters: _getTypeParameters(element.typeParameters2),
@@ -45,7 +42,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
@@ -64,7 +60,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(element.fields2),
@@ -82,7 +77,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],
@@ -101,7 +95,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3 ?? 'extension',
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(element.fields2),
@@ -120,7 +113,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],
@@ -291,5 +283,15 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       superTypes: superTypes,
       isNullable: type.nullabilitySuffix == NullabilitySuffix.question,
     );
+  }
+
+  List<String> _getSuperClasses(ClassElement2 element) {
+    var superClasses = <String>[];
+    var current = element.supertype;
+    while (current != null && !current.isDartCoreObject) {
+      superClasses.add(current.element3.name3!);
+      current = current.superclass;
+    }
+    return superClasses;
   }
 }

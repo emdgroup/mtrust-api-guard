@@ -3,12 +3,7 @@
     "packageName": "api_guard_test",
     "packageVersion": "0.0.1",
     "sdkVersion": "^3.10.7",
-    "dependencies": [
-      {
-        "packageName": "flutter",
-        "packageVersion": null
-      }
-    ],
+    "dependencies": [{ "packageName": "flutter", "packageVersion": null }],
     "androidConstraints": null,
     "iosConstraints": null
   },
@@ -16,7 +11,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "User",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
         {
@@ -27,11 +21,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -44,11 +34,7 @@
               "description": "",
               "type": {
                 "name": "int",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -61,11 +47,7 @@
               "description": "",
               "type": {
                 "name": "String?",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": true
               },
               "named": true,
@@ -83,45 +65,29 @@
           "name": "name",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "age",
           "type": {
             "name": "int",
-            "superTypes": [
-              "num",
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["num", "Object", "Comparable"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "email",
           "type": {
             "name": "String?",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": true
           },
           "description": "",
@@ -143,11 +109,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -165,7 +127,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -173,7 +135,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "Product",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
         {
@@ -184,11 +145,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -201,11 +158,7 @@
               "description": "",
               "type": {
                 "name": "double",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -223,34 +176,22 @@
           "name": "id",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         },
         {
           "name": "price",
           "type": {
             "name": "double",
-            "superTypes": [
-              "num",
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["num", "Object", "Comparable"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         }
       ],
@@ -258,7 +199,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -266,7 +207,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "_PrivateClass",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
         {
@@ -277,11 +217,7 @@
               "description": "",
               "type": {
                 "name": "String",
-                "superTypes": [
-                  "Object",
-                  "Comparable",
-                  "Pattern"
-                ],
+                "superTypes": ["Object", "Comparable", "Pattern"],
                 "isNullable": false
               },
               "named": false,
@@ -299,17 +235,11 @@
           "name": "secret",
           "type": {
             "name": "String",
-            "superTypes": [
-              "Object",
-              "Comparable",
-              "Pattern"
-            ],
+            "superTypes": ["Object", "Comparable", "Pattern"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "final"
-          ],
+          "features": ["final"],
           "annotations": []
         }
       ],
@@ -317,7 +247,7 @@
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -325,22 +255,16 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "BaseClass",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -348,22 +272,16 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "InterfaceA",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -371,42 +289,29 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "ClassWithSuper",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
-        {
-          "name": "new",
-          "signature": [],
-          "features": [],
-          "annotations": []
-        }
+        { "name": "new", "signature": [], "features": [], "annotations": [] }
       ],
       "properties": [],
       "methods": [],
       "type": "class",
       "aliasedType": null,
       "annotations": [],
-      "superClass": "BaseClass",
-      "interfaces": [
-        "InterfaceA"
-      ],
-      "mixins": [
-        "MixinA"
-      ],
+      "superClasses": ["BaseClass"],
+      "interfaces": ["InterfaceA"],
+      "mixins": ["MixinA"],
       "typeParameters": []
     },
     {
       "filePath": "lib/src/api.dart",
       "name": "Status",
-      "isNullSafe": true,
       "description": "",
       "constructors": [
         {
           "name": "new",
           "signature": [],
-          "features": [
-            "const"
-          ],
+          "features": ["const"],
           "annotations": []
         }
       ],
@@ -415,34 +320,22 @@
           "name": "active",
           "type": {
             "name": "Status",
-            "superTypes": [
-              "Enum",
-              "Object"
-            ],
+            "superTypes": ["Enum", "Object"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         },
         {
           "name": "inactive",
           "type": {
             "name": "Status",
-            "superTypes": [
-              "Enum",
-              "Object"
-            ],
+            "superTypes": ["Enum", "Object"],
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         },
         {
@@ -459,10 +352,7 @@
             "isNullable": false
           },
           "description": "",
-          "features": [
-            "static",
-            "const"
-          ],
+          "features": ["static", "const"],
           "annotations": []
         }
       ],
@@ -470,7 +360,7 @@
       "type": "enum",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -478,7 +368,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "StringExt",
-      "isNullSafe": true,
       "description": "",
       "constructors": [],
       "properties": [
@@ -486,9 +375,7 @@
           "name": "isValid",
           "type": {
             "name": "bool",
-            "superTypes": [
-              "Object"
-            ],
+            "superTypes": ["Object"],
             "isNullable": false
           },
           "description": "",
@@ -500,7 +387,7 @@
       "type": "extension",
       "aliasedType": "String",
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -508,7 +395,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "TimestampMixin",
-      "isNullSafe": true,
       "description": "",
       "constructors": [],
       "properties": [
@@ -516,10 +402,7 @@
           "name": "createdAt",
           "type": {
             "name": "DateTime?",
-            "superTypes": [
-              "Object",
-              "Comparable"
-            ],
+            "superTypes": ["Object", "Comparable"],
             "isNullable": true
           },
           "description": "",
@@ -531,7 +414,7 @@
       "type": "mixin",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -539,7 +422,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "MixinA",
-      "isNullSafe": true,
       "description": "",
       "constructors": [],
       "properties": [],
@@ -547,7 +429,7 @@
       "type": "mixin",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -555,7 +437,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "wideningParams",
-      "isNullSafe": true,
       "description": "",
       "constructors": [],
       "properties": [],
@@ -573,11 +454,7 @@
               "description": "",
               "type": {
                 "name": "int",
-                "superTypes": [
-                  "num",
-                  "Object",
-                  "Comparable"
-                ],
+                "superTypes": ["num", "Object", "Comparable"],
                 "isNullable": false
               },
               "named": false,
@@ -586,9 +463,7 @@
               "annotations": []
             }
           ],
-          "features": [
-            "static"
-          ],
+          "features": ["static"],
           "description": "",
           "annotations": [],
           "typeParameters": []
@@ -597,7 +472,7 @@
       "type": "function",
       "aliasedType": null,
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []
@@ -605,7 +480,6 @@
     {
       "filePath": "lib/src/api.dart",
       "name": "UserID",
-      "isNullSafe": true,
       "description": "",
       "constructors": [],
       "properties": [],
@@ -613,7 +487,7 @@
       "type": "typedef",
       "aliasedType": "String",
       "annotations": [],
-      "superClass": null,
+      "superClasses": [],
       "interfaces": [],
       "mixins": [],
       "typeParameters": []

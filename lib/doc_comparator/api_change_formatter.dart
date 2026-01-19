@@ -1,33 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 
-enum ApiChangeTarget {
-  property,
-  method,
-  function,
-  constructor,
-  parameter,
-  component, // For generic component
-  ;
-
-  String text({bool isPlural = false}) {
-    switch (this) {
-      case ApiChangeTarget.property:
-        return isPlural ? 'Properties' : 'Property';
-      case ApiChangeTarget.method:
-        return isPlural ? 'Methods' : 'Method';
-      case ApiChangeTarget.function:
-        return isPlural ? 'Functions' : 'Function';
-      case ApiChangeTarget.constructor:
-        return isPlural ? 'Constructors' : 'Constructor';
-      case ApiChangeTarget.parameter:
-        return isPlural ? 'Params' : 'Param';
-      case ApiChangeTarget.component:
-        return isPlural ? 'Components' : 'Component';
-    }
-  }
-}
-
 /// Formatter to display API changes in a hierarchical format
 class ApiChangeFormatter {
   final List<ApiChange> changes;
@@ -75,7 +48,7 @@ class ApiChangeFormatter {
       for (final component in sortedComponents) {
         final firstChange = componentChanges[component]!.first;
         final componentObj = firstChange.component;
-        final typeLabel = _getComponentTypeLabel(componentObj.type);
+        final typeLabel = componentObj.type.name.replaceAll("Type", "").toLowerCase();
         final filePath = componentObj.filePath;
         final linkTarget =
             (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
@@ -124,8 +97,8 @@ class ApiChangeFormatter {
           key += '-${change.constructor.name}';
         } else if (change is MethodParameterApiChange) {
           key += '-${change.method.name}';
-        } else if (change.operation == ApiChangeOperation.featureAdded ||
-            change.operation == ApiChangeOperation.featureRemoved) {
+        } else if (change.operation == ApiChangeOperation.featureAddition ||
+            change.operation == ApiChangeOperation.featureRemoval) {
           if (change.changedValue != null) {
             key += '-${change.changedValue}';
           }
@@ -158,76 +131,263 @@ class ApiChangeFormatter {
         return '${'#' * markdownHeaderLevel} ✨ Minor changes';
       case ApiChangeMagnitude.patch:
         return '${'#' * markdownHeaderLevel} 👀 Patch changes';
-    }
-  }
-
-  /// Get the text representation of an operation using a prefix (e.g.
-  /// "Properties", "Params", etc. depending on the type of change)
-  String _getOperationDescription(
-    ApiChangeOperation operation,
-    ApiChangeTarget target, {
-    bool isPlural = false,
-    String? changedValue,
-    String? componentLabel,
-  }) {
-    final label = componentLabel ?? target.text(isPlural: isPlural);
-
-    switch (operation) {
-      case ApiChangeOperation.added:
-        return '❇️ $label added';
-      case ApiChangeOperation.removed:
-        return '❌ $label removed';
-      case ApiChangeOperation.becameOptional:
-        return '✅ $label became optional';
-      case ApiChangeOperation.becameNullSafe:
-        return '✅ $label became null safe';
-      case ApiChangeOperation.becameRequired:
-        return '⚠️ $label became required';
-      case ApiChangeOperation.becameNullUnsafe:
-        return '⚠️ $label became null unsafe';
-      case ApiChangeOperation.becameNamed:
-        return '🔠 $label became named';
-      case ApiChangeOperation.becamePositional:
-        return '🔢 $label became positional';
-      case ApiChangeOperation.reordered:
-        return '🔢 $label reordered';
-      case ApiChangeOperation.renamed:
-        return '✏️ $label renamed';
-      case ApiChangeOperation.typeChanged:
-        return '🔄 $label type changed';
-      case ApiChangeOperation.annotationAdded:
-        return '➕ $label annotation added';
-      case ApiChangeOperation.annotationRemoved:
-        return '➖ $label annotation removed';
-      case ApiChangeOperation.superClassChanged:
-        return '🔄 Superclass changed';
-      case ApiChangeOperation.interfaceAdded:
-        return '➕ Interface added';
-      case ApiChangeOperation.interfaceRemoved:
-        return '➖ Interface removed';
-      case ApiChangeOperation.mixinAdded:
-        return '➕ Mixin added';
-      case ApiChangeOperation.mixinRemoved:
-        return '➖ Mixin removed';
-      case ApiChangeOperation.typeParametersChanged:
-        return '🔄 Type parameters changed';
-      case ApiChangeOperation.dependencyAdded:
-        return '📦 Dependency added';
-      case ApiChangeOperation.dependencyRemoved:
-        return '📦 Dependency removed';
-      case ApiChangeOperation.dependencyChanged:
-        return '📦 Dependency changed';
-      case ApiChangeOperation.platformConstraintChanged:
-        return '📱 Platform constraint changed';
-      case ApiChangeOperation.featureAdded:
-        return '❇️ Modifier `$changedValue` added to ${label.toLowerCase()}';
-      case ApiChangeOperation.featureRemoved:
-        return '❌ Modifier `$changedValue` removed from ${label.toLowerCase()}';
       default:
         return '';
     }
   }
 
+  /// Format similar changes into a single line
+  String _formatChanges(List<ApiChange> changes) {
+    return changes.formatAsGroup();
+  }
+}
+
+/// Shared formatting utilities for all API changes
+extension ApiChangeFormattingHelpers on List<ApiChange> {
+  /// Get the operation text with emoji and derived entity name
+  String formatAsGroup() {
+    if (isEmpty) return '';
+
+    // throw Error if mixed types or operations
+    if (length > 1) {
+      final type = first.runtimeType;
+      final operation = first.operation;
+      for (final change in this) {
+        if (change.runtimeType != type || change.operation != operation) {
+          throw StateError('Cannot format mixed change types or operations as group.');
+        }
+      }
+    }
+
+    final change = first;
+    final entityName = _formatEntity();
+
+    switch (change.operation) {
+      case ApiChangeOperation.addition:
+        if (change is ParameterApiChange) {
+          return '❇️ $entityName added ${_formatParent()}: ${_formatChanges()}';
+        }
+        return '❇️ $entityName added: ${_formatChanges()}';
+
+      case ApiChangeOperation.removal:
+        if (change is ParameterApiChange) {
+          return '❌ $entityName removed ${_formatParent()}: ${_formatChanges()}';
+        }
+        return '❌ $entityName removed: ${_formatChanges()}';
+
+      case ApiChangeOperation.typeChange:
+        if (change is ComponentApiChange && change.component.type == DocComponentType.typedefType) {
+          return '🔄 Typedef type changed: ${change.component.name}';
+        }
+        if (change is MethodApiChange) {
+          final isFunction = change.component.type == DocComponentType.functionType;
+          return '🔄 ${isFunction ? "Function" : "Method"} type changed: ${_formatChanges()}';
+        }
+        if (change is ParameterApiChange) {
+          return '🔄 Param type changed ${_formatParent()}: ${_formatChanges()}';
+        }
+        return '🔄 $entityName type changed: ${_formatChanges()}';
+
+      case ApiChangeOperation.typeParametersChange:
+        return '🔄 Type parameters changed: ${change.changedValue}';
+
+      case ApiChangeOperation.annotationAddition:
+        return '➕ $entityName annotation added: ${_formatAnnotations()}';
+
+      case ApiChangeOperation.annotationRemoval:
+        return '➖ $entityName annotation removed: ${_formatAnnotations()}';
+
+      case ApiChangeOperation.featureAddition:
+        return '❇️ Modifier `${change.changedValue}` added to ${entityName.toLowerCase()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.featureRemoval:
+        return '❌ Modifier `${change.changedValue}` removed from ${entityName.toLowerCase()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingOptional:
+        return '✅ $entityName became optional ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingRequired:
+        return '⚠️ $entityName became required ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingNullable:
+        return '⚠️ $entityName became nullable ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingNonNullable:
+        return '✅ $entityName became non-nullable ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingNamed:
+        return '🔠 $entityName became named ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.becomingPositional:
+        return '🔢 $entityName became positional ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.reordering:
+        return '🔢 $entityName reordered ${_formatParent()}: ${_formatChanges()}';
+
+      case ApiChangeOperation.renaming:
+        if (change is ParameterApiChange) {
+          return '✏️ $entityName renamed ${_formatParent()}: ${_formatChanges()}';
+        }
+        return '✏️ $entityName renamed: ${_formatChanges()}';
+
+      case ApiChangeOperation.superClassChange:
+        return '🔄 Superclass changed: ${change.changedValue}';
+
+      case ApiChangeOperation.interfaceImplementation:
+        return '➕ Interface added: ${_formatChangedValues()}';
+
+      case ApiChangeOperation.interfaceRemoval:
+        return '➖ Interface removed: ${_formatChangedValues()}';
+
+      case ApiChangeOperation.mixinApplication:
+        return '➕ Mixin added: ${_formatChangedValues()}';
+
+      case ApiChangeOperation.mixinRemoval:
+        return '➖ Mixin removed: ${_formatChangedValues()}';
+
+      case ApiChangeOperation.dependencyAddition:
+        return '📦 Dependency added: ${change.changedValue}';
+
+      case ApiChangeOperation.dependencyRemoval:
+        return '📦 Dependency removed: ${change.changedValue}';
+
+      case ApiChangeOperation.dependencyVersionChange:
+        return '📦 Dependency version changed: ${change.changedValue}';
+
+      case ApiChangeOperation.platformConstraintChange:
+        return '📱 Platform constraint changed: ${change.changedValue}';
+
+      default:
+        return '$entityName changed';
+    }
+  }
+
+  String _formatParent() {
+    if (first is ConstructorParameterApiChange) {
+      final constructorChange = first as ConstructorParameterApiChange;
+      final name = constructorChange.constructor.name;
+      if (name == 'new' || name.isEmpty) return "in default constructor";
+      if (name.startsWith('_')) return "in private constructor `\$name`";
+      return "in constructor `$name`";
+    } else if (first is MethodParameterApiChange) {
+      final methodChange = first as MethodParameterApiChange;
+      final isFunction = methodChange.component.type == DocComponentType.functionType;
+      final methodType = isFunction ? 'function' : 'method';
+      return 'in $methodType `${methodChange.method.name}`';
+    }
+    return '';
+  }
+
+  String _formatChangedValues() {
+    return map((change) => change.changedValue).join(', ');
+  }
+
+  String _formatAnnotations() {
+    return map((change) {
+      var name = '';
+      if (change is PropertyApiChange) {
+        name = change.property.name;
+      } else if (change is MethodApiChange) {
+        name = change.method.name;
+      } else if (change is ConstructorApiChange) {
+        name = change.constructor.name;
+      } else if (change is ComponentApiChange) {
+        name = change.component.name;
+      }
+      return '`$name` (${change.annotation})';
+    }).join(', ');
+  }
+
+  /// Get the appropriate entity name for this change type
+  String _formatEntity() {
+    final type = first.runtimeType;
+    final isPlural = length > 1;
+    if (type == PropertyApiChange) {
+      return isPlural ? 'Properties' : 'Property';
+    }
+    if (type == MethodApiChange) {
+      final methodChange = first as MethodApiChange;
+      final isFunction = methodChange.component.type == DocComponentType.functionType;
+      if (isFunction) {
+        return isPlural ? 'Functions' : 'Function';
+      }
+      return isPlural ? 'Methods' : 'Method';
+    }
+    if (type == ConstructorApiChange) {
+      return isPlural ? 'Constructors' : 'Constructor';
+    }
+    if (type == ComponentApiChange) {
+      final componentChange = first as ComponentApiChange;
+      switch (componentChange.component.type) {
+        case DocComponentType.classType:
+          return isPlural ? 'Classes' : 'Class';
+        case DocComponentType.mixinType:
+          return isPlural ? 'Mixins' : 'Mixin';
+        case DocComponentType.extensionType:
+          return isPlural ? 'Extensions' : 'Extension';
+        case DocComponentType.enumType:
+          return isPlural ? 'Enums' : 'Enum';
+        case DocComponentType.typedefType:
+          return isPlural ? 'Typedefs' : 'Typedef';
+        case DocComponentType.functionType:
+          return isPlural ? 'Functions' : 'Function';
+        case DocComponentType.metaType:
+          return isPlural ? 'Pubspecs' : 'Pubspec';
+      }
+    }
+    // Else, parameter changes
+    return isPlural ? 'Params' : 'Param';
+  }
+
+  String _formatChanges() {
+    return map(
+      (change) {
+        var changes = '';
+        if (change is PropertyApiChange) {
+          changes = "`" + change.property.name + "`";
+        } else if (change is MethodApiChange) {
+          changes = "`" + change.method.name + "`";
+          if (change.operation == ApiChangeOperation.typeChange) {
+            changes = "`" + change.method.name + "` " + _formatTypeChange(change.method.returnType, change.newType!);
+          }
+        } else if (change is ConstructorApiChange) {
+          changes = "`" + change.constructor.name + "`";
+        } else if (change is ComponentApiChange) {
+          changes = "`" + change.component.name + "`";
+        } else if (change is ParameterApiChange) {
+          changes = _formatParam(change.parameter);
+          if (change.operation == ApiChangeOperation.renaming) {
+            changes = "`" + change.oldName! + "` → `" + change.parameter.name + "`";
+          } else if (change.operation == ApiChangeOperation.typeChange) {
+            changes = "`" + change.parameter.name + "` " + _formatTypeChange(change.parameter.type, change.newType!);
+          }
+        }
+        return changes;
+      },
+    ).join(', ');
+  }
+
+  String _formatParam(DocParameter parameter) {
+    final buffer = StringBuffer("`${parameter.name}`");
+    if (parameter.named) {
+      buffer.write(' (named');
+    } else {
+      buffer.write(' (positional');
+    }
+
+    if (parameter.required) {
+      buffer.write(', required)');
+    } else {
+      buffer.write(', optional');
+      if (parameter.defaultValue != null) {
+        buffer.write(', default: ${parameter.defaultValue}');
+      }
+      buffer.write(')');
+    }
+    return buffer.toString();
+  }
+
+  /// Format a type change with direction indicator
   String _formatTypeChange(DocType oldType, DocType newType) {
     if (oldType.isAssignableTo(newType)) {
       return '(`$oldType` → `$newType`, widened)';
@@ -235,283 +395,6 @@ class ApiChangeFormatter {
       return '(`$oldType` → `$newType`, narrowed)';
     } else {
       return '(`$oldType` → `$newType`)';
-    }
-  }
-
-  /// Format similar changes into a single line
-  String _formatChanges(List<ApiChange> changes) {
-    // we can rely that all changes are of the same operation
-    final operation = changes.first.operation;
-    if (changes.every((c) => c is PropertyApiChange)) {
-      final isPlural = changes.length > 1;
-      final text = _getOperationDescription(
-        operation,
-        ApiChangeTarget.property,
-        isPlural: isPlural,
-        changedValue: changes.first.changedValue,
-      );
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}` (${c.annotation})').join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
-        final details = changes.map((c) => '`${(c as PropertyApiChange).property.name}`').join(', ');
-        return '$text: $details';
-      }
-
-      final props = changes.map((c) => (c as PropertyApiChange).property.name).toList();
-      return '$text: `${props.join('`, `')}`';
-    }
-
-    if (changes.every((c) => c is MethodApiChange)) {
-      final firstChange = changes.first as MethodApiChange;
-      final isFunction = firstChange.component.type == DocComponentType.functionType;
-      final isPlural = changes.length > 1;
-      final target = isFunction ? ApiChangeTarget.function : ApiChangeTarget.method;
-
-      final text = _getOperationDescription(
-        operation,
-        target,
-        isPlural: isPlural,
-        changedValue: firstChange.changedValue,
-      );
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details = changes.map((c) => '`${(c as MethodApiChange).method.name}` (${c.annotation})').join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
-        final details = changes.map((c) => '`${(c as MethodApiChange).method.name}`').join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.typeChanged) {
-        final details = changes.map((c) {
-          final change = c as MethodApiChange;
-          return '`${change.method.name}` ${_formatTypeChange(change.method.returnType, change.newType!)}';
-        }).join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.typeParametersChanged) {
-        final details = changes.map((c) {
-          final change = c as MethodApiChange;
-          return '`${change.method.name}` (${change.changedValue})';
-        }).join(', ');
-        return '$text: $details';
-      }
-
-      final methods = changes.map((c) => (c as MethodApiChange).method.name).toList();
-      return '$text: `${methods.join('`, `')}`';
-    }
-
-    if (changes.every((c) => c is ConstructorParameterApiChange)) {
-      final isPlural = changes.length > 1;
-      final text = _getOperationDescription(operation, ApiChangeTarget.parameter, isPlural: isPlural);
-
-      final constructor = (changes.first as ConstructorParameterApiChange).constructor.name;
-      String constructorLabel;
-      if (constructor == 'new' || constructor.isEmpty) {
-        constructorLabel = "default constructor";
-      } else {
-        constructorLabel = "constructor `$constructor`";
-      }
-      if (constructor.startsWith('_')) {
-        constructorLabel = "private $constructorLabel";
-      }
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details = changes.map((c) {
-          final change = c as ConstructorParameterApiChange;
-          return '`${change.parameter.name}` (${change.annotation})';
-        }).join(', ');
-        return '$text in $constructorLabel: $details';
-      }
-
-      if (operation == ApiChangeOperation.renamed) {
-        final details = changes.map((c) {
-          final change = c as ConstructorParameterApiChange;
-          return '`${change.oldName}` → `${change.parameter.name}`';
-        }).join(', ');
-        return '$text in $constructorLabel: $details';
-      }
-
-      if (operation == ApiChangeOperation.typeChanged) {
-        final details = changes.map((c) {
-          final change = c as ConstructorParameterApiChange;
-          return '`${change.parameter.name}` ${_formatTypeChange(change.parameter.type, change.newType!)}';
-        }).join(', ');
-        return '$text in $constructorLabel: $details';
-      }
-
-      final params = changes.map((c) {
-        final change = c as ConstructorParameterApiChange;
-        final param = change.parameter;
-        final buffer = StringBuffer(param.name);
-        if (param.named) {
-          buffer.write(' (named');
-        } else {
-          buffer.write(' (positional');
-        }
-
-        if (param.required) {
-          buffer.write(', required)');
-        } else {
-          buffer.write(', optional');
-          if (param.defaultValue != null) {
-            buffer.write(', default: ${param.defaultValue}');
-          }
-          buffer.write(')');
-        }
-        return buffer.toString();
-      }).toList();
-
-      return '$text in $constructorLabel: `${params.join('`, `')}`';
-    }
-
-    if (changes.every((c) => c is MethodParameterApiChange)) {
-      final firstChange = changes.first as MethodParameterApiChange;
-      final isFunction = firstChange.component.type == DocComponentType.functionType;
-      final isPlural = changes.length > 1;
-      final text = _getOperationDescription(operation, ApiChangeTarget.parameter, isPlural: isPlural);
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details = changes.map((c) {
-          final change = c as MethodParameterApiChange;
-          return '`${change.parameter.name}` (${change.annotation})';
-        }).join(', ');
-        final method = (changes.first as MethodParameterApiChange).method.name;
-        final label = isFunction ? 'function' : 'method';
-        return '$text in $label `$method`: $details';
-      }
-
-      if (operation == ApiChangeOperation.renamed) {
-        final details = changes.map((c) {
-          final change = c as MethodParameterApiChange;
-          return '`${change.oldName}` → `${change.parameter.name}`';
-        }).join(', ');
-        final method = (changes.first as MethodParameterApiChange).method.name;
-        final label = isFunction ? 'function' : 'method';
-        return '$text in $label `$method`: $details';
-      }
-
-      if (operation == ApiChangeOperation.typeChanged) {
-        final details = changes.map((c) {
-          final change = c as MethodParameterApiChange;
-          return '`${change.parameter.name}` ${_formatTypeChange(change.parameter.type, change.newType!)}';
-        }).join(', ');
-        final method = (changes.first as MethodParameterApiChange).method.name;
-        final label = isFunction ? 'function' : 'method';
-        return '$text in $label `$method`: $details';
-      }
-
-      final params = changes.map((c) {
-        final change = c as MethodParameterApiChange;
-        final param = change.parameter;
-        final buffer = StringBuffer(param.name);
-        if (param.named) {
-          buffer.write(' (named');
-        } else {
-          buffer.write(' (positional');
-        }
-
-        if (param.required) {
-          buffer.write(', required)');
-        } else {
-          buffer.write(', optional');
-          if (param.defaultValue != null) {
-            buffer.write(', default: ${param.defaultValue}');
-          }
-          buffer.write(')');
-        }
-        return buffer.toString();
-      }).toList();
-
-      final method = (changes.first as MethodParameterApiChange).method.name;
-      final label = isFunction ? 'function' : 'method';
-      return '$text in $label `$method`: `${params.join('`, `')}`';
-    }
-
-    if (changes.every((c) => c is ConstructorApiChange)) {
-      // This should always be a single change, so we use singular:
-      final isPlural = changes.length > 1;
-      final text = _getOperationDescription(
-        operation,
-        ApiChangeTarget.constructor,
-        isPlural: isPlural,
-        changedValue: changes.first.changedValue,
-      );
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details =
-            changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}` (${c.annotation})').join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.featureAdded || operation == ApiChangeOperation.featureRemoved) {
-        final details = changes.map((c) => '`${(c as ConstructorApiChange).constructor.name}`').join(', ');
-        return '$text: $details';
-      }
-
-      final constructors = changes.map((c) => (c as ConstructorApiChange).constructor.name).toList();
-      return '$text: `${constructors.join('`, `')}`';
-    }
-
-    if (changes.every((c) => c is ComponentApiChange)) {
-      // This should always be a single change, so we use singular:
-      final component = (changes.first as ComponentApiChange).component;
-      final prefix = _getComponentTypeLabel(component.type);
-      final isPlural = changes.length > 1;
-      final text =
-          _getOperationDescription(operation, ApiChangeTarget.component, isPlural: isPlural, componentLabel: prefix);
-
-      if (operation == ApiChangeOperation.annotationAdded || operation == ApiChangeOperation.annotationRemoved) {
-        final details =
-            changes.map((c) => '`${(c as ComponentApiChange).component.name}` (${c.annotation})').join(', ');
-        return '$text: $details';
-      }
-
-      if (operation == ApiChangeOperation.superClassChanged ||
-          operation == ApiChangeOperation.interfaceAdded ||
-          operation == ApiChangeOperation.interfaceRemoved ||
-          operation == ApiChangeOperation.mixinAdded ||
-          operation == ApiChangeOperation.mixinRemoved ||
-          operation == ApiChangeOperation.typeParametersChanged ||
-          operation == ApiChangeOperation.dependencyChanged ||
-          operation == ApiChangeOperation.platformConstraintChanged) {
-        final details = changes.map((c) => '${(c as ComponentApiChange).changedValue}').join(', ');
-        return '$text: $details';
-      }
-
-      final components = changes.map((c) => (c as ComponentApiChange).component).toList();
-      return '$text: `${components.map((c) => c.name).join('`, `')}`';
-    }
-
-    // This should actually never happen:
-    return '${changes.length} unknown changes';
-  }
-
-  String _getComponentTypeLabel(DocComponentType type) {
-    switch (type) {
-      case DocComponentType.classType:
-        return 'Class';
-      case DocComponentType.functionType:
-        return 'Function';
-      case DocComponentType.mixinType:
-        return 'Mixin';
-      case DocComponentType.enumType:
-        return 'Enum';
-      case DocComponentType.typedefType:
-        return 'Typedef';
-      case DocComponentType.extensionType:
-        return 'Extension';
-      case DocComponentType.dependencyType:
-        return 'Dependency';
-      case DocComponentType.platformConstraintType:
-        return 'Platform Constraint';
     }
   }
 }

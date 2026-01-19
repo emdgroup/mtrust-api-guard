@@ -27,6 +27,9 @@ Future<String> calculateNextVersion(
       logger.info('Incrementing patch version');
       version = version.nextPatch;
       break;
+    case ApiChangeMagnitude.ignore:
+      logger.info('No version increment for ignore magnitude');
+      break;
   }
 
   final newVersion = version.toString();

@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/badges/badge_generator.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
+import 'package:mtrust_api_guard/config/config.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
+import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -62,6 +64,10 @@ Future<VersionResult> version({
     gitRoot: gitRoot,
     cache: cache,
   );
+
+  // Load config and apply magnitude overrides
+  final config = ApiGuardConfig.load(dartRoot);
+  applyMagnitudeOverrides(changes, config);
 
   final basePubSpec = await GitUtils.gitShow(
     baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix),

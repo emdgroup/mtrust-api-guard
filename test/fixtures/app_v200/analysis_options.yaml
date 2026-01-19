@@ -1,0 +1,54 @@
+api_guard:
+  magnitude_overrides:
+    # Example: Ignore removals of private elements entirely
+    - operation: removal
+      magnitude: ignore
+      selection:
+        name_pattern: "^_.*"
+
+    # We can also use the "description" field as a way to describe the override
+    - description: Adding internal or experimental elements are considered as patch
+      operation: addition
+      magnitude: patch
+      selection:
+        has_annotation:
+          - "internal"
+          - "experimental"
+
+    # Example: Renaming a parameter will be considered as a major change
+    - operation: renaming
+      magnitude: major
+      selection:
+        entity:
+          - parameter
+        enclosing:
+          enclosing:
+            name_pattern: "^MagnitudeOverrideTest$"
+
+    # Example: Treat property removals in mixins as patch changes
+    - operation: removal
+      magnitude: patch
+      selection:
+        entity:
+          - property
+        enclosing:
+          entity: mixin
+
+    # Example: All changes to classes extending MagnitudeOverrideTest are minor
+    - operation: "*"
+      magnitude: minor
+      selection:
+        subtype_of:
+          - ClassWithSuper
+
+    # Example: Allow removing parameters named 'key' from constructors of Widget subclasses as non-breaking
+    - operation: removal
+      magnitude: minor
+      description: "Widget keys are optional"
+      selection:
+        entity: parameter
+        name_pattern: "^key$"
+        enclosing:
+          entity: constructor
+          enclosing:
+            subtype_of: Widget

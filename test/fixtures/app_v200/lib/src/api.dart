@@ -1,4 +1,4 @@
-// Version 3 of the API
+// Version 1.0.0 of the API
 // This fixture represents the "After" state of the API for testing the diff tool.
 // It contains changes relative to app_v110 (Version 2).
 
@@ -139,4 +139,23 @@ class Modifiers {
 abstract class AbstractModifiers {
   abstract void willBecomeAbstract();
   void willLoseAbstract() {}
+}
+
+class MagnitudeOverrideTest {
+  // removed fields
+
+  @internal
+  String? internalField; // new field with @internal annotation
+
+  @experimental
+  String? experimentalField; // new field with @experimental annotation
+
+  void paramWillBeRenamedAsBreaking(String newName) {}
+}
+
+// Mock, so we can test override based on superclass
+class Widget {}
+
+class CustomWidget extends Widget {
+  CustomWidget({required String title}); // removed 'key' parameter
 }
