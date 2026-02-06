@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 
 import 'package:mtrust_api_guard/version/version.dart';
 
@@ -103,8 +104,10 @@ class VersionCommand extends Command
   FutureOr? run() async {
     // Load config and determine doc file path
 
+    final gitRoot = await GitUtils.findGitRoot(Directory.current.path);
+
     final result = await version(
-      gitRoot: Directory.current,
+      gitRoot: Directory(gitRoot),
       dartRoot: Directory.current,
       badge: badge,
       baseRef: baseRef,
