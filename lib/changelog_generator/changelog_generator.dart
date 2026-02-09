@@ -118,7 +118,7 @@ class ChangelogGenerator {
     final updatedContent = '$newEntry$existingContent';
     await changelogFile.writeAsString(updatedContent);
 
-    logger.info('CHANGELOG.md updated successfully.');
+    logger.info('${changelogFile.absolute.path} updated successfully.');
   }
 
   /// Retrieves the package version and homepage from pubspec.yaml

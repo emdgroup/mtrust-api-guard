@@ -20,40 +20,59 @@ class Cache {
     return Directory(join(_cacheDir.path, repoName));
   }
 
-  /// Gets the path for an API file cached for a specific git ref
-  File getApiFileForRef(String repoPath, String ref) {
-    final repoCacheDir = getRepositoryCacheDir(repoPath);
-    return File(join(repoCacheDir.path, '${ref}_api.json'));
+  /// Sanitizes a path for use in file names
+  String _sanitizePath(String path) {
+    if (path == '.' || path.isEmpty) {
+      return 'root';
+    }
+    // Replace path separators and invalid characters with underscores
+    return path.replaceAll(RegExp(r'[<>:"|?*\x00-\x1f/\\]'), '_');
   }
 
-  /// Stores API documentation for a specific git ref
-  Future<void> storeApiFile(String repoPath, String ref, String content) async {
+  /// Gets the path for an API file cached for a specific git ref and dart root
+  File getApiFileForRef(String repoPath, String ref, String dartRelativePath) {
+    final repoCacheDir = getRepositoryCacheDir(repoPath);
+    final sanitizedDartPath = _sanitizePath(dartRelativePath);
+    return File(join(repoCacheDir.path, '${ref}_${sanitizedDartPath}_api.json'));
+  }
+
+  /// Stores API documentation for a specific git ref and dart root
+  Future<void> storeApiFile(
+    String repoPath,
+    String ref,
+    String dartRelativePath,
+    String content,
+  ) async {
     final repoCacheDir = getRepositoryCacheDir(repoPath);
     if (!repoCacheDir.existsSync()) {
       repoCacheDir.createSync(recursive: true);
     }
 
-    final apiFile = getApiFileForRef(repoPath, ref);
+    final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
     await apiFile.writeAsString(content);
   }
 
-  bool hasApiFileForRef(String repoPath, String ref) {
-    final apiFile = getApiFileForRef(repoPath, ref);
+  bool hasApiFileForRef(String repoPath, String ref, String dartRelativePath) {
+    final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
     return apiFile.existsSync();
   }
 
-  /// Retrieves API documentation for a specific git ref
-  Future<String?> retrieveApiFile(String repoPath, String ref) async {
-    final apiFile = getApiFileForRef(repoPath, ref);
+  /// Retrieves API documentation for a specific git ref and dart root
+  Future<String?> retrieveApiFile(
+    String repoPath,
+    String ref,
+    String dartRelativePath,
+  ) async {
+    final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
     if (apiFile.existsSync()) {
       return await apiFile.readAsString();
     }
     return null;
   }
 
-  /// Checks if API documentation exists for a specific git ref
-  bool hasApiFile(String repoPath, String ref) {
-    final apiFile = getApiFileForRef(repoPath, ref);
+  /// Checks if API documentation exists for a specific git ref and dart root
+  bool hasApiFile(String repoPath, String ref, String dartRelativePath) {
+    final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
     return apiFile.existsSync();
   }
 

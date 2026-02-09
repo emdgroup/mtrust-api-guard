@@ -97,6 +97,9 @@ Future<VersionResult> version({
 
   final baseVersion = PubspecUtils.getVersion(basePubSpec);
 
+  logger.info('Base version: $baseVersion');
+  logger.info('Changes: $changes');
+
   final highestMagnitudeChange = getHighestMagnitude(changes);
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');

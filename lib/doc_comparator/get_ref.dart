@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/models/package_info.dart';
+import 'package:path/path.dart';
 
 Future<PackageApi> getRef({
   required String ref,
@@ -22,11 +24,17 @@ Future<PackageApi> getRef({
 
   // Handle git refs
   if (cache) {
-    final cache = Cache();
+    final cacheInstance = Cache();
+    final repoPath = GitUtils.getRepositoryRoot(gitRoot.path);
+    final dartRelativePath = relative(dartRoot.path, from: gitRoot.path);
 
-    if (cache.hasApiFile(gitRoot.path, ref)) {
+    if (cacheInstance.hasApiFile(repoPath, ref, dartRelativePath)) {
       logger.success('Using cached API documentation for $ref');
-      final cachedContent = await cache.retrieveApiFile(gitRoot.path, ref);
+      final cachedContent = await cacheInstance.retrieveApiFile(
+        repoPath,
+        ref,
+        dartRelativePath,
+      );
       if (cachedContent != null) {
         return parsePackageApiFile(cachedContent);
       }

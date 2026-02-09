@@ -82,9 +82,13 @@ Future<PackageApi> generateDocs({
   final classes = <DocComponent>[];
 
   if (shouldCache) {
-    if (cache.hasApiFile(repoPath, effectiveRef)) {
+    if (cache.hasApiFile(repoPath, effectiveRef, dartRelativePath)) {
       logger.success('Using cached API documentation for $effectiveRef');
-      final cachedContent = await cache.retrieveApiFile(repoPath, effectiveRef);
+      final cachedContent = await cache.retrieveApiFile(
+        repoPath,
+        effectiveRef,
+        dartRelativePath,
+      );
       if (cachedContent != null) {
         logger.success('Using cached API documentation for $effectiveRef');
 
@@ -112,20 +116,20 @@ Future<PackageApi> generateDocs({
     }
   }
 
+  logger.info('determining analysis dart root');
+  logger.info('dartRoot: ${dartRoot.path}');
+  logger.info('gitRoot: ${gitRoot.path}');
+  logger.info('worktreePath: $worktreePath');
+
   // Determine the root path to use for analysis
   // If using a worktree, calculate the dartRoot path relative to the worktree
-  final analysisDartRoot = worktreePath != null
-      ? () {
-          final gitRootAbs = Directory(gitRoot.path).absolute.path;
-          final dartRootAbs = Directory(dartRoot.path).absolute.path;
-          final relativePath = relative(dartRootAbs, from: gitRootAbs);
-          // Handle case where dartRoot == gitRoot (relative path would be ".")
-          if (relativePath == '.' || relativePath.isEmpty) {
-            return Directory(worktreePath!);
-          }
-          return Directory(join(worktreePath!, relativePath));
-        }()
-      : dartRoot;
+  Directory analysisDartRoot = dartRoot;
+  if (worktreePath != null) {
+    final gitRootAbs = Directory(gitRoot.path).absolute.path;
+    final dartRootAbs = Directory(dartRoot.path).absolute.path;
+    final relativePath = relative(dartRootAbs, from: gitRootAbs);
+    analysisDartRoot = Directory(join(worktreePath, relativePath));
+  }
 
   try {
     final (config, globbedFiles) = evaluateTargetFiles(analysisDartRoot.path);
@@ -269,7 +273,7 @@ Future<PackageApi> generateDocs({
 
     // Cache the generated documentation if requested
     if (shouldCache) {
-      await cache.storeApiFile(repoPath, effectiveRef, output);
+      await cache.storeApiFile(repoPath, effectiveRef, dartRelativePath, output);
       logger.success('Cached documentation for ref: $effectiveRef');
     }
 
@@ -285,10 +289,10 @@ Future<PackageApi> generateDocs({
     return packageApi;
   } finally {
     // Clean up worktree if it was created
-    if (worktreeCreated && worktreePath != null) {
+    if (worktreeCreated) {
       try {
         logger.detail('Cleaning up worktree at $worktreePath');
-        await GitUtils.removeWorktree(repoPath, worktreePath);
+        await GitUtils.removeWorktree(repoPath, worktreePath!);
         logger.detail('Successfully cleaned up worktree');
       } catch (e) {
         logger.err('Warning: Failed to clean up worktree at $worktreePath: $e');
