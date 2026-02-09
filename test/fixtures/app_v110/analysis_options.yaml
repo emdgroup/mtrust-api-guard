@@ -1,0 +1,3 @@
+api_guard:
+  entry_points:
+    - lib/src/api.dart

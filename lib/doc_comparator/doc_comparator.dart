@@ -2,7 +2,8 @@
 
 import 'dart:io';
 
-import 'package:mtrust_api_guard/doc_comparator/doc_ext.dart';
+import 'package:mtrust_api_guard/doc_comparator/comparators/component_comparator.dart';
+import 'package:mtrust_api_guard/doc_comparator/comparators/metadata_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/get_ref.dart';
 
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
@@ -16,12 +17,14 @@ Future<List<ApiChange>> compare({
 }) async {
   // Load config and determine doc file path
 
-  final baseDoc = await getRef(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
-  final newDoc = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
+  final baseApi = await getRef(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
+  final newApi = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
 
-  final apiChanges = baseDoc.compareTo(
-    newDoc,
+  final apiChanges = baseApi.components.compareTo(
+    newApi.components,
   );
+
+  apiChanges.addAll(baseApi.metadata.compareTo(newApi.metadata));
 
   return apiChanges;
 }

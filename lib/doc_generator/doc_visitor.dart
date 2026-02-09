@@ -1,8 +1,11 @@
 // ignore_for_file: experimental_member_use
 
 import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/nullability_suffix.dart';
+import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/element/visitor2.dart';
 import 'package:mtrust_api_guard/models/doc_items.dart';
+import 'package:mtrust_api_guard/models/doc_type.dart';
 
 /// A visitor that traverses the AST to collect documentation components.
 ///
@@ -11,28 +14,31 @@ import 'package:mtrust_api_guard/models/doc_items.dart';
 /// type aliases, extensions, and top-level functions.
 class DocVisitor extends RecursiveElementVisitor2<void> {
   final String filePath;
+  final String? entryPoint;
   final List<DocComponent> components = [];
 
-  DocVisitor({required this.filePath});
+  DocVisitor({required this.filePath, this.entryPoint});
 
   /// Visits a class element and extracts its documentation.
   @override
   void visitClassElement(ClassElement2 element) {
+    final superTypeInfo = _getSuperTypeInfo(element);
+
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
+      entryPoint: entryPoint,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
       methods: _mapMethods(_collectMethodsWithInheritance(element)),
       type: DocComponentType.classType,
       annotations: _getAnnotations(element),
-      superClass: (element.supertype != null && !element.supertype!.isDartCoreObject)
-          ? element.supertype!.element3.name3
-          : null,
+      superClasses: superTypeInfo.superClasses,
+      superClassPackages: superTypeInfo.superClassPackages,
       interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
       mixins: element.mixins.map((e) => e.element3.name3!).toList(),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitClassElement(element);
   }
@@ -43,7 +49,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(_collectFieldsWithInheritance(element)),
@@ -51,6 +56,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       type: DocComponentType.mixinType,
       annotations: _getAnnotations(element),
       interfaces: element.interfaces.map((e) => e.element3.name3!).toList(),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitMixinElement(element);
   }
@@ -61,13 +67,13 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: _mapConstructors(element.constructors2),
       properties: _mapProperties(element.fields2),
       methods: _mapMethods(element.methods2),
       type: DocComponentType.enumType,
       annotations: _getAnnotations(element),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitEnumElement(element);
   }
@@ -78,7 +84,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],
@@ -86,6 +91,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       type: DocComponentType.typedefType,
       aliasedType: element.aliasedType.toString(),
       annotations: _getAnnotations(element),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitTypeAliasElement(element);
   }
@@ -96,7 +102,6 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3 ?? 'extension',
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: _mapProperties(element.fields2),
@@ -104,6 +109,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       type: DocComponentType.extensionType,
       aliasedType: element.extendedType.toString(),
       annotations: _getAnnotations(element),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitExtensionElement(element);
   }
@@ -114,14 +120,13 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     components.add(DocComponent(
       name: element.name3!,
       filePath: filePath,
-      isNullSafe: true,
       description: _getDescription(element),
       constructors: [],
       properties: [],
       methods: [
         DocMethod(
           name: element.name3!,
-          returnType: element.returnType.toString(),
+          returnType: _getDocType(element.returnType),
           description: _getDescription(element),
           signature: _mapParameters(element.formalParameters),
           features: [
@@ -129,10 +134,12 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
             if (element.isExternal) "external",
           ],
           annotations: _getAnnotations(element),
+          typeParameters: _getTypeParameters(element.typeParameters2),
         )
       ],
       type: DocComponentType.functionType,
       annotations: _getAnnotations(element),
+      typeParameters: _getTypeParameters(element.typeParameters2),
     ));
     super.visitTopLevelFunctionElement(element);
   }
@@ -165,6 +172,10 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
       }
     }
     for (final method in element.methods2) {
+      // Filter out abstract methods in non-abstract classes (likely parser artifacts from invalid code)
+      if (element is ClassElement2 && !element.isAbstract && method.isAbstract) {
+        continue;
+      }
       methodMap[method.name3!] = method;
     }
     return methodMap.values;
@@ -208,7 +219,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     return fields
         .map((e) => DocProperty(
               name: e.name3!,
-              type: e.type.toString(),
+              type: _getDocType(e.type),
               description: _getDescription(e),
               features: [
                 if (e.isStatic) "static",
@@ -227,7 +238,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
     return methods
         .map((e) => DocMethod(
               name: e.name3!,
-              returnType: e.returnType.toString(),
+              returnType: _getDocType(e.returnType),
               description: _getDescription(e),
               signature: _mapParameters(e.formalParameters),
               features: [
@@ -236,6 +247,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
                 if (e.isExternal) "external",
               ],
               annotations: _getAnnotations(e),
+              typeParameters: _getTypeParameters(e.typeParameters2),
             ))
         .toList();
   }
@@ -246,12 +258,62 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
         .map((param) => DocParameter(
               description: _getDescription(param),
               name: param.name3!,
-              type: param.type.toString(),
+              type: _getDocType(param.type),
               named: param.isNamed,
               required: param.isRequired,
               defaultValue: param.defaultValueCode,
               annotations: _getAnnotations(param),
             ))
         .toList();
+  }
+
+  /// Extracts type parameters from an element.
+  List<String> _getTypeParameters(List<TypeParameterElement2> typeParameters) {
+    return typeParameters.map((e) {
+      final bound = e.bound;
+      if (bound != null) {
+        return '${e.name3} extends $bound';
+      }
+      return e.name3!;
+    }).toList();
+  }
+
+  DocType _getDocType(DartType type) {
+    final superTypes = <String>[];
+    if (type is InterfaceType) {
+      for (final superType in type.allSupertypes) {
+        superTypes.add(superType.element3.name3!);
+      }
+    }
+    return DocType(
+      name: type.toString(),
+      superTypes: superTypes,
+      isNullable: type.nullabilitySuffix == NullabilitySuffix.question,
+    );
+  }
+
+  ({List<String> superClasses, List<String> superClassPackages}) _getSuperTypeInfo(ClassElement2 element) {
+    var superClasses = <String>[];
+    var superClassPackages = <String>[];
+    var current = element.supertype;
+
+    while (current != null && !current.isDartCoreObject) {
+      // 1. Add Class Name
+      superClasses.add(current.element3.name3!);
+
+      // 2. Add Package Name
+      final uri = current.element3.library2.uri;
+      if (uri.isScheme('package')) {
+        superClassPackages.add(uri.pathSegments.first);
+      } else if (uri.isScheme('dart')) {
+        superClassPackages.add(uri.toString().split('/').first);
+      } else {
+        superClassPackages.add('project');
+      }
+
+      current = current.superclass;
+    }
+
+    return (superClasses: superClasses, superClassPackages: superClassPackages);
   }
 }

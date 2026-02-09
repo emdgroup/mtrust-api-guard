@@ -1,0 +1,3 @@
+class Internal {
+  // field removed.
+}

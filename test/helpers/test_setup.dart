@@ -33,11 +33,15 @@ class TestSetup {
   /// Set up a git repository with user configuration.
   Future<void> setupGitRepo() async {
     await runProcess('git', ['init'], workingDir: tempDir.path);
-    await runProcess(
-      'git',
-      ['remote', 'add', 'origin', 'https://github.com/emdgroup/mtrust-api-guard.git'],
-      workingDir: tempDir.path,
-    );
+    try {
+      await runProcess('git', ['remote', 'get-url', 'origin'], workingDir: tempDir.path);
+    } catch (_) {
+      await runProcess(
+        'git',
+        ['remote', 'add', 'origin', 'https://github.com/emdgroup/mtrust-api-guard.git'],
+        workingDir: tempDir.path,
+      );
+    }
     await runProcess(
       'git',
       ['config', 'user.email', TestConstants.testEmail],
@@ -109,7 +113,7 @@ class TestSetup {
   Future<void> setupFlutterPackage() async {
     await runProcess(
       'flutter',
-      ['create', '.', '--template', 'package'],
+      ['create', '.', '--template', 'package', '--project-name', 'api_guard_test'],
       workingDir: tempDir.path,
     );
 

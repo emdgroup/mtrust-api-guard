@@ -2,7 +2,9 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/badges/badge_generator.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator.dart';
+import 'package:mtrust_api_guard/config/config.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
+import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -79,11 +81,14 @@ Future<VersionResult> version({
           ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
               (throw Exception('No previous version found for package $packageName'))
           : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
-  
-  final pubspecPath = packageName != null 
-      ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml')
-      : 'pubspec.yaml';
-  
+
+  final pubspecPath =
+      packageName != null ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml') : 'pubspec.yaml';
+
+  // Load config and apply magnitude overrides
+  final config = ApiGuardConfig.load(dartRoot);
+  applyMagnitudeOverrides(changes, config);
+
   final basePubSpec = await GitUtils.gitShow(
     baseRefForPubspec,
     gitRoot.path,
@@ -98,7 +103,8 @@ Future<VersionResult> version({
 
   // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
   final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
-  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
+  final nextVersion =
+      await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
 
   logger.info('Next version: $nextVersion');
 

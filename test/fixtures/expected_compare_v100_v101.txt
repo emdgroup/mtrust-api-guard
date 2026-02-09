@@ -11,5 +11,8 @@
 **`mixin` TimestampMixin** ([lib/src/api.dart](lib/src/api.dart))
 - ❇️ Method added: `_updateTimestamp`
 
+**`class` User** ([lib/src/api.dart](lib/src/api.dart))
+- ✏️ Param renamed in method `updateEmail`: `newEmail` → `email`
+
 **`class` _PrivateClass** ([lib/src/api.dart](lib/src/api.dart))
 - ❌ Class removed: `_PrivateClass`
