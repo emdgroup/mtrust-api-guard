@@ -47,15 +47,24 @@ Future<VersionResult> version({
   required bool cache,
   required String tagPrefix,
   String? dartFile,
+  String? packageName,
 }) async {
-  final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
+  // For workspace packages, use package-specific tag methods
+  final hasPreviousVersion = packageName != null
+      ? (await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: 'v')).isNotEmpty
+      : (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
 
   if (baseRef == null && !hasPreviousVersion) {
-    logger.err('No previous version found. Please tag the first version. e.g. git tag ${tagPrefix}0.0.1');
+    final exampleTag = packageName != null ? '$packageName/v0.0.1' : '${tagPrefix}0.0.1';
+    logger.err('No previous version found. Please tag the first version. e.g. git tag $exampleTag');
     exit(1);
   }
 
-  final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix);
+  final effectiveBaseRef = baseRef ??
+      (packageName != null
+          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
+              (throw Exception('No previous version found for package $packageName'))
+          : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
 
   final changes = await compare(
     baseRef: effectiveBaseRef,
@@ -65,10 +74,20 @@ Future<VersionResult> version({
     cache: cache,
   );
 
+  final baseRefForPubspec = baseRef ??
+      (packageName != null
+          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
+              (throw Exception('No previous version found for package $packageName'))
+          : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
+  
+  final pubspecPath = packageName != null 
+      ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml')
+      : 'pubspec.yaml';
+  
   final basePubSpec = await GitUtils.gitShow(
-    baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix),
+    baseRefForPubspec,
     gitRoot.path,
-    'pubspec.yaml',
+    pubspecPath,
   );
 
   final baseVersion = PubspecUtils.getVersion(basePubSpec);
@@ -77,7 +96,9 @@ Future<VersionResult> version({
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');
 
-  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, tagPrefix);
+  // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
+  final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
+  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
 
   logger.info('Next version: $nextVersion');
 
@@ -114,9 +135,12 @@ Future<VersionResult> version({
   }
 
   if (commit) {
+    // For workspace packages, commit from the package directory
+    // For single packages, commit from git root
+    final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
     await GitUtils.commitVersion(
       nextVersion,
-      gitRoot.path,
+      commitRoot,
       commitBadge: badge,
       commitChangelog: generateChangelog,
     );

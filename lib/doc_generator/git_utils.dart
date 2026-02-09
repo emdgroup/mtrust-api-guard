@@ -220,6 +220,60 @@ class GitUtils {
     return tags.last.$1;
   }
 
+  /// Gets version tags for a specific package in a workspace
+  /// Tags are expected to be in format: {package-name}/v{version}
+  static Future<List<(String, Version)>> getVersionsForPackage(
+    String? root,
+    String packageName, {
+    String tagPrefix = 'v',
+  }) async {
+    final allTags = await getTags(root);
+    final packageTagPrefix = '$packageName/';
+
+    final packageVersions = allTags
+        .where((tag) => tag.isNotEmpty && tag.startsWith(packageTagPrefix))
+        .map((tag) {
+          // Extract version part after package-name/
+          final versionPart = tag.substring(packageTagPrefix.length);
+          String version = versionPart;
+          if (versionPart.startsWith(tagPrefix)) {
+            version = versionPart.substring(tagPrefix.length);
+          }
+
+          try {
+            return (tag, Version.parse(version));
+          } catch (e) {
+            logger.detail('Skipping tag $tag. Not a valid version.');
+            return null;
+          }
+        })
+        .whereType<(String, Version)>()
+        .toList();
+
+    final sortedVersions = packageVersions.toList()..sort((a, b) => a.$2.compareTo(b.$2));
+
+    return sortedVersions;
+  }
+
+  /// Gets the previous tag ref for a specific package in a workspace
+  /// Returns null if no tags exist for the package
+  static Future<String?> getPreviousRefForPackage(
+    String? root,
+    String packageName, {
+    String tagPrefix = 'v',
+  }) async {
+    try {
+      final tags = await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix);
+      if (tags.isEmpty) {
+        return null;
+      }
+      return tags.last.$1;
+    } catch (e) {
+      logger.detail('Error getting previous ref for package $packageName: $e');
+      return null;
+    }
+  }
+
   static Future<String> gitShow(String ref, String? root, String path) async {
     final result = await Process.run(
       'git',
