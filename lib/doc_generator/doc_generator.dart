@@ -29,11 +29,13 @@ Future<PackageApi> generateDocs({
     exit(1);
   }
 
-  // Check for uncommitted changes if we're going to checkout a ref
+  // Stash uncommitted changes if we're going to checkout a different ref.
+  // This allows the tool to work in CI environments where prior steps
+  // (e.g. `flutter pub get`) create uncommitted artefacts.
+  bool didStash = false;
   if (gitRef != 'HEAD' && GitUtils.hasUncommittedChanges(gitRoot.path)) {
-    logger.err('Repository has uncommitted changes. Please commit or stash them before proceeding.');
-    logger.err('This prevents potential data loss during ref checkout.');
-    exit(1);
+    logger.info('Stashing uncommitted changes before checking out ref...');
+    didStash = await GitUtils.stashChanges(gitRoot.path);
   }
 
   final originalRef = await GitUtils.getCurrentRef(gitRoot.path);
@@ -59,6 +61,10 @@ Future<PackageApi> generateDocs({
         await GitUtils.checkoutRef(originalBranch, gitRoot.path);
       } else {
         await GitUtils.checkoutRef(originalRef, gitRoot.path);
+      }
+      if (didStash) {
+        logger.info('Restoring stashed changes...');
+        await GitUtils.popStash(gitRoot.path);
       }
       logger.info('Successfully restored original state');
     } catch (e) {
@@ -246,6 +252,6 @@ Future<PackageApi> generateDocs({
 
     return packageApi;
   } finally {
-    restoreOriginalState();
+    await restoreOriginalState();
   }
 }

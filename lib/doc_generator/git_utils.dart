@@ -99,6 +99,43 @@ class GitUtils {
     }
   }
 
+  /// Stashes any uncommitted changes (including untracked files)
+  /// Returns true if changes were stashed, false if the working tree was clean.
+  static Future<bool> stashChanges(String? root) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['stash', 'push', '--include-untracked', '-m', 'mtrust_api_guard_auto_stash'],
+        workingDirectory: root,
+      );
+      if (result.exitCode != 0) {
+        throw GitException('Failed to stash changes: ${result.stderr}');
+      }
+      // "No local changes to save" means nothing was stashed
+      return !result.stdout.toString().contains('No local changes to save');
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    }
+  }
+
+  /// Pops the most recent stash entry.
+  /// Silently succeeds if there is nothing to pop.
+  static Future<void> popStash(String? root) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['stash', 'pop'],
+        workingDirectory: root,
+      );
+      if (result.exitCode != 0) {
+        // Log but don't throw – a pop failure shouldn't crash the tool
+        logger.err('Warning: Failed to pop stash: ${result.stderr}');
+      }
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    }
+  }
+
   /// Checks out a specific git ref
   /// Throws [GitException] if the operation fails
   static Future<void> checkoutRef(String ref, String? root) async {
