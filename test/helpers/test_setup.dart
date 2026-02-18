@@ -93,10 +93,22 @@ class TestSetup {
     final stderr = result.stderr.toString().trim();
 
     if (stdout.isNotEmpty) {
-      result.stdout.toString().trim().split('\n').forEach((line) => printOnFailure('\t$line'));
+      result.stdout
+          .toString()
+          .trim()
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .forEach((line) => printOnFailure('\t$line'));
     }
     if (stderr.isNotEmpty) {
-      result.stderr.toString().trim().split('\n').forEach((line) => printOnFailure('\t$line'));
+      result.stderr
+          .toString()
+          .trim()
+          .split('\n')
+          .map((line) => line.trim())
+          .where((line) => line.isNotEmpty)
+          .forEach((line) => printOnFailure('\t$line'));
     }
 
     if (result.exitCode != 0) {
@@ -109,6 +121,14 @@ class TestSetup {
     }
   }
 
+  Future<void> _clearDir(String dirName) async {
+    final dir = Directory(p.join(tempDir.path, dirName));
+    if (dir.existsSync()) {
+      await dir.delete(recursive: true);
+      await dir.create();
+    }
+  }
+
   /// Set up a Flutter package in the test directory.
   Future<void> setupFlutterPackage() async {
     await runProcess(
@@ -117,14 +137,18 @@ class TestSetup {
       workingDir: tempDir.path,
     );
 
-    Future<void> _clearDir(String dirName) async {
-      final dir = Directory(p.join(tempDir.path, dirName));
-      if (dir.existsSync()) {
-        await dir.delete(recursive: true);
-        await dir.create();
-      }
-    }
+    // remove the contents of lib/ and test/ directories
+    await _clearDir('lib');
+    await _clearDir('test');
+  }
 
+  /// Set up a Flutter plugin in the test directory.
+  Future<void> setupFlutterPlugin() async {
+    await runProcess(
+      'flutter',
+      ['create', '.', '--template', 'plugin', '--project-name', 'api_guard_test'],
+      workingDir: tempDir.path,
+    );
     // remove the contents of lib/ and test/ directories
     await _clearDir('lib');
     await _clearDir('test');

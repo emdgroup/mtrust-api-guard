@@ -76,7 +76,7 @@ enum ApiChangeOperation {
   dependencyVersionChange(ApiChangeMagnitude.patch),
   dependencyAddition(ApiChangeMagnitude.patch),
   dependencyRemoval(ApiChangeMagnitude.minor),
-  platformConstraintChange(ApiChangeMagnitude.major),
+  platformConstraintChange(ApiChangeMagnitude.patch),
 
   // Feature changes
   featureAddition(ApiChangeMagnitude.minor),

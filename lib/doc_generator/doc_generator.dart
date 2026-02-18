@@ -25,6 +25,12 @@ Future<PackageApi> generateDocs({
   required bool shouldCache,
 }) async {
   final cache = Cache();
+
+  if (gitRef == 'HEAD') {
+    logger.info('HEAD is not a valid git ref. Cannot cache documentation for current HEAD.');
+    shouldCache = false;
+  }
+
   // Check if we're in a git repository
   if (!await GitUtils.isGitRepository(gitRoot.path)) {
     logger.err('Not in a git repository. Cannot proceed with ref-based generation.');
@@ -90,7 +96,7 @@ Future<PackageApi> generateDocs({
         dartRelativePath,
       );
       if (cachedContent != null) {
-        logger.success('Using cached API documentation for $effectiveRef');
+        logger.success('Using cached API documentation for $effectiveRef in $dartRelativePath');
 
         // Clean up worktree if it was created
         if (worktreeCreated && worktreePath != null) {
@@ -144,14 +150,14 @@ Future<PackageApi> generateDocs({
     if (config.entryPoints.isNotEmpty) {
       useRecursiveAnalysis = true;
       for (final point in config.entryPoints) {
-        filesToAnalyze.add(normalize(absolute(join(dartRoot.path, point))));
+        filesToAnalyze.add(normalize(absolute(join(analysisDartRoot.path, point))));
       }
     } else {
       // Check if we should default to the main library file
       // We do this only if the include configuration is the default one
       final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
 
-      final mainLibrary = normalize(join(dartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
+      final mainLibrary = normalize(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
 
       if (isDefaultInclude && File(mainLibrary).existsSync()) {
         useRecursiveAnalysis = true;
@@ -167,7 +173,7 @@ Future<PackageApi> generateDocs({
     }
 
     final contextCollection = AnalysisContextCollection(
-      includedPaths: [dartRoot.path],
+      includedPaths: [normalize(absolute(analysisDartRoot.path))],
       excludedPaths: config.exclude.toList(),
     );
 
@@ -192,8 +198,8 @@ Future<PackageApi> generateDocs({
           // as the file path, as it provides a stable reference compared to
           // local pub-cache paths.
           final sourcePath = library.firstFragment.source.fullName;
-          if (isWithin(dartRoot.path, sourcePath)) {
-            filePath = relative(sourcePath, from: dartRoot.path);
+          if (isWithin(analysisDartRoot.path, sourcePath)) {
+            filePath = relative(sourcePath, from: analysisDartRoot.path);
           }
         }
       } catch (e) {
@@ -225,7 +231,7 @@ Future<PackageApi> generateDocs({
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
             libraryResult.element2,
-            relative(file, from: dartRoot.path),
+            relative(file, from: analysisDartRoot.path),
           );
         } else {
           // Legacy / Glob mode: non-recursive, just the file

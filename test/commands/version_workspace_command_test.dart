@@ -63,6 +63,12 @@ workspace:
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
       await sharedLibDir.create(recursive: true);
       await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), sharedLibDir);
+      
+      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
+      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptions.existsSync()) {
+        await v100AnalysisOptions.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
+      }
 
       // 4. Create consumer package that depends on shared
       final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
@@ -104,6 +110,12 @@ workspace:
 
       // 7. Make changes only to shared package (patch-level change)
       await copyDir(Directory(p.join(testSetup.fixtures.appV101Dir.path, 'lib')), sharedLibDir);
+      
+      // Copy analysis_options.yaml from v101 fixtures to ensure consistent entry points
+      final v101AnalysisOptions = File(p.join(testSetup.fixtures.appV101Dir.path, 'analysis_options.yaml'));
+      if (v101AnalysisOptions.existsSync()) {
+        await v101AnalysisOptions.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
+      }
 
       // 8. Commit changes
       await testSetup.commitChanges('fix: update shared package');
@@ -181,6 +193,12 @@ workspace:
       final packageALibDir = Directory(p.join(packageADir.path, 'lib'));
       await packageALibDir.create(recursive: true);
       await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), packageALibDir);
+      
+      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
+      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptions.existsSync()) {
+        await v100AnalysisOptions.copy(p.join(packageADir.path, 'analysis_options.yaml'));
+      }
 
       // 4. Create package_b
       final packageBDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'package_b'));
@@ -213,6 +231,13 @@ workspace:
 
       // 6. Make changes only to package_a
       await copyDir(Directory(p.join(testSetup.fixtures.appV101Dir.path, 'lib')), packageALibDir);
+      
+      // Copy analysis_options.yaml from v101 fixtures to ensure consistent entry points
+      final v101AnalysisOptions = File(p.join(testSetup.fixtures.appV101Dir.path, 'analysis_options.yaml'));
+      if (v101AnalysisOptions.existsSync()) {
+        await v101AnalysisOptions.copy(p.join(packageADir.path, 'analysis_options.yaml'));
+      }
+      
       await testSetup.commitChanges('fix: update package_a');
 
       // 7. Run version-workspace command
@@ -291,6 +316,12 @@ workspace:
       final baseLibDir = Directory(p.join(baseDir.path, 'lib'));
       await baseLibDir.create(recursive: true);
       await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), baseLibDir);
+      
+      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
+      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptions.existsSync()) {
+        await v100AnalysisOptions.copy(p.join(baseDir.path, 'analysis_options.yaml'));
+      }
 
       // 4. Create shared package (depends on base)
       final sharedDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'shared'));
@@ -314,6 +345,12 @@ workspace:
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
       await sharedLibDir.create(recursive: true);
       await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), sharedLibDir);
+      
+      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
+      final v100AnalysisOptionsShared = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptionsShared.existsSync()) {
+        await v100AnalysisOptionsShared.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
+      }
 
       // 5. Create consumer package (depends on shared)
       final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
@@ -337,6 +374,12 @@ workspace:
       final consumerLibDir = Directory(p.join(consumerDir.path, 'lib'));
       await consumerLibDir.create(recursive: true);
       await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), consumerLibDir);
+      
+      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
+      final v100AnalysisOptionsConsumer = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptionsConsumer.existsSync()) {
+        await v100AnalysisOptionsConsumer.copy(p.join(consumerDir.path, 'analysis_options.yaml'));
+      }
 
       // 6. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -346,6 +389,13 @@ workspace:
 
       // 7. Make changes to base package (minor change)
       await copyDir(Directory(p.join(testSetup.fixtures.appV110Dir.path, 'lib')), baseLibDir);
+      
+      // Copy analysis_options.yaml from v110 fixtures to ensure consistent entry points
+      final v110AnalysisOptions = File(p.join(testSetup.fixtures.appV110Dir.path, 'analysis_options.yaml'));
+      if (v110AnalysisOptions.existsSync()) {
+        await v110AnalysisOptions.copy(p.join(baseDir.path, 'analysis_options.yaml'));
+      }
+      
       await testSetup.commitChanges('feat: update base package');
 
       // 8. Run version-workspace command

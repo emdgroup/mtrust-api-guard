@@ -44,9 +44,15 @@ void main() {
       final generatedContent = await File(generatedFilePath).readAsString();
 
       // decode the json to avoid formatting issues
-      final expectedJson = jsonDecode(expectedGeneratedContent);
-      final generatedJson = jsonDecode(generatedContent);
-      expect(generatedJson, expectedJson);
+      final expectedJson = jsonDecode(expectedGeneratedContent) as Map<String, dynamic>;
+      final generatedJson = jsonDecode(generatedContent) as Map<String, dynamic>;
+      
+      // Remove sdkVersion from both JSON objects to ignore SDK version differences
+      // Different Flutter versions generate different SDK constraints
+      final normalizedExpectedJson = removeSdkVersionFromJson(expectedJson);
+      final normalizedGeneratedJson = removeSdkVersionFromJson(generatedJson);
+      
+      expect(normalizedGeneratedJson, normalizedExpectedJson);
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

@@ -53,6 +53,19 @@ String stripChangelog(String changelog) {
       .replaceAll(releasedOnLineRegexp, '');
 }
 
+/// Remove sdkVersion from JSON metadata to ignore SDK version differences in tests.
+/// Different Flutter versions generate different SDK constraints, so we ignore this field
+/// when comparing generated API documentation JSON.
+Map<String, dynamic> removeSdkVersionFromJson(Map<String, dynamic> json) {
+  final result = Map<String, dynamic>.from(json);
+  if (result.containsKey('metadata') && result['metadata'] is Map) {
+    final metadata = Map<String, dynamic>.from(result['metadata'] as Map);
+    metadata.remove('sdkVersion');
+    result['metadata'] = metadata;
+  }
+  return result;
+}
+
 /// Test constants for better maintainability.
 class TestConstants {
   static const String initialVersion = '0.0.1';

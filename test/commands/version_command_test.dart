@@ -23,20 +23,18 @@ void main() {
       await testSetup.tearDown();
     });
 
-    test('detects API changes between versions', () async {
-      // 1. Initialize git repo and flutter package
+    /// Helper method to set up initial version state with homepage for changelog links
+    Future<void> _setupInitialVersion({bool plugin = false}) async {
       await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
+      if (plugin) {
+        await testSetup.setupFlutterPlugin();
+      } else {
+        await testSetup.setupFlutterPackage();
+      }
 
-      // 1.1 Add homepage to pubspec.yaml for testing changelog links
+      // Add homepage to pubspec.yaml for testing changelog links
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
       var pubspecContent = await pubspecFile.readAsString();
-
-      // Normalize SDK constraint to ensure consistent test results regardless of local Flutter version
-      pubspecContent = pubspecContent.replaceAll(
-        RegExp(r'sdk:.*'),
-        'sdk: ">=3.0.0 <4.0.0"',
-      );
 
       final updatedPubspecContent = pubspecContent.replaceFirst(
         'homepage:',
@@ -44,103 +42,128 @@ void main() {
       );
       await pubspecFile.writeAsString(updatedPubspecContent);
 
-      // 2. Set up initial version (1.0.0)
+      // Set up initial version
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
 
-      // Add initial android constraints
-      final androidDir = Directory(p.join(testSetup.tempDir.path, 'android', 'app'));
-      if (!androidDir.existsSync()) {
-        androidDir.createSync(recursive: true);
-      }
-      final gradleFile = File(p.join(androidDir.path, 'build.gradle'));
-      await gradleFile.writeAsString('''
-android {
-    defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 30
-        compileSdkVersion 30
-    }
-}
-''');
-
-      // 3. Commit initial state and tag it
+      // Commit initial state and tag it
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
-
-      printOnFailure('Initial version: ${testSetup.getCurrentVersion()}');
-
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
       expect(testSetup.getCurrentVersion(), TestConstants.initialVersion);
+    }
 
-      // 4. Apply patch-level changes (1.0.0 -> 1.0.1)
+    test('detects patch-level API changes', () async {
+      await _setupInitialVersion();
+
+      // Apply patch-level changes (0.0.0 -> 0.0.1)
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
 
-      // Add a dependency
-      final pubspecFileV101 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContentV101 = await pubspecFileV101.readAsString();
-      // Add path dependency to avoid pub get issues
-      pubspecContentV101 = pubspecContentV101.replaceFirst(
-        'dependencies:',
-        'dependencies:\n  path: ^1.8.0',
-      );
-      await pubspecFileV101.writeAsString(pubspecContentV101);
-
-      // 5. Commit and run version command to detect patch change
+      // Commit and run version command to detect patch change
       await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
+      printOnFailure("Add v101 files and commit");
+      printOnFailure("================================================");
       await testSetup.runApiGuard('version', ["--verbose"]);
+
+      printOnFailure("================================================");
 
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
 
-      // 6. Apply minor-level changes (1.0.1 -> 1.1.0)
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.initialVersion}'));
+      expect(tags, contains('v${TestConstants.patchVersion}'));
+    });
+
+    test('detects minor-level API changes', () async {
+      printOnFailure("================================================");
+      await _setupInitialVersion();
+
+      // Apply patch-level changes first to get to 1.0.1
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+      printOnFailure("================================================");
+
+      printOnFailure("Add v101 files and commit");
+      printOnFailure("================================================");
+
+      // Apply minor-level changes (1.0.1 -> 1.1.0)
       await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
 
-      // Remove dependency added in previous step
-      final pubspecFileV110 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContentV110 = await pubspecFileV110.readAsString();
-      pubspecContentV110 = pubspecContentV110.replaceFirst(
-        'dependencies:\n  path: ^1.8.0',
-        'dependencies:',
-      );
-      await pubspecFileV110.writeAsString(pubspecContentV110);
-
-      // 7. Commit and run version command to detect minor change
+      // Commit and run version command to detect minor change
       await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
-
       await testSetup.runApiGuard('version', ["--verbose"]);
 
       expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
 
-      // 8. Apply major-level changes (1.1.0 -> 2.0.0)
+      printOnFailure("Add v110 files and commit");
+      printOnFailure("================================================");
+
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.minorVersion}'));
+    });
+
+    test('detects major-level API changes', () async {
+      await _setupInitialVersion();
+
+      // Apply patch-level changes first to get to 1.0.1
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Apply minor-level changes to get to 1.1.0
+      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Apply major-level changes (1.1.0 -> 2.0.0)
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
 
-      // Change android constraints
-      final gradleFileV200 = File(p.join(testSetup.tempDir.path, 'android', 'app', 'build.gradle'));
-      await gradleFileV200.writeAsString('''
-android {
-    defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 30
-        compileSdkVersion 30
-    }
-}
-''');
-
-      // Change SDK constraints (Breaking change)
-      final pubspecFileV200 = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContentV200 = await pubspecFileV200.readAsString();
-      pubspecContentV200 = pubspecContentV200.replaceFirst(
-        'sdk: ">=3.0.0 <4.0.0"',
-        'sdk: ">=3.2.0 <4.0.0"',
-      );
-      await pubspecFileV200.writeAsString(pubspecContentV200);
-
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
-
       await testSetup.runApiGuard('version', ["--verbose"]);
 
       expect(testSetup.getCurrentVersion(), TestConstants.majorVersion);
 
-      // 9. Verify all version tags were created
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.majorVersion}'));
+    });
+
+    test('generates changelog correctly for multiple version changes', () async {
+      await _setupInitialVersion();
+
+      // Apply patch-level changes (1.0.0 -> 1.0.1)
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product, remove _PrivateClass');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Apply minor-level changes (1.0.1 -> 1.1.0)
+      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Apply major-level changes (1.1.0 -> 2.0.0)
+      await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
+      await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Verify all version tags were created
       final tags = await runProcess(
         'git',
         ['tag'],
@@ -152,7 +175,7 @@ android {
       expect(tags, contains('v${TestConstants.minorVersion}'));
       expect(tags, contains('v${TestConstants.majorVersion}'));
 
-      // 10. Verify changelog was generated correctly
+      // Verify changelog was generated correctly
       final changelogFile = File(p.join(testSetup.tempDir.path, 'CHANGELOG.md'));
       final changelogContent = stripChangelog(
         await changelogFile.readAsString(),
@@ -169,6 +192,104 @@ android {
       );
 
       expect(changelogContent, equalsIgnoringWhitespace(expectedChangelog));
+    });
+
+    test('detects version change when adding a dependency', () async {
+      await _setupInitialVersion();
+
+      // Add a dependency
+      final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContent = await pubspecFile.readAsString();
+      pubspecContent = pubspecContent.replaceFirst(
+        'dependencies:',
+        'dependencies:\n  path: ^1.8.0',
+      );
+      await pubspecFile.writeAsString(pubspecContent);
+
+      await testSetup.commitChanges('chore: add path dependency');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Adding a dependency should not change the API, so version should remain the same
+      // or trigger a patch if it affects the API surface
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.patchVersion}'));
+    });
+
+    test('detects version change when removing a dependency', () async {
+      await _setupInitialVersion();
+
+      // First add a dependency
+      final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContent = await pubspecFile.readAsString();
+      pubspecContent = pubspecContent.replaceFirst(
+        'dependencies:',
+        'dependencies:\n  path: ^1.8.0',
+      );
+      await pubspecFile.writeAsString(pubspecContent);
+      await testSetup.commitChanges('chore: add path dependency');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Now remove the dependency
+      pubspecContent = await pubspecFile.readAsString();
+      pubspecContent = pubspecContent.replaceFirst(
+        'dependencies:\n  path: ^1.8.0',
+        'dependencies:',
+      );
+      await pubspecFile.writeAsString(pubspecContent);
+
+      await testSetup.commitChanges('chore: remove path dependency');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Removing a dependency might trigger a minor or patch change
+      expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
+
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.minorVersion}'));
+    });
+
+    test('detects patch version change when changing SDK constraints', () async {
+      await _setupInitialVersion(plugin: true);
+
+      // Change SDK constraints (SDK constraint changes are patch-level changes)
+      final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      var pubspecContent = await pubspecFile.readAsString();
+      printOnFailure("pubspecContent: $pubspecContent");
+      pubspecContent = pubspecContent.replaceFirst(
+        RegExp(r'sdk:\s+[^\n]+'),
+        'sdk: ">=3.2.0 <4.0.0"',
+      );
+      await pubspecFile.writeAsString(pubspecContent);
+
+      printOnFailure("pubspecContent: $pubspecContent");
+
+      await testSetup.commitChanges('chore: update SDK constraints');
+      await testSetup.runApiGuard('version', ["--verbose"]);
+
+      // Changing SDK constraints is a patch-level change
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+
+      // Verify tag was created
+      final tags = await runProcess(
+        'git',
+        ['tag'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(tags, contains('v${TestConstants.patchVersion}'));
     });
 
     test('version command fails when no previous version is found', () async {
