@@ -253,8 +253,32 @@ extension ApiChangeFormattingHelpers on List<ApiChange> {
       case ApiChangeOperation.dependencyVersionChange:
         return '📦 Dependency version changed: ${change.changedValue}';
 
-      case ApiChangeOperation.platformConstraintChange:
-        return '📱 Platform constraint changed: ${change.changedValue}';
+      case ApiChangeOperation.minDartSdkVersionDecrease:
+        return '🎯 Minimum Dart SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.minDartSdkVersionIncrease:
+        return '🎯 Minimum Dart SDK version increased: ${change.changedValue}';
+      case ApiChangeOperation.maxDartSdkVersionDecrease:
+        return '🎯 Maximum Dart SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.maxDartSdkVersionIncrease:
+        return '🎯 Maximum Dart SDK version increased: ${change.changedValue}';
+
+      case ApiChangeOperation.minFlutterSdkVersionDecrease:
+        return '🎯 Minimum Flutter SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.minFlutterSdkVersionIncrease:
+        return '🎯 Minimum Flutter SDK version increased: ${change.changedValue}';
+      case ApiChangeOperation.maxFlutterSdkVersionDecrease:
+        return '🎯 Maximum Flutter SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.maxFlutterSdkVersionIncrease:
+        return '🎯 Maximum Flutter SDK version increased: ${change.changedValue}';
+
+      case ApiChangeOperation.minAndroidSdkVersionDecrease:
+        return '🤖 Minimum Android SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.minAndroidSdkVersionIncrease:
+        return '🤖 Minimum Android SDK version increased: ${change.changedValue}';
+      case ApiChangeOperation.minIosSdkVersionDecrease:
+        return '🍎 Minimum iOS SDK version decreased: ${change.changedValue}';
+      case ApiChangeOperation.minIosSdkVersionIncrease:
+        return '🍎 Minimum iOS SDK version increased: ${change.changedValue}';
 
       default:
         return '$entityName changed';

@@ -22,6 +22,7 @@ class PackageMetadata {
   final String? packageName;
   final String? packageVersion;
   final String? sdkVersion;
+  final String? flutterVersion;
   final List<PackageDependency> dependencies;
   final AndroidPlatformConstraints? androidConstraints;
   final IOSPlatformConstraints? iosConstraints;
@@ -30,6 +31,7 @@ class PackageMetadata {
     this.packageName,
     this.packageVersion,
     this.sdkVersion,
+    this.flutterVersion,
     this.dependencies = const [],
     this.androidConstraints,
     this.iosConstraints,

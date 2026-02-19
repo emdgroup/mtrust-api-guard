@@ -27,32 +27,70 @@ extension MetadataComparator on PackageMetadata {
     );
 
     // Compare SDK constraints
-    if (sdkVersion != newMeta.sdkVersion) {
-      changes.add(ComponentApiChange(
-        component: DocComponent.meta(
-          name: 'sdk',
-          description: 'Dart SDK Constraint',
-          filePath: 'pubspec.yaml',
-        ),
-        operation: ApiChangeOperation.platformConstraintChange,
-        changedValue: 'SDK constraint changed from `$sdkVersion` to `${newMeta.sdkVersion}`',
-      ));
-    }
+    compareVersionConstraints(
+      oldVersion: sdkVersion,
+      newVersion: newMeta.sdkVersion,
+      callbacks: VersionConstraintCallbacks(
+        onMinIncrease: (version, previousVersion) =>
+            MetaApiChange.minDartSdkVersionIncrease(version: version, previousVersion: previousVersion),
+        onMinDecrease: (version, previousVersion) =>
+            MetaApiChange.minDartSdkVersionDecrease(version: version, previousVersion: previousVersion),
+        onMaxIncrease: (version, previousVersion) =>
+            MetaApiChange.maxDartSdkVersionIncrease(version: version, previousVersion: previousVersion),
+        onMaxDecrease: (version, previousVersion) =>
+            MetaApiChange.maxDartSdkVersionDecrease(version: version, previousVersion: previousVersion),
+      ),
+      changes: changes,
+    );
+
+    // Compare Flutter SDK constraints
+    compareVersionConstraints(
+      oldVersion: flutterVersion,
+      newVersion: newMeta.flutterVersion,
+      callbacks: VersionConstraintCallbacks(
+        onMinIncrease: (version, previousVersion) =>
+            MetaApiChange.minFlutterSdkVersionIncrease(version: version, previousVersion: previousVersion),
+        onMinDecrease: (version, previousVersion) =>
+            MetaApiChange.minFlutterSdkVersionDecrease(version: version, previousVersion: previousVersion),
+        onMaxIncrease: (version, previousVersion) =>
+            MetaApiChange.maxFlutterSdkVersionIncrease(version: version, previousVersion: previousVersion),
+        onMaxDecrease: (version, previousVersion) =>
+            MetaApiChange.maxFlutterSdkVersionDecrease(version: version, previousVersion: previousVersion),
+      ),
+      changes: changes,
+    );
 
     // Compare Android constraints
     if (androidConstraints != null || newMeta.androidConstraints != null) {
       final baseMin = androidConstraints?.minSdkVersion;
       final newMin = newMeta.androidConstraints?.minSdkVersion;
       if (baseMin != newMin) {
-        changes.add(ComponentApiChange(
-          component: DocComponent.meta(
-            name: 'android:minSdkVersion',
-            description: 'Android minSdkVersion',
-            filePath: 'android/app/build.gradle',
-          ),
-          operation: ApiChangeOperation.platformConstraintChange,
-          changedValue: 'Android minSdkVersion changed from `$baseMin` to `$newMin`',
-        ));
+        if (baseMin == null && newMin != null) {
+          // No previous constraint, now there is one
+          changes.add(MetaApiChange.minAndroidSdkVersionIncrease(
+            version: newMin,
+            previousVersion: 0,
+          ));
+        } else if (baseMin != null && newMin == null) {
+          // Had a constraint, now removed
+          changes.add(MetaApiChange.minAndroidSdkVersionDecrease(
+            version: 0,
+            previousVersion: baseMin,
+          ));
+        } else if (baseMin != null && newMin != null) {
+          // Compare versions
+          if (newMin > baseMin) {
+            changes.add(MetaApiChange.minAndroidSdkVersionIncrease(
+              version: newMin,
+              previousVersion: baseMin,
+            ));
+          } else if (newMin < baseMin) {
+            changes.add(MetaApiChange.minAndroidSdkVersionDecrease(
+              version: newMin,
+              previousVersion: baseMin,
+            ));
+          }
+        }
       }
       // Add other android constraints checks if needed
     }
@@ -62,15 +100,32 @@ extension MetadataComparator on PackageMetadata {
       final baseMin = iosConstraints?.minimumOsVersion;
       final newMin = newMeta.iosConstraints?.minimumOsVersion;
       if (baseMin != newMin) {
-        changes.add(ComponentApiChange(
-          component: DocComponent.meta(
-            name: 'ios:minimumOsVersion',
-            description: 'iOS minimumOsVersion',
-            filePath: 'ios/Runner.xcodeproj/project.pbxproj',
-          ),
-          operation: ApiChangeOperation.platformConstraintChange,
-          changedValue: 'iOS minimumOsVersion changed from `$baseMin` to `$newMin`',
-        ));
+        if (baseMin == null && newMin != null) {
+          // No previous constraint, now there is one
+          changes.add(MetaApiChange.minIosSdkVersionIncrease(
+            version: newMin,
+            previousVersion: 0,
+          ));
+        } else if (baseMin != null && newMin == null) {
+          // Had a constraint, now removed
+          changes.add(MetaApiChange.minIosSdkVersionDecrease(
+            version: 0,
+            previousVersion: baseMin,
+          ));
+        } else if (baseMin != null && newMin != null) {
+          // Compare versions
+          if (newMin > baseMin) {
+            changes.add(MetaApiChange.minIosSdkVersionIncrease(
+              version: newMin,
+              previousVersion: baseMin,
+            ));
+          } else if (newMin < baseMin) {
+            changes.add(MetaApiChange.minIosSdkVersionDecrease(
+              version: newMin,
+              previousVersion: baseMin,
+            ));
+          }
+        }
       }
     }
 

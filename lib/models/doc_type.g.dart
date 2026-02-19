@@ -8,7 +8,10 @@ part of 'doc_type.dart';
 
 DocType _$DocTypeFromJson(Map<String, dynamic> json) => DocType(
       name: json['name'] as String,
-      superTypes: (json['superTypes'] as List<dynamic>?)?.map((e) => e as String).toList() ?? const [],
+      superTypes: (json['superTypes'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
       isNullable: json['isNullable'] as bool? ?? false,
     );
 

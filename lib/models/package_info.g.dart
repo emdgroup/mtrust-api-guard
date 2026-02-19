@@ -25,6 +25,7 @@ PackageMetadata _$PackageMetadataFromJson(Map<String, dynamic> json) =>
       packageName: json['packageName'] as String?,
       packageVersion: json['packageVersion'] as String?,
       sdkVersion: json['sdkVersion'] as String?,
+      flutterVersion: json['flutterVersion'] as String?,
       dependencies: (json['dependencies'] as List<dynamic>?)
               ?.map(
                   (e) => PackageDependency.fromJson(e as Map<String, dynamic>))
@@ -45,6 +46,7 @@ Map<String, dynamic> _$PackageMetadataToJson(PackageMetadata instance) =>
       'packageName': instance.packageName,
       'packageVersion': instance.packageVersion,
       'sdkVersion': instance.sdkVersion,
+      'flutterVersion': instance.flutterVersion,
       'dependencies': instance.dependencies,
       'androidConstraints': instance.androidConstraints,
       'iosConstraints': instance.iosConstraints,

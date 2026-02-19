@@ -76,7 +76,24 @@ enum ApiChangeOperation {
   dependencyVersionChange(ApiChangeMagnitude.patch),
   dependencyAddition(ApiChangeMagnitude.patch),
   dependencyRemoval(ApiChangeMagnitude.minor),
-  platformConstraintChange(ApiChangeMagnitude.patch),
+  // Dart SDK constraints
+  minDartSdkVersionDecrease(ApiChangeMagnitude.patch),
+  minDartSdkVersionIncrease(ApiChangeMagnitude.major),
+  maxDartSdkVersionDecrease(ApiChangeMagnitude.major),
+  maxDartSdkVersionIncrease(ApiChangeMagnitude.patch),
+  // Flutter SDK constraints
+  minFlutterSdkVersionIncrease(ApiChangeMagnitude.major),
+  maxFlutterSdkVersionDecrease(ApiChangeMagnitude.major),
+  maxFlutterSdkVersionIncrease(ApiChangeMagnitude.patch),
+  minFlutterSdkVersionDecrease(ApiChangeMagnitude.patch),
+
+  // Android constraints
+  minAndroidSdkVersionDecrease(ApiChangeMagnitude.patch),
+  minAndroidSdkVersionIncrease(ApiChangeMagnitude.major),
+
+  // iOS constraints
+  minIosSdkVersionDecrease(ApiChangeMagnitude.patch),
+  minIosSdkVersionIncrease(ApiChangeMagnitude.major),
 
   // Feature changes
   featureAddition(ApiChangeMagnitude.minor),
@@ -142,7 +159,18 @@ class MetaApiChange extends ApiChange {
     ApiChangeOperation.dependencyVersionChange,
     ApiChangeOperation.dependencyAddition,
     ApiChangeOperation.dependencyRemoval,
-    ApiChangeOperation.platformConstraintChange,
+    ApiChangeOperation.minDartSdkVersionDecrease,
+    ApiChangeOperation.minDartSdkVersionIncrease,
+    ApiChangeOperation.maxDartSdkVersionDecrease,
+    ApiChangeOperation.maxDartSdkVersionIncrease,
+    ApiChangeOperation.minFlutterSdkVersionDecrease,
+    ApiChangeOperation.minFlutterSdkVersionIncrease,
+    ApiChangeOperation.maxFlutterSdkVersionDecrease,
+    ApiChangeOperation.maxFlutterSdkVersionIncrease,
+    ApiChangeOperation.minAndroidSdkVersionDecrease,
+    ApiChangeOperation.minAndroidSdkVersionIncrease,
+    ApiChangeOperation.minIosSdkVersionDecrease,
+    ApiChangeOperation.minIosSdkVersionIncrease,
   };
 
   factory MetaApiChange.dependencyVersionChange({
@@ -177,6 +205,138 @@ class MetaApiChange extends ApiChange {
       description: 'removed',
     );
   }
+
+  factory MetaApiChange.minDartSdkVersionDecrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minDartSdkVersionDecrease,
+      title: "Minimum Dart SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minDartSdkVersionIncrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minDartSdkVersionIncrease,
+      title: "Minimum Dart SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.maxDartSdkVersionDecrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.maxDartSdkVersionDecrease,
+      title: "Maximum Dart SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.maxDartSdkVersionIncrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.maxDartSdkVersionIncrease,
+      title: "Maximum Dart SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minFlutterSdkVersionDecrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minFlutterSdkVersionDecrease,
+      title: "Minimum Flutter SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minFlutterSdkVersionIncrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minFlutterSdkVersionIncrease,
+      title: "Minimum Flutter SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.maxFlutterSdkVersionDecrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.maxFlutterSdkVersionDecrease,
+      title: "Maximum Flutter SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+  @override
+  factory MetaApiChange.maxFlutterSdkVersionIncrease({
+    required String version,
+    required String previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.maxFlutterSdkVersionIncrease,
+      title: "Maximum Flutter SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minAndroidSdkVersionDecrease({
+    required int version,
+    required int previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minAndroidSdkVersionDecrease,
+      title: "Minimum Android SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minAndroidSdkVersionIncrease({
+    required int version,
+    required int previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minAndroidSdkVersionIncrease,
+      title: "Minimum Android SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minIosSdkVersionDecrease({
+    required num version,
+    required num previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minIosSdkVersionDecrease,
+      title: "Minimum iOS SDK version decreased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
+
+  factory MetaApiChange.minIosSdkVersionIncrease({
+    required num version,
+    required num previousVersion,
+  }) {
+    return MetaApiChange(
+      operation: ApiChangeOperation.minIosSdkVersionIncrease,
+      title: "Minimum iOS SDK version increased",
+      description: 'from `$previousVersion` to `$version`',
+    );
+  }
 }
 
 /// A change that belongs to a specific component.
@@ -206,6 +366,11 @@ class ComponentApiChange extends ApiChange {
     ApiChangeOperation.mixinRemoval,
     ApiChangeOperation.superClassChange,
   };
+
+  @override
+  toString() {
+    return 'ComponentApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue)';
+  }
 }
 
 /// A change that belongs to a specific property of a component.
@@ -258,6 +423,11 @@ class PropertyApiChange extends ApiChange {
     }
 
     return super.getMagnitude();
+  }
+
+  @override
+  toString() {
+    return 'PropertyApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue, property: ${property.name})';
   }
 }
 
@@ -318,6 +488,11 @@ class MethodApiChange extends ApiChange {
 
   bool isFunctionChange() {
     return component.type == DocComponentType.functionType;
+  }
+
+  @override
+  toString() {
+    return 'MethodApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue, method: ${method.name})';
   }
 }
 
@@ -395,6 +570,11 @@ abstract class ParameterApiChange extends ApiChange {
     }
     return super.getMagnitude();
   }
+
+  @override
+  toString() {
+    return 'ParameterApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue, parameter: ${parameter.name}, parentName: $parentName, oldName: $oldName, newType: $newType)';
+  }
 }
 
 class MethodParameterApiChange extends ParameterApiChange {
@@ -433,7 +613,6 @@ class ConstructorApiChange extends ApiChange {
     ApiChangeOperation.dependencyAddition,
     ApiChangeOperation.dependencyRemoval,
     ApiChangeOperation.dependencyVersionChange,
-    ApiChangeOperation.platformConstraintChange,
   };
 
   @override
@@ -458,6 +637,11 @@ class ConstructorApiChange extends ApiChange {
 
     return super.getMagnitude();
   }
+
+  @override
+  toString() {
+    return 'ConstructorApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue, constructor: ${constructor.name})';
+  }
 }
 
 class ConstructorParameterApiChange extends ParameterApiChange {
@@ -472,4 +656,9 @@ class ConstructorParameterApiChange extends ParameterApiChange {
     super.newType,
     super.annotation,
   }) : super(parentName: constructor.name);
+
+  @override
+  toString() {
+    return 'ConstructorParameterApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue, constructor: ${constructor.name}, parameter: ${parameter.name}, oldName: $oldName, newType: $newType)';
+  }
 }
