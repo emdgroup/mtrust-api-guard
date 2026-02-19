@@ -2,11 +2,17 @@ import 'dart:io';
 import 'package:path/path.dart';
 
 class Cache {
-  static const cacheDir = "\$HOME/.mtrust_api_guard/cache";
+  static const String _defaultCacheDir = "\$HOME/.mtrust_api_guard/cache";
 
   Directory get _cacheDir {
+    // Check for environment variable first
+    final envCacheDir = Platform.environment['MTRUST_API_GUARD_CACHE_DIR'];
+    if (envCacheDir != null && envCacheDir.isNotEmpty) {
+      return Directory(envCacheDir);
+    }
+    // Fall back to default location
     final homeDir = Platform.environment['HOME'] ?? '';
-    return Directory(cacheDir.replaceAll("\$HOME", homeDir));
+    return Directory(_defaultCacheDir.replaceAll("\$HOME", homeDir));
   }
 
   /// Gets the root cache directory

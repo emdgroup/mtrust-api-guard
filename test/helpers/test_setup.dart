@@ -11,6 +11,7 @@ import 'test_helpers.dart';
 /// Helper class for managing test setup and teardown.
 class TestSetup {
   late Directory tempDir;
+  late Directory cacheDir;
   final Directory rootDir = Directory.current;
   final TestFixtures fixtures = TestFixtures();
 
@@ -22,6 +23,11 @@ class TestSetup {
       await tempDir.delete(recursive: true); // Ensure a clean state
     }
     await tempDir.create();
+    
+    // Create a unique cache directory for this test
+    cacheDir = Directory(p.join(tempDir.path, 'cache'));
+    await cacheDir.create(recursive: true);
+    
     await runApiGuard('cache', ['--clear']); // Clear cache before each test
   }
 
@@ -83,10 +89,15 @@ class TestSetup {
     printOnFailure('Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
     printOnFailure("dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
 
+    // Set the cache directory environment variable for this test
+    final environment = Map<String, String>.from(Platform.environment);
+    environment['MTRUST_API_GUARD_CACHE_DIR'] = cacheDir.path;
+
     final result = await Process.run(
       'dart',
       ["${rootDir.path}/bin/mtrust_api_guard.dart", command, ...args],
       workingDirectory: tempDir.path,
+      environment: environment,
     );
 
     final stdout = result.stdout.toString().trim();
