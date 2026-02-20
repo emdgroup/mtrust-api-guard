@@ -20,6 +20,7 @@ class PubspecAnalyzer {
     final packageName = pubspecYaml['name'] as String?;
     final packageVersion = pubspecYaml['version'] as String?;
     final sdkVersion = _getSdkVersion(pubspecYaml);
+    final flutterVersion = _getFlutterVersion(pubspecYaml);
     final dependencies = _getDependencies(pubspecYaml);
 
     final androidConstraints = await _getAndroidConstraints();
@@ -29,6 +30,7 @@ class PubspecAnalyzer {
       packageName: packageName,
       packageVersion: packageVersion,
       sdkVersion: sdkVersion,
+      flutterVersion: flutterVersion,
       dependencies: dependencies,
       androidConstraints: androidConstraints,
       iosConstraints: iosConstraints,
@@ -39,6 +41,14 @@ class PubspecAnalyzer {
     final environment = pubspecYaml['environment'];
     if (environment is Map) {
       return environment['sdk']?.toString();
+    }
+    return null;
+  }
+
+  String? _getFlutterVersion(dynamic pubspecYaml) {
+    final environment = pubspecYaml['environment'];
+    if (environment is Map) {
+      return environment['flutter']?.toString();
     }
     return null;
   }

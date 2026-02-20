@@ -12,6 +12,7 @@ import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/calculate_next_version.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:recase/recase.dart';
 
 class VersionResult {
   final Version version;
@@ -47,15 +48,25 @@ Future<VersionResult> version({
   required bool generateChangelog,
   required bool cache,
   required String tagPrefix,
+  String? dartFile,
+  String? packageName,
 }) async {
-  final hasPreviousVersion = (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
+  // For workspace packages, use package-specific tag methods
+  final hasPreviousVersion = packageName != null
+      ? (await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: 'v')).isNotEmpty
+      : (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
 
   if (baseRef == null && !hasPreviousVersion) {
-    logger.err('No previous version found. Please tag the first version. e.g. git tag ${tagPrefix}0.0.1');
+    final exampleTag = packageName != null ? '$packageName/v0.0.1' : '${tagPrefix}0.0.1';
+    logger.err('No previous version found. Please tag the first version. e.g. git tag $exampleTag');
     exit(1);
   }
 
-  final effectiveBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix);
+  final effectiveBaseRef = baseRef ??
+      (packageName != null
+          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
+              (throw Exception('No previous version found for package $packageName'))
+          : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
 
   final changes = await compare(
     baseRef: effectiveBaseRef,
@@ -65,23 +76,38 @@ Future<VersionResult> version({
     cache: cache,
   );
 
+  final baseRefForPubspec = baseRef ??
+      (packageName != null
+          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
+              (throw Exception('No previous version found for package $packageName'))
+          : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
+
+  final pubspecPath =
+      packageName != null ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml') : 'pubspec.yaml';
+
   // Load config and apply magnitude overrides
   final config = ApiGuardConfig.load(dartRoot);
   applyMagnitudeOverrides(changes, config);
 
   final basePubSpec = await GitUtils.gitShow(
-    baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix),
+    baseRefForPubspec,
     gitRoot.path,
-    'pubspec.yaml',
+    pubspecPath,
   );
 
   final baseVersion = PubspecUtils.getVersion(basePubSpec);
+
+  logger.info('Base version: $baseVersion');
+  logger.info('Changes: $changes');
 
   final highestMagnitudeChange = getHighestMagnitude(changes);
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');
 
-  final nextVersion = await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, tagPrefix);
+  // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
+  final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
+  final nextVersion =
+      await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
 
   logger.info('Next version: $nextVersion');
 
@@ -118,9 +144,12 @@ Future<VersionResult> version({
   }
 
   if (commit) {
+    // For workspace packages, commit from the package directory
+    // For single packages, commit from git root
+    final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
     await GitUtils.commitVersion(
       nextVersion,
-      gitRoot.path,
+      commitRoot,
       commitBadge: badge,
       commitChangelog: generateChangelog,
     );
@@ -130,6 +159,25 @@ Future<VersionResult> version({
   if (tag) {
     await GitUtils.gitTag("$tagPrefix$nextVersion", gitRoot.path);
     logger.info('Tagged version $tagPrefix$nextVersion');
+  }
+
+  if (dartFile != null) {
+    final pubspecFile = File(join(dartRoot.path, 'pubspec.yaml'));
+    if (!pubspecFile.existsSync()) {
+      throw Exception('pubspec.yaml not found at ${pubspecFile.path}');
+    }
+    final pubspecContent = await pubspecFile.readAsString();
+    final safePackageName = packageName ?? PubspecUtils.getPackageName(pubspecContent);
+    final camelCasePackageName = ReCase(safePackageName).camelCase;
+    final constantName = '${camelCasePackageName}Version';
+
+    final dartFileContent = "const String $constantName = '$nextVersion';\n";
+    final dartOutputFile = File(dartFile);
+    if (!dartOutputFile.existsSync()) {
+      dartOutputFile.createSync(recursive: true);
+    }
+    await dartOutputFile.writeAsString(dartFileContent);
+    logger.info('Generated Dart file with version constant at $dartFile');
   }
 
   return VersionResult(

@@ -220,6 +220,60 @@ class GitUtils {
     return tags.last.$1;
   }
 
+  /// Gets version tags for a specific package in a workspace
+  /// Tags are expected to be in format: {package-name}/v{version}
+  static Future<List<(String, Version)>> getVersionsForPackage(
+    String? root,
+    String packageName, {
+    String tagPrefix = 'v',
+  }) async {
+    final allTags = await getTags(root);
+    final packageTagPrefix = '$packageName/';
+
+    final packageVersions = allTags
+        .where((tag) => tag.isNotEmpty && tag.startsWith(packageTagPrefix))
+        .map((tag) {
+          // Extract version part after package-name/
+          final versionPart = tag.substring(packageTagPrefix.length);
+          String version = versionPart;
+          if (versionPart.startsWith(tagPrefix)) {
+            version = versionPart.substring(tagPrefix.length);
+          }
+
+          try {
+            return (tag, Version.parse(version));
+          } catch (e) {
+            logger.detail('Skipping tag $tag. Not a valid version.');
+            return null;
+          }
+        })
+        .whereType<(String, Version)>()
+        .toList();
+
+    final sortedVersions = packageVersions.toList()..sort((a, b) => a.$2.compareTo(b.$2));
+
+    return sortedVersions;
+  }
+
+  /// Gets the previous tag ref for a specific package in a workspace
+  /// Returns null if no tags exist for the package
+  static Future<String?> getPreviousRefForPackage(
+    String? root,
+    String packageName, {
+    String tagPrefix = 'v',
+  }) async {
+    try {
+      final tags = await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix);
+      if (tags.isEmpty) {
+        return null;
+      }
+      return tags.last.$1;
+    } catch (e) {
+      logger.detail('Error getting previous ref for package $packageName: $e');
+      return null;
+    }
+  }
+
   static Future<String> gitShow(String ref, String? root, String path) async {
     final result = await Process.run(
       'git',
@@ -347,6 +401,137 @@ class GitUtils {
       }
     } catch (e) {
       logger.err('Error retrieving commits: $e');
+      return [];
+    }
+  }
+
+  /// Resolves a git ref to its commit hash
+  /// Throws [GitException] if the ref doesn't exist
+  static Future<String> resolveRef(String ref, String? root) async {
+    try {
+      final result = await Process.run('git', ['rev-parse', ref], workingDirectory: root);
+      if (result.exitCode != 0) {
+        throw GitException('Failed to resolve ref $ref: ${result.stderr}');
+      }
+      return result.stdout.toString().trim();
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    } catch (e) {
+      if (e is GitException) rethrow;
+      throw GitException('Unexpected error: $e');
+    }
+  }
+
+  /// Creates a git worktree at the specified path for the given ref
+  /// Throws [GitException] if the operation fails
+  static Future<void> createWorktree(String gitRoot, String ref, String worktreePath) async {
+    try {
+      // First, try to remove existing worktree if it exists
+      if (await worktreeExists(gitRoot, worktreePath)) {
+        logger.detail('Removing existing worktree at $worktreePath');
+        await removeWorktree(gitRoot, worktreePath);
+      }
+
+      // Create the worktree
+      final result = await Process.run(
+        'git',
+        ['worktree', 'add', worktreePath, ref],
+        workingDirectory: gitRoot,
+      );
+      if (result.exitCode != 0) {
+        throw GitException('Failed to create worktree for ref $ref at $worktreePath: ${result.stderr}');
+      }
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    } catch (e) {
+      if (e is GitException) rethrow;
+      throw GitException('Unexpected error: $e');
+    }
+  }
+
+  /// Removes a git worktree
+  /// Throws [GitException] if the operation fails
+  static Future<void> removeWorktree(String gitRoot, String worktreePath) async {
+    try {
+      // Use --force to handle cases where worktree has uncommitted changes or is locked
+      final result = await Process.run(
+        'git',
+        ['worktree', 'remove', '--force', worktreePath],
+        workingDirectory: gitRoot,
+      );
+      if (result.exitCode != 0) {
+        // If worktree remove fails, try to remove the directory manually
+        final dir = Directory(worktreePath);
+        if (dir.existsSync()) {
+          logger.detail('Git worktree remove failed, attempting manual cleanup of $worktreePath');
+          try {
+            dir.deleteSync(recursive: true);
+          } catch (e) {
+            throw GitException(
+                'Failed to remove worktree at $worktreePath: ${result.stderr}. Manual cleanup also failed: $e');
+          }
+        } else {
+          // Directory doesn't exist, consider it cleaned up
+          logger.detail('Worktree directory $worktreePath does not exist, considering it cleaned up');
+        }
+      }
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    } catch (e) {
+      if (e is GitException) rethrow;
+      throw GitException('Unexpected error: $e');
+    }
+  }
+
+  /// Checks if a worktree exists at the specified path
+  static Future<bool> worktreeExists(String gitRoot, String worktreePath) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['worktree', 'list'],
+        workingDirectory: gitRoot,
+      );
+      if (result.exitCode != 0) {
+        return false;
+      }
+      final worktrees = result.stdout.toString().trim().split('\n');
+      // Check if any worktree path matches (handle both absolute and relative paths)
+      final normalizedPath = Directory(worktreePath).absolute.path;
+      return worktrees.any((line) {
+        final parts = line.trim().split(RegExp(r'\s+'));
+        if (parts.isEmpty) return false;
+        final existingPath = Directory(parts[0]).absolute.path;
+        return existingPath == normalizedPath;
+      });
+    } catch (e) {
+      logger.detail('Error checking worktree existence: $e');
+      return false;
+    }
+  }
+
+  /// Lists all worktrees for the repository
+  /// Returns a list of worktree paths
+  static Future<List<String>> listWorktrees(String gitRoot) async {
+    try {
+      final result = await Process.run(
+        'git',
+        ['worktree', 'list'],
+        workingDirectory: gitRoot,
+      );
+      if (result.exitCode != 0) {
+        return [];
+      }
+      final worktrees = result.stdout.toString().trim().split('\n');
+      return worktrees
+          .where((line) => line.trim().isNotEmpty)
+          .map((line) {
+            final parts = line.trim().split(RegExp(r'\s+'));
+            return parts.isNotEmpty ? parts[0] : '';
+          })
+          .where((path) => path.isNotEmpty)
+          .toList();
+    } catch (e) {
+      logger.detail('Error listing worktrees: $e');
       return [];
     }
   }

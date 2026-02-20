@@ -6,30 +6,34 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
+import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/version/workspace_version.dart';
+import 'package:mtrust_api_guard/version/workspace_utils.dart';
 
-import 'package:mtrust_api_guard/version/version.dart';
-
-class VersionCommand extends Command
+class VersionWorkspaceCommand extends Command
     with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithCache {
-  static final VersionCommand _instance = VersionCommand._internal();
+  static final VersionWorkspaceCommand _instance = VersionWorkspaceCommand._internal();
 
-  factory VersionCommand() => _instance;
-
-  @override
-  String get description => "Calculate and output the next version based on API changes";
+  factory VersionWorkspaceCommand() => _instance;
 
   @override
-  String get name => "version";
+  String get description => "Calculate and output the next version for all packages in a workspace based on API changes";
+
+  @override
+  String get name => "version-workspace";
 
   @override
   String get usage {
     return super.usage +
         "\n\n"
-            "Calculates the next version based on API changes between versions.\n"
-            "Uses the current package version from the base file.\n";
+            "Calculates the next version for each package in a Dart workspace based on API changes.\n"
+            "Only packages with changes compared to the base ref will be versioned.\n"
+            "Tags are created in format: {package-name}/v{version}\n"
+            "Dependencies between workspace packages are automatically updated.\n";
   }
 
-  VersionCommand._internal() {
+  VersionWorkspaceCommand._internal() {
     argParser
       ..addFlag(
         'badge',
@@ -64,12 +68,6 @@ class VersionCommand extends Command
         defaultsTo: false,
       )
       ..addOption(
-        'tag-prefix',
-        help: 'Prefix for version tags useful for mono repos where multiple packages are versioned together',
-        defaultsTo: 'v',
-        valueHelp: 'prefix',
-      )
-      ..addOption(
         'dart-file',
         help: 'Output the version as a Dart constant to the specified file',
         valueHelp: 'file',
@@ -100,29 +98,36 @@ class VersionCommand extends Command
     return argResults?['json'] as String?;
   }
 
-  String get tagPrefix {
-    return argResults?['tag-prefix'] as String? ?? 'v';
-  }
-
   String? get dartFile {
     return argResults?['dart-file'] as String?;
   }
 
   @override
   FutureOr? run() async {
-    // Load config and determine doc file path
+    final rootDir = root;
+    final gitRoot = Directory(GitUtils.getRepositoryRoot(rootDir.path));
 
-    final result = await version(
-      gitRoot: Directory.current,
-      dartRoot: Directory.current,
+    // Detect workspace
+    final workspace = detectWorkspace(rootDir);
+    if (workspace == null) {
+      logger.err('No workspace detected. Root pubspec.yaml must contain a "workspace" property.');
+      logger.info('For single-package projects, use the "version" command instead.');
+      exit(1);
+    }
+
+    logger.info('Detected workspace with ${workspace.memberPaths.length} members');
+
+    final result = await versionWorkspace(
+      gitRoot: gitRoot,
+      workspace: workspace,
       badge: badge,
       baseRef: baseRef,
       tag: tag,
+      newRef: newRef,
       commit: commit,
       generateChangelog: generateChangelog,
       cache: cache,
       isPreRelease: preRelease,
-      tagPrefix: tagPrefix,
       dartFile: dartFile,
     );
 
@@ -133,5 +138,7 @@ class VersionCommand extends Command
       }
       await jsonFile.writeAsString(jsonEncode(result.toJson()));
     }
+
+    logger.success('Workspace versioning completed. Versioned ${result.packageVersions.length} package(s).');
   }
 }

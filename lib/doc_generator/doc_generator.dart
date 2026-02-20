@@ -1,3 +1,5 @@
+// ignore_for_file: experimental_member_use
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -14,6 +16,60 @@ import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart';
+import 'package:yaml/yaml.dart';
+
+/// Checks if Flutter command is available
+bool _isFlutterAvailable() {
+  try {
+    final result = Process.runSync('flutter', ['--version'], runInShell: true);
+    return result.exitCode == 0;
+  } catch (e) {
+    return false;
+  }
+}
+
+/// Checks if a project is a Flutter project by examining pubspec.yaml
+bool _isFlutterProject(String packagePath) {
+  final pubspecFile = File(join(packagePath, 'pubspec.yaml'));
+  if (!pubspecFile.existsSync()) {
+    return false;
+  }
+
+  try {
+    final pubspecContent = pubspecFile.readAsStringSync();
+    final pubspecYaml = loadYaml(pubspecContent);
+
+    // Check for Flutter SDK dependency in dependencies
+    if (pubspecYaml['dependencies'] is Map) {
+      final deps = pubspecYaml['dependencies'] as Map;
+      if (deps.containsKey('flutter')) {
+        return true;
+      }
+    }
+
+    // Check for Flutter SDK dependency in dev_dependencies
+    if (pubspecYaml['dev_dependencies'] is Map) {
+      final devDeps = pubspecYaml['dev_dependencies'] as Map;
+      if (devDeps.containsKey('flutter')) {
+        return true;
+      }
+    }
+
+    // Check for Flutter environment constraint
+    if (pubspecYaml['environment'] is Map) {
+      final env = pubspecYaml['environment'] as Map;
+      if (env.containsKey('flutter')) {
+        return true;
+      }
+    }
+
+    return false;
+  } catch (e) {
+    // If we can't parse the pubspec, default to dart pub get
+    logger.detail('Failed to parse pubspec.yaml to detect Flutter project: $e');
+    return false;
+  }
+}
 
 Future<PackageApi> generateDocs({
   required String gitRef,
@@ -23,57 +79,108 @@ Future<PackageApi> generateDocs({
   required bool shouldCache,
 }) async {
   final cache = Cache();
+
+  if (gitRef == 'HEAD') {
+    logger.info('HEAD is not a valid git ref. Cannot cache documentation for current HEAD.');
+    shouldCache = false;
+  }
+
   // Check if we're in a git repository
   if (!await GitUtils.isGitRepository(gitRoot.path)) {
     logger.err('Not in a git repository. Cannot proceed with ref-based generation.');
     exit(1);
   }
 
-  // Check for uncommitted changes if we're going to checkout a ref
-  if (gitRef != 'HEAD' && GitUtils.hasUncommittedChanges(gitRoot.path)) {
-    logger.err('Repository has uncommitted changes. Please commit or stash them before proceeding.');
-    logger.err('This prevents potential data loss during ref checkout.');
-    exit(1);
-  }
-
-  final originalRef = await GitUtils.getCurrentRef(gitRoot.path);
-  final originalBranch = await GitUtils.getCurrentBranch(gitRoot.path);
-
-  // If the ref is HEAD, get the current ref (commit hash)
-  if (gitRef == 'HEAD') {
-    gitRef = await GitUtils.getCurrentRef(gitRoot.path);
-  }
-
-  logger.info('Checking out ref: $gitRef');
-  await GitUtils.checkoutRef(gitRef, gitRoot.path);
-  logger.info('Successfully checked out ref: $gitRef');
-  final effectiveRef = await GitUtils.getCurrentRef(gitRoot.path);
-
   final repoPath = GitUtils.getRepositoryRoot(gitRoot.path);
-  final classes = <DocComponent>[];
+  final currentHeadRef = await GitUtils.getCurrentRef(gitRoot.path);
 
-  Future<void> restoreOriginalState() async {
+  // Resolve the target ref to a commit hash
+  String effectiveRef;
+  if (gitRef == 'HEAD') {
+    effectiveRef = currentHeadRef;
+  } else {
+    effectiveRef = await GitUtils.resolveRef(gitRef, gitRoot.path);
+  }
+
+  // Check if we're analyzing the current HEAD - if so, skip worktree creation
+  final isCurrentHead = effectiveRef == currentHeadRef;
+  String? worktreePath;
+  Directory? worktreeDir;
+  bool worktreeCreated = false;
+
+  final dartRelativePath = relative(dartRoot.path, from: gitRoot.path);
+
+  if (isCurrentHead) {
+    logger.info('Analyzing current HEAD ($effectiveRef), using current working directory');
+    worktreePath = null; // Use current directory
+  } else {
+    // Create worktree in cache directory
+    worktreeDir = cache.getWorktreeDir(repoPath, effectiveRef);
+    worktreePath = worktreeDir.path;
+
+    logger.info('Creating worktree for ref $gitRef ($effectiveRef) at $worktreePath');
+
     try {
-      logger.info('Restoring original state...');
-      if (originalBranch != null) {
-        await GitUtils.checkoutRef(originalBranch, gitRoot.path);
-      } else {
-        await GitUtils.checkoutRef(originalRef, gitRoot.path);
+      await GitUtils.createWorktree(repoPath, gitRef, worktreePath);
+      worktreeCreated = true;
+      logger.info('Successfully created worktree at $worktreePath');
+
+      // Determine if this is a Flutter project and use the appropriate pub get command
+      final packagePath = join(worktreePath, dartRelativePath);
+      final isFlutterProject = _isFlutterProject(packagePath);
+      final isFlutterAvailable = _isFlutterAvailable();
+
+      // Only use flutter if the project is a Flutter project AND Flutter is available
+      final useFlutter = isFlutterProject && isFlutterAvailable;
+      final command = useFlutter ? 'flutter' : 'dart';
+      final args = ['pub', 'get'];
+
+      if (isFlutterProject && !isFlutterAvailable) {
+        logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
       }
-      logger.info('Successfully restored original state');
+
+      logger.info(
+          'Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath');
+      final result = Process.runSync(
+        command,
+        args,
+        workingDirectory: packagePath,
+      );
+      if (result.exitCode != 0) {
+        logger.err('Failed to run $command ${args.join(' ')}: ${result.stderr} in $packagePath');
+        if (result.stdout.toString().isNotEmpty) {
+          logger.err('stdout: ${result.stdout}');
+        }
+        throw Exception('Failed to run $command ${args.join(' ')} in $packagePath (exit code: ${result.exitCode})');
+      }
     } catch (e) {
-      logger.err('Warning: Failed to restore original state: $e');
-      logger.err('Please manually checkout your original branch/ref');
+      logger.err('Failed to create worktree: $e');
+      rethrow;
     }
   }
 
+  final classes = <DocComponent>[];
+
   if (shouldCache) {
-    if (cache.hasApiFile(repoPath, effectiveRef)) {
+    if (cache.hasApiFileForRef(repoPath, effectiveRef, dartRelativePath)) {
       logger.success('Using cached API documentation for $effectiveRef');
-      final cachedContent = await cache.retrieveApiFile(repoPath, effectiveRef);
+      final cachedContent = await cache.retrieveApiFile(
+        repoPath,
+        effectiveRef,
+        dartRelativePath,
+      );
       if (cachedContent != null) {
-        logger.success('Using cached API documentation for $effectiveRef');
-        await restoreOriginalState();
+        logger.success('Using cached API documentation for $effectiveRef in $dartRelativePath');
+
+        // Clean up worktree if it was created
+        if (worktreeCreated && worktreePath != null) {
+          try {
+            await GitUtils.removeWorktree(repoPath, worktreePath);
+            logger.detail('Cleaned up worktree at $worktreePath');
+          } catch (e) {
+            logger.err('Warning: Failed to clean up worktree: $e');
+          }
+        }
 
         // Write the cached content to file if requested
         if (out != null) {
@@ -89,11 +196,26 @@ Future<PackageApi> generateDocs({
     }
   }
 
+  logger.info('determining analysis dart root');
+  logger.info('dartRoot: ${dartRoot.path}');
+  logger.info('gitRoot: ${gitRoot.path}');
+  logger.info('worktreePath: $worktreePath');
+
+  // Determine the root path to use for analysis
+  // If using a worktree, calculate the dartRoot path relative to the worktree
+  Directory analysisDartRoot = dartRoot;
+  if (worktreePath != null) {
+    final gitRootAbs = Directory(gitRoot.path).absolute.path;
+    final dartRootAbs = Directory(dartRoot.path).absolute.path;
+    final relativePath = relative(dartRootAbs, from: gitRootAbs);
+    analysisDartRoot = Directory(join(worktreePath, relativePath));
+  }
+
   try {
-    final (config, globbedFiles) = evaluateTargetFiles(dartRoot.path);
+    final (config, globbedFiles) = evaluateTargetFiles(analysisDartRoot.path);
 
     // Analyze pubspec
-    final pubspecAnalyzer = PubspecAnalyzer(dartRoot.path);
+    final pubspecAnalyzer = PubspecAnalyzer(analysisDartRoot.path);
     final packageMetadata = await pubspecAnalyzer.analyze();
 
     final filesToAnalyze = <String>{};
@@ -102,14 +224,14 @@ Future<PackageApi> generateDocs({
     if (config.entryPoints.isNotEmpty) {
       useRecursiveAnalysis = true;
       for (final point in config.entryPoints) {
-        filesToAnalyze.add(normalize(absolute(join(dartRoot.path, point))));
+        filesToAnalyze.add(normalize(absolute(join(analysisDartRoot.path, point))));
       }
     } else {
       // Check if we should default to the main library file
       // We do this only if the include configuration is the default one
       final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
 
-      final mainLibrary = normalize(join(dartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
+      final mainLibrary = normalize(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
 
       if (isDefaultInclude && File(mainLibrary).existsSync()) {
         useRecursiveAnalysis = true;
@@ -125,7 +247,7 @@ Future<PackageApi> generateDocs({
     }
 
     final contextCollection = AnalysisContextCollection(
-      includedPaths: [dartRoot.path],
+      includedPaths: [normalize(absolute(analysisDartRoot.path))],
       excludedPaths: config.exclude.toList(),
     );
 
@@ -150,8 +272,8 @@ Future<PackageApi> generateDocs({
           // as the file path, as it provides a stable reference compared to
           // local pub-cache paths.
           final sourcePath = library.firstFragment.source.fullName;
-          if (isWithin(dartRoot.path, sourcePath)) {
-            filePath = relative(sourcePath, from: dartRoot.path);
+          if (isWithin(analysisDartRoot.path, sourcePath)) {
+            filePath = relative(sourcePath, from: analysisDartRoot.path);
           }
         }
       } catch (e) {
@@ -183,7 +305,7 @@ Future<PackageApi> generateDocs({
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
             libraryResult.element2,
-            relative(file, from: dartRoot.path),
+            relative(file, from: analysisDartRoot.path),
           );
         } else {
           // Legacy / Glob mode: non-recursive, just the file
@@ -231,7 +353,7 @@ Future<PackageApi> generateDocs({
 
     // Cache the generated documentation if requested
     if (shouldCache) {
-      await cache.storeApiFile(repoPath, effectiveRef, output);
+      await cache.storeApiFile(repoPath, effectiveRef, dartRelativePath, output);
       logger.success('Cached documentation for ref: $effectiveRef');
     }
 
@@ -246,6 +368,16 @@ Future<PackageApi> generateDocs({
 
     return packageApi;
   } finally {
-    restoreOriginalState();
+    // Clean up worktree if it was created
+    if (worktreeCreated) {
+      try {
+        logger.detail('Cleaning up worktree at $worktreePath');
+        await GitUtils.removeWorktree(repoPath, worktreePath!);
+        logger.detail('Successfully cleaned up worktree');
+      } catch (e) {
+        logger.err('Warning: Failed to clean up worktree at $worktreePath: $e');
+        logger.err('You may need to manually remove the worktree');
+      }
+    }
   }
 }

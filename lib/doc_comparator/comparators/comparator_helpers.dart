@@ -1,3 +1,6 @@
+import 'package:mtrust_api_guard/mtrust_api_guard.dart';
+import 'package:pub_semver/pub_semver.dart';
+
 /// Compares two lists of items and invokes callbacks for added, removed, and matched items.
 ///
 /// [oldList] The list of items from the old version.
@@ -80,5 +83,139 @@ void compareAnnotations({
     if (!oldAnnotations.contains(annotation)) {
       onAdded(annotation);
     }
+  }
+}
+
+/// Callbacks for creating version constraint change events.
+class VersionConstraintCallbacks {
+  final ApiChange Function(String version, String previousVersion) onMinIncrease;
+  final ApiChange Function(String version, String previousVersion) onMinDecrease;
+  final ApiChange Function(String version, String previousVersion) onMaxIncrease;
+  final ApiChange Function(String version, String previousVersion) onMaxDecrease;
+
+  const VersionConstraintCallbacks({
+    required this.onMinIncrease,
+    required this.onMinDecrease,
+    required this.onMaxIncrease,
+    required this.onMaxDecrease,
+  });
+}
+
+/// Compares two version constraint strings and adds appropriate API changes.
+///
+/// [oldVersion] The old version constraint string (e.g., "^3.0.0" or ">=3.0.0 <4.0.0").
+/// [newVersion] The new version constraint string.
+/// [callbacks] Callbacks for creating the appropriate MetaApiChange instances.
+/// [changes] The list to add changes to.
+void compareVersionConstraints({
+  required String? oldVersion,
+  required String? newVersion,
+  required VersionConstraintCallbacks callbacks,
+  required List<ApiChange> changes,
+}) {
+  if (oldVersion == newVersion) return;
+
+  if (oldVersion == null) {
+    // No previous constraint, but now there is one
+    changes.add(callbacks.onMinIncrease(newVersion!, 'not constrained'));
+    return;
+  }
+
+  if (newVersion == null) {
+    // No new constraint, but there was one before
+    changes.add(callbacks.onMinDecrease(oldVersion, 'constrained to `$oldVersion`'));
+    return;
+  }
+
+  // Compare the versions using pub_semver
+  final oldConstraint = VersionConstraint.parse(oldVersion);
+  final newConstraint = VersionConstraint.parse(newVersion);
+
+  // Extract min and max versions from VersionRange
+  Version? oldMin, oldMax, newMin, newMax;
+  bool oldIncludeMin = false, oldIncludeMax = false;
+  bool newIncludeMin = false, newIncludeMax = false;
+
+  if (oldConstraint is VersionRange) {
+    oldMin = oldConstraint.min;
+    oldMax = oldConstraint.max;
+    oldIncludeMin = oldConstraint.includeMin;
+    oldIncludeMax = oldConstraint.includeMax;
+  } else if (oldConstraint is Version) {
+    // Exact version constraint
+    oldMin = oldConstraint;
+    oldMax = oldConstraint;
+    oldIncludeMin = true;
+    oldIncludeMax = true;
+  }
+
+  if (newConstraint is VersionRange) {
+    newMin = newConstraint.min;
+    newMax = newConstraint.max;
+    newIncludeMin = newConstraint.includeMin;
+    newIncludeMax = newConstraint.includeMax;
+  } else if (newConstraint is Version) {
+    // Exact version constraint
+    newMin = newConstraint.min;
+    newMax = newConstraint.max;
+    newIncludeMin = true;
+    newIncludeMax = true;
+  }
+
+  // Compare minimum versions
+  if (oldMin != null && newMin != null) {
+    final minComparison = newMin.compareTo(oldMin);
+
+    if (minComparison > 0) {
+      // New minimum version is greater
+      changes.add(callbacks.onMinIncrease(newVersion, oldVersion));
+    } else if (minComparison < 0) {
+      // New minimum version is less
+      changes.add(callbacks.onMinDecrease(newVersion, oldVersion));
+    } else if (minComparison == 0) {
+      // Versions are equal, check include flags
+      // If old was exclusive (>) and new is inclusive (>=), minimum effectively decreased
+      if (!oldIncludeMin && newIncludeMin) {
+        changes.add(callbacks.onMinDecrease(newVersion, oldVersion));
+      } else if (oldIncludeMin && !newIncludeMin) {
+        // If old was inclusive (>=) and new is exclusive (>), minimum effectively increased
+        changes.add(callbacks.onMinIncrease(newVersion, oldVersion));
+      }
+      // If both have same include flag, no change
+    }
+  } else if (oldMin == null && newMin != null) {
+    // Was unbounded, now has a minimum
+    changes.add(callbacks.onMinIncrease(newVersion, oldVersion));
+  } else if (oldMin != null && newMin == null) {
+    // Had a minimum, now unbounded
+    changes.add(callbacks.onMinDecrease(newVersion, oldVersion));
+  }
+
+  // Compare maximum versions
+  if (oldMax != null && newMax != null) {
+    final maxComparison = newMax.compareTo(oldMax);
+    if (maxComparison > 0) {
+      // New maximum version is greater
+      changes.add(callbacks.onMaxIncrease(newVersion, oldVersion));
+    } else if (maxComparison < 0) {
+      // New maximum version is less
+      changes.add(callbacks.onMaxDecrease(newVersion, oldVersion));
+    } else if (maxComparison == 0) {
+      // Versions are equal, check include flags
+      // If old was inclusive (<=) and new is exclusive (<), maximum effectively decreased
+      if (oldIncludeMax && !newIncludeMax) {
+        changes.add(callbacks.onMaxDecrease(newVersion, oldVersion));
+      } else if (!oldIncludeMax && newIncludeMax) {
+        // If old was exclusive (<) and new is inclusive (<=), maximum effectively increased
+        changes.add(callbacks.onMaxIncrease(newVersion, oldVersion));
+      }
+      // If both have same include flag, no change
+    }
+  } else if (oldMax == null && newMax != null) {
+    // Was unbounded, now has a maximum
+    changes.add(callbacks.onMaxDecrease(newVersion, oldVersion));
+  } else if (oldMax != null && newMax == null) {
+    // Had a maximum, now unbounded
+    changes.add(callbacks.onMaxIncrease(newVersion, oldVersion));
   }
 }
