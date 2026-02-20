@@ -124,22 +124,23 @@ Future<PackageApi> generateDocs({
       await GitUtils.createWorktree(repoPath, gitRef, worktreePath);
       worktreeCreated = true;
       logger.info('Successfully created worktree at $worktreePath');
-      
+
       // Determine if this is a Flutter project and use the appropriate pub get command
       final packagePath = join(worktreePath, dartRelativePath);
       final isFlutterProject = _isFlutterProject(packagePath);
       final isFlutterAvailable = _isFlutterAvailable();
-      
+
       // Only use flutter if the project is a Flutter project AND Flutter is available
       final useFlutter = isFlutterProject && isFlutterAvailable;
       final command = useFlutter ? 'flutter' : 'dart';
       final args = ['pub', 'get'];
-      
+
       if (isFlutterProject && !isFlutterAvailable) {
         logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
       }
-      
-      logger.info('Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath');
+
+      logger.info(
+          'Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath');
       final result = Process.runSync(
         command,
         args,
@@ -150,7 +151,7 @@ Future<PackageApi> generateDocs({
         if (result.stdout.toString().isNotEmpty) {
           logger.err('stdout: ${result.stdout}');
         }
-        exit(1);
+        throw Exception('Failed to run $command ${args.join(' ')} in $packagePath (exit code: ${result.exitCode})');
       }
     } catch (e) {
       logger.err('Failed to create worktree: $e');
@@ -161,7 +162,7 @@ Future<PackageApi> generateDocs({
   final classes = <DocComponent>[];
 
   if (shouldCache) {
-    if (cache.hasApiFile(repoPath, effectiveRef, dartRelativePath)) {
+    if (cache.hasApiFileForRef(repoPath, effectiveRef, dartRelativePath)) {
       logger.success('Using cached API documentation for $effectiveRef');
       final cachedContent = await cache.retrieveApiFile(
         repoPath,

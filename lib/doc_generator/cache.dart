@@ -32,7 +32,9 @@ class Cache {
       return 'root';
     }
     // Replace path separators and invalid characters with underscores
-    return path.replaceAll(RegExp(r'[<>:"|?*\x00-\x1f/\\]'), '_');
+    // Differences between platforms are not relevant as a cache is only used
+    // for the same platform.
+    return normalize(path).replaceAll(RegExp(r'[<>:"|?*\x00-\x1f/\\]'), '_');
   }
 
   /// Gets the path for an API file cached for a specific git ref and dart root
@@ -74,12 +76,6 @@ class Cache {
       return await apiFile.readAsString();
     }
     return null;
-  }
-
-  /// Checks if API documentation exists for a specific git ref and dart root
-  bool hasApiFile(String repoPath, String ref, String dartRelativePath) {
-    final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
-    return apiFile.existsSync();
   }
 
   /// Lists all cached refs for a repository

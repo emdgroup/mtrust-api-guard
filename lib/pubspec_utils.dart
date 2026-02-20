@@ -91,7 +91,6 @@ class PubspecUtils {
             pubspecEditor.update([sectionName, packageName, 'version'], newConstraint);
           }
         }
-        return; // Don't update if it's a path dependency or other complex format
       } else {
         // Default to ^ constraint
         final newConstraint = '^${newVersion.toString()}';

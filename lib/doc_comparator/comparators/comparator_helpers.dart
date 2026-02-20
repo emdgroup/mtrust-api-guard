@@ -156,8 +156,8 @@ void compareVersionConstraints({
     newIncludeMax = newConstraint.includeMax;
   } else if (newConstraint is Version) {
     // Exact version constraint
-    newMin = newConstraint;
-    newMax = newConstraint;
+    newMin = newConstraint.min;
+    newMax = newConstraint.max;
     newIncludeMin = true;
     newIncludeMax = true;
   }
@@ -165,6 +165,7 @@ void compareVersionConstraints({
   // Compare minimum versions
   if (oldMin != null && newMin != null) {
     final minComparison = newMin.compareTo(oldMin);
+
     if (minComparison > 0) {
       // New minimum version is greater
       changes.add(callbacks.onMinIncrease(newVersion, oldVersion));

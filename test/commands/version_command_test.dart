@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:recase/recase.dart';
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../helpers/test_setup.dart';
 import '../helpers/test_helpers.dart';
@@ -23,6 +24,15 @@ void main() {
       await testSetup.tearDown();
     });
 
+    /// Helper to update pubspec.yaml using YamlEditor
+    Future<void> _updatePubspec(String filePath, List<Object> path, dynamic value) async {
+      final pubspecFile = File(filePath);
+      final pubspecContent = await pubspecFile.readAsString();
+      final editor = YamlEditor(pubspecContent);
+      editor.update(path, value);
+      await pubspecFile.writeAsString(editor.toString());
+    }
+
     /// Helper method to set up initial version state with homepage for changelog links
     Future<void> _setupInitialVersion({bool plugin = false}) async {
       await testSetup.setupGitRepo();
@@ -34,13 +44,11 @@ void main() {
 
       // Add homepage to pubspec.yaml for testing changelog links
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContent = await pubspecFile.readAsString();
-
-      final updatedPubspecContent = pubspecContent.replaceFirst(
-        'homepage:',
-        'homepage: https://github.com/emdgroup/mtrust-api-guard/',
+      await _updatePubspec(
+        pubspecFile.path,
+        ['homepage'],
+        'https://github.com/emdgroup/mtrust-api-guard/',
       );
-      await pubspecFile.writeAsString(updatedPubspecContent);
 
       // Set up initial version
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
@@ -199,12 +207,7 @@ void main() {
 
       // Add a dependency
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContent = await pubspecFile.readAsString();
-      pubspecContent = pubspecContent.replaceFirst(
-        'dependencies:',
-        'dependencies:\n  path: ^1.8.0',
-      );
-      await pubspecFile.writeAsString(pubspecContent);
+      await _updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
 
       await testSetup.commitChanges('chore: add path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
@@ -228,22 +231,15 @@ void main() {
 
       // First add a dependency
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContent = await pubspecFile.readAsString();
-      pubspecContent = pubspecContent.replaceFirst(
-        'dependencies:',
-        'dependencies:\n  path: ^1.8.0',
-      );
-      await pubspecFile.writeAsString(pubspecContent);
+      await _updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
       await testSetup.commitChanges('chore: add path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
 
       // Now remove the dependency
-      pubspecContent = await pubspecFile.readAsString();
-      pubspecContent = pubspecContent.replaceFirst(
-        'dependencies:\n  path: ^1.8.0',
-        'dependencies:',
-      );
-      await pubspecFile.writeAsString(pubspecContent);
+      final pubspecContent = await pubspecFile.readAsString();
+      final editor = YamlEditor(pubspecContent);
+      editor.remove(['dependencies', 'path']);
+      await pubspecFile.writeAsString(editor.toString());
 
       await testSetup.commitChanges('chore: remove path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
@@ -264,23 +260,16 @@ void main() {
     test('detects patch version change when changing SDK constraints', () async {
       await _setupInitialVersion(plugin: true);
 
-      // Change SDK constraints (SDK constraint changes are patch-level changes)
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      var pubspecContent = await pubspecFile.readAsString();
-      printOnFailure("pubspecContent: $pubspecContent");
-      pubspecContent = pubspecContent.replaceFirst(
-        RegExp(r'sdk:\s+[^\n]+'),
-        'sdk: ">=3.2.0 <4.0.0"',
-      );
-      await pubspecFile.writeAsString(pubspecContent);
-
-      printOnFailure("pubspecContent: $pubspecContent");
+      await _updatePubspec(pubspecFile.path, ['environment', 'sdk'], '>=3.2.0 <4.0.0');
 
       await testSetup.commitChanges('chore: update SDK constraints');
       await testSetup.runApiGuard('version', ["--verbose"]);
 
       // Changing SDK constraints is a patch-level change
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+
+      print(File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsStringSync());
 
       // Verify tag was created
       final tags = await runProcess(

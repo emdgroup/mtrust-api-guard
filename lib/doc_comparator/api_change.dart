@@ -282,7 +282,7 @@ class MetaApiChange extends ApiChange {
       description: 'from `$previousVersion` to `$version`',
     );
   }
-  @override
+
   factory MetaApiChange.maxFlutterSdkVersionIncrease({
     required String version,
     required String previousVersion,
@@ -336,6 +336,11 @@ class MetaApiChange extends ApiChange {
       title: "Minimum iOS SDK version increased",
       description: 'from `$previousVersion` to `$version`',
     );
+  }
+
+  @override
+  toString() {
+    return 'MetaApiChange(component: ${component.name}, operation: $operation, annotation: $annotation, changedValue: $changedValue)';
   }
 }
 

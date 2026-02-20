@@ -20,6 +20,19 @@ void main() {
         expect(minIncrease.changedValue, contains('^2.0.0'));
       });
 
+      test('minimum version increase creates major change when changing from caret constraint to range constraint', () {
+        final oldMeta = PackageMetadata(sdkVersion: '^3.1.7');
+        final newMeta = PackageMetadata(sdkVersion: '>=3.2.0 <4.0.0');
+
+        final changes = oldMeta.compareTo(newMeta);
+
+        expect(changes.length, greaterThanOrEqualTo(1));
+        final minIncrease = changes.firstWhere(
+          (c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease,
+        );
+        expect(minIncrease.getMagnitude(), ApiChangeMagnitude.major);
+      });
+
       test('minimum version decrease creates patch change', () {
         final oldMeta = PackageMetadata(sdkVersion: '^3.0.0');
         final newMeta = PackageMetadata(sdkVersion: '^2.0.0');

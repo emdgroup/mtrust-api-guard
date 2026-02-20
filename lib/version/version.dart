@@ -167,8 +167,8 @@ Future<VersionResult> version({
       throw Exception('pubspec.yaml not found at ${pubspecFile.path}');
     }
     final pubspecContent = await pubspecFile.readAsString();
-    final packageName = PubspecUtils.getPackageName(pubspecContent);
-    final camelCasePackageName = ReCase(packageName).camelCase;
+    final safePackageName = packageName ?? PubspecUtils.getPackageName(pubspecContent);
+    final camelCasePackageName = ReCase(safePackageName).camelCase;
     final constantName = '${camelCasePackageName}Version';
 
     final dartFileContent = "const String $constantName = '$nextVersion';\n";

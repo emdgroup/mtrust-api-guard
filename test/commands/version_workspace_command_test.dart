@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 import '../helpers/test_setup.dart';
 import '../helpers/test_helpers.dart';
@@ -21,6 +22,15 @@ void main() {
     tearDown(() async {
       await testSetup.tearDown();
     });
+
+    /// Helper to update pubspec.yaml using YamlEditor
+    Future<void> _updatePubspec(String filePath, List<Object> path, dynamic value) async {
+      final pubspecFile = File(filePath);
+      final pubspecContent = await pubspecFile.readAsString();
+      final editor = YamlEditor(pubspecContent);
+      editor.update(path, value);
+      await pubspecFile.writeAsString(editor.toString());
+    }
 
     test('versions workspace packages with changes and updates dependencies', () async {
       // 1. Initialize git repo
@@ -54,10 +64,8 @@ workspace:
 
       // Update shared package pubspec.yaml
       final sharedPubspec = File(p.join(sharedDir.path, 'pubspec.yaml'));
-      final sharedPubspecContent = await sharedPubspec.readAsString();
-      await sharedPubspec.writeAsString(sharedPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: shared', 'name: shared\nresolution: workspace'));
+      await _updatePubspec(sharedPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(sharedPubspec.path, ['resolution'], 'workspace');
 
       // Copy API files to shared package
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
@@ -87,14 +95,9 @@ workspace:
 
       // Update consumer package pubspec.yaml
       final consumerPubspec = File(p.join(consumerDir.path, 'pubspec.yaml'));
-      final consumerPubspecContent = await consumerPubspec.readAsString();
-      await consumerPubspec.writeAsString(consumerPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: consumer', 'name: consumer\nresolution: workspace')
-          .replaceFirst(
-            'dependencies:',
-            'dependencies:\n  shared:\n    ^0.0.1',
-          ));
+      await _updatePubspec(consumerPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(consumerPubspec.path, ['resolution'], 'workspace');
+      await _updatePubspec(consumerPubspec.path, ['dependencies', 'shared'], '^0.0.1');
 
       // Copy API files to consumer package
       final consumerLibDir = Directory(p.join(consumerDir.path, 'lib'));
@@ -185,10 +188,8 @@ workspace:
       await Directory(p.join(packageADir.path, 'test')).create();
 
       final packageAPubspec = File(p.join(packageADir.path, 'pubspec.yaml'));
-      final packageAPubspecContent = await packageAPubspec.readAsString();
-      await packageAPubspec.writeAsString(packageAPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: package_a', 'name: package_a\nresolution: workspace'));
+      await _updatePubspec(packageAPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(packageAPubspec.path, ['resolution'], 'workspace');
 
       final packageALibDir = Directory(p.join(packageADir.path, 'lib'));
       await packageALibDir.create(recursive: true);
@@ -215,10 +216,8 @@ workspace:
       await Directory(p.join(packageBDir.path, 'test')).create();
 
       final packageBPubspec = File(p.join(packageBDir.path, 'pubspec.yaml'));
-      final packageBPubspecContent = await packageBPubspec.readAsString();
-      await packageBPubspec.writeAsString(packageBPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: package_b', 'name: package_b\nresolution: workspace'));
+      await _updatePubspec(packageBPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(packageBPubspec.path, ['resolution'], 'workspace');
 
       final packageBLibDir = Directory(p.join(packageBDir.path, 'lib'));
       await packageBLibDir.create(recursive: true);
@@ -308,10 +307,8 @@ workspace:
       await Directory(p.join(baseDir.path, 'test')).create();
 
       final basePubspec = File(p.join(baseDir.path, 'pubspec.yaml'));
-      final basePubspecContent = await basePubspec.readAsString();
-      await basePubspec.writeAsString(basePubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: base', 'name: base\nresolution: workspace'));
+      await _updatePubspec(basePubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(basePubspec.path, ['resolution'], 'workspace');
 
       final baseLibDir = Directory(p.join(baseDir.path, 'lib'));
       await baseLibDir.create(recursive: true);
@@ -333,14 +330,9 @@ workspace:
       await Directory(p.join(sharedDir.path, 'test')).create();
 
       final sharedPubspec = File(p.join(sharedDir.path, 'pubspec.yaml'));
-      final sharedPubspecContent = await sharedPubspec.readAsString();
-      await sharedPubspec.writeAsString(sharedPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: shared', 'name: shared\nresolution: workspace')
-          .replaceFirst(
-            'dependencies:',
-            'dependencies:\n  base:\n    ^0.0.1',
-          ));
+      await _updatePubspec(sharedPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(sharedPubspec.path, ['resolution'], 'workspace');
+      await _updatePubspec(sharedPubspec.path, ['dependencies', 'base'], '^0.0.1');
 
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
       await sharedLibDir.create(recursive: true);
@@ -362,14 +354,9 @@ workspace:
       await Directory(p.join(consumerDir.path, 'test')).create();
 
       final consumerPubspec = File(p.join(consumerDir.path, 'pubspec.yaml'));
-      final consumerPubspecContent = await consumerPubspec.readAsString();
-      await consumerPubspec.writeAsString(consumerPubspecContent
-          .replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: 0.0.1')
-          .replaceFirst('name: consumer', 'name: consumer\nresolution: workspace')
-          .replaceFirst(
-            'dependencies:',
-            'dependencies:\n  shared:\n    ^0.0.1',
-          ));
+      await _updatePubspec(consumerPubspec.path, ['version'], '0.0.1');
+      await _updatePubspec(consumerPubspec.path, ['resolution'], 'workspace');
+      await _updatePubspec(consumerPubspec.path, ['dependencies', 'shared'], '^0.0.1');
 
       final consumerLibDir = Directory(p.join(consumerDir.path, 'lib'));
       await consumerLibDir.create(recursive: true);
