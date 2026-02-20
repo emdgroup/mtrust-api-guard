@@ -1,3 +1,58 @@
+## 6.0.0
+Released on: 2/20/2026, changelog automatically generated.
+
+
+### Features
+
+- Use git worktrees to generate analysis ([#15](issues/15)) ([0a14157](commit/0a14157))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❌ Property removed: `platformConstraintChange`
+
+#### ✨ Minor changes
+
+**`enum` ApiChangeOperation** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Properties added: `minDartSdkVersionDecrease`, `minDartSdkVersionIncrease`, `maxDartSdkVersionDecrease`, `maxDartSdkVersionIncrease`, `minFlutterSdkVersionIncrease`, `maxFlutterSdkVersionDecrease`, `maxFlutterSdkVersionIncrease`, `minFlutterSdkVersionDecrease`, `minAndroidSdkVersionDecrease`, `minAndroidSdkVersionIncrease`, `minIosSdkVersionDecrease`, `minIosSdkVersionIncrease`
+
+**`class` ComponentApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` ConstructorApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` ConstructorParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` MetaApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Constructors added: `minDartSdkVersionDecrease`, `minDartSdkVersionIncrease`, `maxDartSdkVersionDecrease`, `maxDartSdkVersionIncrease`, `minFlutterSdkVersionDecrease`, `minFlutterSdkVersionIncrease`, `maxFlutterSdkVersionDecrease`, `maxFlutterSdkVersionIncrease`, `minAndroidSdkVersionDecrease`, `minAndroidSdkVersionIncrease`, `minIosSdkVersionDecrease`, `minIosSdkVersionIncrease`
+- ❇️ Method added: `toString`
+
+**`class` MethodApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` MethodParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` PackageMetadata** ([lib/models/package_info.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-19e49251f73769c21a87c929cfbcd048e47853b79856e4274892b13df23b4334))
+- ❇️ Param added in default constructor: `flutterVersion` (named, optional)
+- ❇️ Property added: `flutterVersion`
+
+**`class` ParameterApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+**`class` PropertyApiChange** ([lib/doc_comparator/api_change.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-78145d8eef8e04a4fa58ee7fbd1fd879acfee7e8e4530553d5bd6c57800bef09))
+- ❇️ Method added: `toString`
+
+#### 👀 Patch changes
+
+**`meta` dependency `recase`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency added: with version `^4.1.0`
+
+
 ## 5.1.0
 Released on: 1/19/2026, changelog automatically generated.
 
