@@ -1,3 +1,12 @@
+## 6.0.1
+Released on: 2/23/2026, changelog automatically generated.
+
+
+### Features
+
+- parameterize pre-release prefix ([0a237bc](commit/0a237bc))
+- add pre-release prefix option for versioning ([ce427f4](commit/ce427f4))
+
 ## 6.0.0
 Released on: 2/20/2026, changelog automatically generated.
 
