@@ -43,6 +43,7 @@ Future<VersionResult> version({
   required bool tag,
   String? newRef,
   required bool isPreRelease,
+  required String preReleasePrefix,
   required bool commit,
   required bool badge,
   required bool generateChangelog,
@@ -76,12 +77,6 @@ Future<VersionResult> version({
     cache: cache,
   );
 
-  final baseRefForPubspec = baseRef ??
-      (packageName != null
-          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
-              (throw Exception('No previous version found for package $packageName'))
-          : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
-
   final pubspecPath =
       packageName != null ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml') : 'pubspec.yaml';
 
@@ -90,7 +85,7 @@ Future<VersionResult> version({
   applyMagnitudeOverrides(changes, config);
 
   final basePubSpec = await GitUtils.gitShow(
-    baseRefForPubspec,
+    effectiveBaseRef,
     gitRoot.path,
     pubspecPath,
   );
@@ -106,8 +101,14 @@ Future<VersionResult> version({
 
   // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
   final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
-  final nextVersion =
-      await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
+  final nextVersion = await calculateNextVersion(
+    baseVersion,
+    highestMagnitudeChange,
+    isPreRelease,
+    gitRoot,
+    versionTagPrefix,
+    preReleasePrefix,
+  );
 
   logger.info('Next version: $nextVersion');
 
@@ -138,7 +139,7 @@ Future<VersionResult> version({
   }
 
   if (badge) {
-    final badgeContent = await generateVersionBadge(nextVersion);
+    badgeContent = await generateVersionBadge(nextVersion);
     await File(join(dartRoot.path, 'version_badge.svg')).writeAsString(badgeContent);
     logger.info('Generated version badge for version $nextVersion');
   }

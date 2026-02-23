@@ -60,8 +60,14 @@ class VersionCommand extends Command
       ..addFlag(
         'pre-release',
         abbr: 'p',
-        help: 'Add pre-release suffix. 3.0.0-dev.1 where dev.1 is the pre-release suffix',
+        help: 'Add pre-release suffix. Defaults to 3.0.0-1 unless --pre-release-prefix is provided',
         defaultsTo: false,
+      )
+      ..addOption(
+        'pre-release-prefix',
+        help: 'Prefix for pre-release versions. Example: --pre-release-prefix dev -> 3.0.0-dev.1',
+        defaultsTo: '',
+        valueHelp: 'prefix',
       )
       ..addOption(
         'tag-prefix',
@@ -86,6 +92,10 @@ class VersionCommand extends Command
 
   bool get preRelease {
     return argResults?['pre-release'] as bool;
+  }
+
+  String get preReleasePrefix {
+    return argResults?['pre-release-prefix'] as String? ?? '';
   }
 
   bool get badge {
@@ -122,6 +132,7 @@ class VersionCommand extends Command
       generateChangelog: generateChangelog,
       cache: cache,
       isPreRelease: preRelease,
+      preReleasePrefix: preReleasePrefix,
       tagPrefix: tagPrefix,
       dartFile: dartFile,
     );
