@@ -40,7 +40,18 @@ jobs:
         run: dart pub global activate --source path .
       - name: Compare API changes
         id: version
-        run: mtrust_api_guard version --badge --no-commit --tag --generate-changelog --json version_output.json ${{ inputs.pre_release && '--pre-release' || '' }} ${{ inputs.pre_release_prefix != '' && format('--pre-release-prefix "{0}"', inputs.pre_release_prefix) || '' }}
+        run: |
+          args=(version --badge --no-commit --tag --generate-changelog --json version_output.json)
+
+          if [[ "${{ inputs.pre_release }}" == "true" ]]; then
+            args+=(--pre-release)
+          fi
+
+          if [[ -n "${{ inputs.pre_release_prefix }}" ]]; then
+            args+=(--pre-release-prefix "${{ inputs.pre_release_prefix }}")
+          fi
+
+          mtrust_api_guard "${args[@]}"
 
       - name: Generate version summary and comment on PR
         if: github.event_name == 'pull_request'
