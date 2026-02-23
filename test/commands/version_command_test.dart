@@ -341,7 +341,7 @@ void main() {
       expect(testSetup.getCurrentVersion(), '1.0.0');
     });
 
-    test('pre-release prefix option applies custom suffix', () async {
+    test('pre-release prefix option applies custom suffix including incrementing numbers', () async {
       // 1. Set up initial tagged version
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
@@ -349,12 +349,19 @@ void main() {
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
-      // 2. Apply minor changes and create pre-release with custom prefix
+      // 2. Apply minor changes and create first pre-release with custom prefix
       await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
       await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release', '--pre-release-prefix', 'dev']);
       expect(testSetup.getCurrentVersion(), '0.1.0-dev.1');
+
+      // 3. Apply additional minor changes and create second pre-release
+      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await testSetup.commitChanges('Additional minor updates for pre-release');
+
+      await testSetup.runApiGuard('version', ['--pre-release', '--pre-release-prefix', 'dev']);
+      expect(testSetup.getCurrentVersion(), '0.1.0-dev.2');
     });
 
     test('custom tag prefix works correctly', () async {
