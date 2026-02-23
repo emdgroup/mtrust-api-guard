@@ -6,6 +6,10 @@ on:
         type: boolean
         description: "Whether to run the version command with the pre-release flag"
         default: false
+      pre_release_prefix:
+        type: string
+        description: "Prefix for pre-release versions (e.g. 'dev' => 3.0.0-dev.1, empty => 3.0.0-1)"
+        default: ""
       use_local_version:
         type: boolean
         description: "Whether to use the local version of mtrust_api_guard"
@@ -36,7 +40,7 @@ jobs:
         run: dart pub global activate --source path .
       - name: Compare API changes
         id: version
-        run: mtrust_api_guard version --badge --no-commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
+        run: mtrust_api_guard version --badge --no-commit --tag --generate-changelog --json version_output.json ${{ inputs.pre_release && '--pre-release' || '' }} ${{ inputs.pre_release_prefix != '' && format('--pre-release-prefix "{0}"', inputs.pre_release_prefix) || '' }}
 
       - name: Generate version summary and comment on PR
         if: github.event_name == 'pull_request'

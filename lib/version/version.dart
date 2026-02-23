@@ -43,6 +43,7 @@ Future<VersionResult> version({
   required bool tag,
   String? newRef,
   required bool isPreRelease,
+  required String preReleasePrefix,
   required bool commit,
   required bool badge,
   required bool generateChangelog,
@@ -106,8 +107,14 @@ Future<VersionResult> version({
 
   // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
   final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
-  final nextVersion =
-      await calculateNextVersion(baseVersion, highestMagnitudeChange, isPreRelease, gitRoot, versionTagPrefix);
+  final nextVersion = await calculateNextVersion(
+    baseVersion,
+    highestMagnitudeChange,
+    isPreRelease,
+    gitRoot,
+    versionTagPrefix,
+    preReleasePrefix,
+  );
 
   logger.info('Next version: $nextVersion');
 

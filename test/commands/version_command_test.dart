@@ -326,19 +326,35 @@ void main() {
       await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release']);
-      expect(testSetup.getCurrentVersion(), '0.1.0-dev.1');
+      expect(testSetup.getCurrentVersion(), '0.1.0-1');
 
       // 3. Apply major changes and create another pre-release
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release']);
-      expect(testSetup.getCurrentVersion(), '1.0.0-dev.1');
+      expect(testSetup.getCurrentVersion(), '1.0.0-1');
 
       // 4. Finalize the release (removes pre-release suffix)
       await testSetup.runApiGuard('version', []);
 
       expect(testSetup.getCurrentVersion(), '1.0.0');
+    });
+
+    test('pre-release prefix option applies custom suffix', () async {
+      // 1. Set up initial tagged version
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      // 2. Apply minor changes and create pre-release with custom prefix
+      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await testSetup.commitChanges('API change to v${TestConstants.minorVersion}');
+
+      await testSetup.runApiGuard('version', ['--pre-release', '--pre-release-prefix', 'dev']);
+      expect(testSetup.getCurrentVersion(), '0.1.0-dev.1');
     });
 
     test('custom tag prefix works correctly', () async {

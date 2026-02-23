@@ -11,6 +11,7 @@ Future<String> calculateNextVersion(
   bool isPreRelease,
   Directory gitRoot,
   String tagPrefix,
+  String preReleasePrefix,
 ) async {
   logger.info('Current version: $version');
 
@@ -37,12 +38,22 @@ Future<String> calculateNextVersion(
   logger.info('New version: $newVersion');
 
   if (isPreRelease) {
+    final normalizedPrefix = preReleasePrefix.trim();
+    final separator = normalizedPrefix.isEmpty || normalizedPrefix.endsWith('.') ? '' : '.';
+    String buildPreReleaseSuffix(int number) {
+      if (normalizedPrefix.isEmpty) {
+        return '$number';
+      }
+      return '$normalizedPrefix$separator$number';
+    }
+
     var preReleaseNum = 1;
-    while (await GitUtils.gitTagExists('$tagPrefix$newVersion-dev.$preReleaseNum', gitRoot.path)) {
+    while (await GitUtils.gitTagExists('$tagPrefix$newVersion-${buildPreReleaseSuffix(preReleaseNum)}', gitRoot.path)) {
       preReleaseNum++;
     }
-    logger.info('Pre-release version: $newVersion-dev.$preReleaseNum');
-    return '$newVersion-dev.$preReleaseNum';
+    final preReleaseVersion = '$newVersion-${buildPreReleaseSuffix(preReleaseNum)}';
+    logger.info('Pre-release version: $preReleaseVersion');
+    return preReleaseVersion;
   } else if (await GitUtils.gitTagExists('$tagPrefix$newVersion', gitRoot.path)) {
     logger.err('Version tag $tagPrefix$newVersion already exists');
     throw Exception('Version tag $tagPrefix$newVersion already exists');
