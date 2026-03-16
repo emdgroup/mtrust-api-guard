@@ -205,9 +205,33 @@ class GitUtils {
   }
 
   static Future<void> gitTag(String tag, String? root) async {
-    final result = await Process.run('git', ['tag', '-a', tag, '-m', 'Release $tag'], workingDirectory: root);
-    if (result.exitCode != 0) {
-      throw GitException('Failed to tag $tag: ${result.stderr.toString()}');
+    // Create an empty release commit WITHOUT [skip ci] and place the tag there.
+    // The bump commit (which has [skip ci]) is then restored as branch HEAD via reset.
+    //
+    // Why: GitHub suppresses tag-triggered workflows when the tagged commit's message
+    // contains [skip ci]. By tagging an empty child commit (which inherits the correct
+    // file state from the bump commit but carries no [skip ci]), the tag-triggered
+    // publish pipeline fires normally, while the branch push is still suppressed
+    // because branch HEAD remains the [skip ci] bump commit.
+    final releaseCommit = await Process.run(
+      'git',
+      ['commit', '--allow-empty', '-m', 'chore(release): $tag'],
+      workingDirectory: root,
+    );
+    if (releaseCommit.exitCode != 0) {
+      throw GitException('Failed to create release commit: ${releaseCommit.stderr.toString()}');
+    }
+
+    final tagResult = await Process.run('git', ['tag', '-a', tag, '-m', 'Release $tag'], workingDirectory: root);
+    if (tagResult.exitCode != 0) {
+      throw GitException('Failed to tag $tag: ${tagResult.stderr.toString()}');
+    }
+
+    // Reset branch HEAD back to the bump commit; the release commit remains
+    // reachable only via the tag.
+    final resetResult = await Process.run('git', ['reset', '--hard', 'HEAD~1'], workingDirectory: root);
+    if (resetResult.exitCode != 0) {
+      throw GitException('Failed to reset after tagging $tag: ${resetResult.stderr.toString()}');
     }
   }
 
