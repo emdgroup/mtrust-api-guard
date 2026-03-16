@@ -1,3 +1,11 @@
+## 6.0.4
+Released on: 3/16/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- implement empty release commit tagging to trigger workflows ([a034d19](commit/a034d19))
+
 ## 6.0.3
 Released on: 3/16/2026, changelog automatically generated.
 
