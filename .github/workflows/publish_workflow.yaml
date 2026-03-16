@@ -32,42 +32,57 @@ on:
         default: "main"
 
     secrets:
+      # GitHub App credentials (app_id + app_private_key) take precedence over token.
+      # Setting up a GitHub App is generally preferred: the identity is org-owned,
+      # credentials don't expire, and bypass permissions can be scoped precisely per
+      # ruleset — unlike a PAT which is tied to an individual user.
       app_id:
-        description: "The app id to use for cloning and pushing"
+        description: "The app id to use for cloning and pushing (takes precedence over token)"
         required: false
       app_private_key:
-        description: "The private key to use for cloning and pushing"
+        description: "The private key to use for cloning and pushing (takes precedence over token)"
+        required: false
+      token:
+        description: "A PAT or elevated token to use for cloning and pushing (used when app_id/app_private_key are not provided)"
         required: false
 
 jobs:
   compare_api_changes:
     runs-on: ubuntu-latest
     steps:
-      # Check if app secrets are provided
-      - name: Check if app secrets are provided
+      # Determine which auth method to use (app > token > github default)
+      - name: Check which auth method to use
         id: check-secrets
         run: |
           if [ -n "${{ secrets.app_id }}" ] && [ -n "${{ secrets.app_private_key }}" ]; then
-            echo "has_secrets=true" >> $GITHUB_OUTPUT
+            echo "auth_method=app" >> $GITHUB_OUTPUT
+          elif [ -n "${{ secrets.token }}" ]; then
+            echo "auth_method=token" >> $GITHUB_OUTPUT
           else
-            echo "has_secrets=false" >> $GITHUB_OUTPUT
+            echo "auth_method=github" >> $GITHUB_OUTPUT
           fi
       # Authenticate and clone as github app
       - name: 🔑 Get token for bumper app
-        if: steps.check-secrets.outputs.has_secrets == 'true'
+        if: steps.check-secrets.outputs.auth_method == 'app'
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
           app-id: ${{ secrets.app_id }}
           private-key: ${{ secrets.app_private_key }}
       - name: Checkout code using app token
-        if: steps.check-secrets.outputs.has_secrets == 'true'
+        if: steps.check-secrets.outputs.auth_method == 'app'
         uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
+      # Authenticate and clone using provided token
+      - name: Checkout code using provided token
+        if: steps.check-secrets.outputs.auth_method == 'token'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.token }}
       # Authenticate and clone as github user
       - name: Checkout code using github token
-        if: steps.check-secrets.outputs.has_secrets == 'false'
+        if: steps.check-secrets.outputs.auth_method == 'github'
         uses: actions/checkout@v4
       # Fetch tags and configure git
       - name: Fetch all tags
