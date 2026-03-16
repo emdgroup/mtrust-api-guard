@@ -108,7 +108,12 @@ jobs:
       - name: Compare API changes
         id: version
         run: mtrust_api_guard version --badge --commit --tag --generate-changelog --json version_output.json  ${{ inputs.pre_release && '--pre-release' || '' }}
-      # Generate version summary and comment on PR
-      - name: Push changes to remote repository
+      # Push branch and tags separately so that the tag push is a pure ref update
+      # with no commit messages. This ensures [skip ci] in the version bump commit
+      # does not suppress workflows triggered by the tag (e.g. pub.dev publish).
+      - name: Push branch to remote repository
         if: inputs.git_push
-        run: git push origin ${{ inputs.git_push_branch }} --follow-tags
+        run: git push origin ${{ inputs.git_push_branch }}
+      - name: Push tags to remote repository
+        if: inputs.git_push
+        run: git push origin --tags
