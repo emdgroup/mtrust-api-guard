@@ -1,3 +1,6 @@
+## 6.0.2
+Released on: 3/16/2026, changelog automatically generated.
+
 ## 6.0.1
 Released on: 2/23/2026, changelog automatically generated.
 
