@@ -1,3 +1,15 @@
+## 6.0.6
+Released on: 3/25/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- stop recursing into re-exports of external packages ([0043941](commit/0043941))
+- absolutize mainLibrary path for consistent relative computation ([477d7d1](commit/477d7d1))
+- update stale comment and normalize sourcePath in host detection ([029a45e](commit/029a45e))
+- normalize paths and stop following dart:/external file: re-exports ([a75aecb](commit/a75aecb))
+- stop recursing into re-exports of external packages ([55d3b74](commit/55d3b74))
+
 ## 6.0.5
 Released on: 3/25/2026, changelog automatically generated.
 
