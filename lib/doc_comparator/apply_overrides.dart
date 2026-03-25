@@ -98,9 +98,10 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
 
   if (selection.fromPackage != null) {
     bool packageMatched = false;
+    final ownPackage = context.ownPackage;
     for (final package in selection.fromPackage!) {
       // Match if the component is defined in the package (via its filePath)
-      if (context.ownPackage == package) {
+      if (ownPackage == package) {
         packageMatched = true;
         break;
       }
