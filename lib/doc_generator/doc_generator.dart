@@ -231,7 +231,8 @@ Future<PackageApi> generateDocs({
       // We do this only if the include configuration is the default one
       final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
 
-      final mainLibrary = normalize(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
+      final mainLibrary =
+          normalize(absolute(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart')));
 
       if (isDefaultInclude && File(mainLibrary).existsSync()) {
         useRecursiveAnalysis = true;
