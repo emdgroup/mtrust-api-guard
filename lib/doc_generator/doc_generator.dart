@@ -231,7 +231,8 @@ Future<PackageApi> generateDocs({
       // We do this only if the include configuration is the default one
       final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
 
-      final mainLibrary = normalize(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart'));
+      final mainLibrary =
+          normalize(absolute(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart')));
 
       if (isDefaultInclude && File(mainLibrary).existsSync()) {
         useRecursiveAnalysis = true;
@@ -253,29 +254,36 @@ Future<PackageApi> generateDocs({
 
     final progress = logger.progress("Analyzing dart files");
     final visitedLibraries = <String>{};
+    final normalizedRoot = normalize(absolute(analysisDartRoot.path));
 
     // Recursive visitor function
     void visitLibraryRecursive(LibraryElement2 library, String entryPoint) {
       if (visitedLibraries.contains(library.uri.toString())) return;
       visitedLibraries.add(library.uri.toString());
 
-      // Visit all libraries exported from this library, including any
-      // re-exported libraries from dependencies. Re-exported symbols are
-      // considered part of this package's public API and must be included
-      // in the generated documentation.
+      // Visit all libraries exported from this library. For host-package
+      // libraries the export chain is followed recursively so that
+      // re-exported symbols appear in the generated documentation.
+      // External dependencies are visited (their symbols are part of the
+      // public API) but their own re-exports are NOT followed to avoid
+      // pulling in large transitive graphs (e.g. Flutter/vector_math).
 
       String filePath = library.uri.toString();
+      bool isHostPackage = false;
       try {
-        if (library.uri.isScheme('package')) {
+        if (library.uri.isScheme('package') || library.uri.isScheme('file')) {
           // Attempt to resolve to relative path if within project.
           // For external packages (e.g. Flutter), we keep the package: URI
           // as the file path, as it provides a stable reference compared to
           // local pub-cache paths.
-          final sourcePath = library.firstFragment.source.fullName;
-          if (isWithin(analysisDartRoot.path, sourcePath)) {
-            filePath = relative(sourcePath, from: analysisDartRoot.path);
+          final sourcePath = normalize(absolute(library.firstFragment.source.fullName));
+          if (isWithin(normalizedRoot, sourcePath)) {
+            filePath = relative(sourcePath, from: normalizedRoot);
+            isHostPackage = true;
           }
         }
+        // dart: URIs and file: URIs outside the project root are not host
+        // packages — do not follow their re-exports.
       } catch (e) {
         // Ignore resolution errors, fallback to uri
       }
@@ -288,6 +296,12 @@ Future<PackageApi> generateDocs({
       classes.addAll(visitor.components);
 
       for (final exported in library.exportedLibraries2) {
+        // Only follow re-exports from within the host package.
+        // External packages (e.g. patrol, flutter) may themselves re-export
+        // large transitive graphs (vector_math, dart:ui, etc.) — we don't
+        // want those pulled into the API doc.
+        if (!isHostPackage) continue;
+
         visitLibraryRecursive(exported, entryPoint);
       }
     }
@@ -305,7 +319,7 @@ Future<PackageApi> generateDocs({
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
             libraryResult.element2,
-            relative(file, from: analysisDartRoot.path),
+            relative(file, from: normalizedRoot),
           );
         } else {
           // Legacy / Glob mode: non-recursive, just the file
