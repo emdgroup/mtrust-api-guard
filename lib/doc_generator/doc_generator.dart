@@ -253,6 +253,7 @@ Future<PackageApi> generateDocs({
 
     final progress = logger.progress("Analyzing dart files");
     final visitedLibraries = <String>{};
+    final normalizedRoot = normalize(absolute(analysisDartRoot.path));
 
     // Recursive visitor function
     void visitLibraryRecursive(LibraryElement2 library, String entryPoint) {
@@ -268,7 +269,6 @@ Future<PackageApi> generateDocs({
 
       String filePath = library.uri.toString();
       bool isHostPackage = false;
-      final normalizedRoot = normalize(absolute(analysisDartRoot.path));
       try {
         if (library.uri.isScheme('package') || library.uri.isScheme('file')) {
           // Attempt to resolve to relative path if within project.
@@ -315,7 +315,6 @@ Future<PackageApi> generateDocs({
           continue;
         }
 
-        final normalizedRoot = normalize(absolute(analysisDartRoot.path));
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
             libraryResult.element2,
