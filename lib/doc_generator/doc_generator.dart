@@ -265,6 +265,7 @@ Future<PackageApi> generateDocs({
       // in the generated documentation.
 
       String filePath = library.uri.toString();
+      bool isHostPackage = false;
       try {
         if (library.uri.isScheme('package')) {
           // Attempt to resolve to relative path if within project.
@@ -274,7 +275,11 @@ Future<PackageApi> generateDocs({
           final sourcePath = library.firstFragment.source.fullName;
           if (isWithin(analysisDartRoot.path, sourcePath)) {
             filePath = relative(sourcePath, from: analysisDartRoot.path);
+            isHostPackage = true;
           }
+        } else {
+          // dart: scheme or file URIs — always considered part of the host
+          isHostPackage = true;
         }
       } catch (e) {
         // Ignore resolution errors, fallback to uri
@@ -288,6 +293,12 @@ Future<PackageApi> generateDocs({
       classes.addAll(visitor.components);
 
       for (final exported in library.exportedLibraries2) {
+        // Only follow re-exports from within the host package.
+        // External packages (e.g. patrol, flutter) may themselves re-export
+        // large transitive graphs (vector_math, dart:ui, etc.) — we don't
+        // want those pulled into the API doc.
+        if (!isHostPackage) continue;
+
         visitLibraryRecursive(exported, entryPoint);
       }
     }
