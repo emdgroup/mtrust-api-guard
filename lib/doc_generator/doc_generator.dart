@@ -266,21 +266,21 @@ Future<PackageApi> generateDocs({
 
       String filePath = library.uri.toString();
       bool isHostPackage = false;
+      final normalizedRoot = normalize(absolute(analysisDartRoot.path));
       try {
-        if (library.uri.isScheme('package')) {
+        if (library.uri.isScheme('package') || library.uri.isScheme('file')) {
           // Attempt to resolve to relative path if within project.
           // For external packages (e.g. Flutter), we keep the package: URI
           // as the file path, as it provides a stable reference compared to
           // local pub-cache paths.
           final sourcePath = library.firstFragment.source.fullName;
-          if (isWithin(analysisDartRoot.path, sourcePath)) {
-            filePath = relative(sourcePath, from: analysisDartRoot.path);
+          if (isWithin(normalizedRoot, sourcePath)) {
+            filePath = relative(sourcePath, from: normalizedRoot);
             isHostPackage = true;
           }
-        } else {
-          // dart: scheme or file URIs — always considered part of the host
-          isHostPackage = true;
         }
+        // dart: URIs and file: URIs outside the project root are not host
+        // packages — do not follow their re-exports.
       } catch (e) {
         // Ignore resolution errors, fallback to uri
       }
@@ -313,10 +313,11 @@ Future<PackageApi> generateDocs({
           continue;
         }
 
+        final normalizedRoot = normalize(absolute(analysisDartRoot.path));
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
             libraryResult.element2,
-            relative(file, from: analysisDartRoot.path),
+            relative(file, from: normalizedRoot),
           );
         } else {
           // Legacy / Glob mode: non-recursive, just the file
