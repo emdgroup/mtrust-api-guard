@@ -98,8 +98,14 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
 
   if (selection.fromPackage != null) {
     bool packageMatched = false;
+    final ownPackage = context.ownPackage;
     for (final package in selection.fromPackage!) {
-      // Direct package check
+      // Match if the component is defined in the package (via its filePath)
+      if (ownPackage == package) {
+        packageMatched = true;
+        break;
+      }
+      // Also match if the component's superclass comes from the package
       if (context.superClassPackages.contains(package)) {
         packageMatched = true;
         break;
@@ -124,6 +130,7 @@ class _SelectionContext {
   final List<String> annotations;
   final List<String> superTypes;
   final List<String> superClassPackages;
+  final String? filePath;
   final _SelectionContext? enclosing;
 
   _SelectionContext({
@@ -132,12 +139,24 @@ class _SelectionContext {
     required this.annotations,
     required this.superTypes,
     this.superClassPackages = const [],
+    this.filePath,
     this.enclosing,
   });
 
+  /// Extracts the package name from a `package:` URI filePath.
+  /// Returns null if filePath is not a package URI.
+  String? get ownPackage {
+    if (filePath == null) return null;
+    final uri = Uri.tryParse(filePath!);
+    if (uri != null && uri.isScheme('package') && uri.pathSegments.isNotEmpty) {
+      return uri.pathSegments.first;
+    }
+    return null;
+  }
+
   @override
   String toString() {
-    return 'SelectionContext(name: $name, kind: $kind, annotations: $annotations, superTypes: $superTypes, superClassPackages: $superClassPackages, enclosing: $enclosing)';
+    return 'SelectionContext(name: $name, kind: $kind, annotations: $annotations, superTypes: $superTypes, superClassPackages: $superClassPackages, filePath: $filePath, enclosing: $enclosing)';
   }
 }
 
@@ -156,6 +175,7 @@ _SelectionContext _createContext(ApiChange change) {
     annotations: change.component.annotations,
     superTypes: superTypes,
     superClassPackages: change.component.superClassPackages,
+    filePath: change.component.filePath,
     enclosing: null,
   );
 
