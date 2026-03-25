@@ -259,10 +259,12 @@ Future<PackageApi> generateDocs({
       if (visitedLibraries.contains(library.uri.toString())) return;
       visitedLibraries.add(library.uri.toString());
 
-      // Visit all libraries exported from this library, including any
-      // re-exported libraries from dependencies. Re-exported symbols are
-      // considered part of this package's public API and must be included
-      // in the generated documentation.
+      // Visit all libraries exported from this library. For host-package
+      // libraries the export chain is followed recursively so that
+      // re-exported symbols appear in the generated documentation.
+      // External dependencies are visited (their symbols are part of the
+      // public API) but their own re-exports are NOT followed to avoid
+      // pulling in large transitive graphs (e.g. Flutter/vector_math).
 
       String filePath = library.uri.toString();
       bool isHostPackage = false;
@@ -273,7 +275,7 @@ Future<PackageApi> generateDocs({
           // For external packages (e.g. Flutter), we keep the package: URI
           // as the file path, as it provides a stable reference compared to
           // local pub-cache paths.
-          final sourcePath = library.firstFragment.source.fullName;
+          final sourcePath = normalize(absolute(library.firstFragment.source.fullName));
           if (isWithin(normalizedRoot, sourcePath)) {
             filePath = relative(sourcePath, from: normalizedRoot);
             isHostPackage = true;
