@@ -148,7 +148,7 @@ class _SelectionContext {
   String? get ownPackage {
     if (filePath == null) return null;
     final uri = Uri.tryParse(filePath!);
-    if (uri != null && uri.isScheme('package')) {
+    if (uri != null && uri.isScheme('package') && uri.pathSegments.isNotEmpty) {
       return uri.pathSegments.first;
     }
     return null;
