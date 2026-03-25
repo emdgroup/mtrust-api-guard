@@ -1,3 +1,12 @@
+## 6.0.5
+Released on: 3/25/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **overrides:** match from_package selection against component's own package ([e69885d](commit/e69885d))
+- match from_package selection against component's own package ([1af5c40](commit/1af5c40))
+
 ## 6.0.4
 Released on: 3/16/2026, changelog automatically generated.
 
