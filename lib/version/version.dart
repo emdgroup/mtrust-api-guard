@@ -99,14 +99,12 @@ Future<VersionResult> version({
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');
 
-  // For workspace packages, extract the 'v' prefix from tagPrefix (which is like 'package/v')
-  final versionTagPrefix = packageName != null ? 'v' : tagPrefix;
   final nextVersion = await calculateNextVersion(
     baseVersion,
     highestMagnitudeChange,
     isPreRelease,
     gitRoot,
-    versionTagPrefix,
+    tagPrefix,
     preReleasePrefix,
   );
 
