@@ -1,3 +1,11 @@
+## 6.0.7
+Released on: 6/23/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **version:** increment pre-release suffix on same stable base ([1af74b7](commit/1af74b7))
+
 ## 6.0.6
 Released on: 3/25/2026, changelog automatically generated.
 
