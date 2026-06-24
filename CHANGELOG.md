@@ -1,3 +1,34 @@
+## 8.0.0
+Released on: 6/24/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **changelog:** remove unnecessary string interpolation braces ([fbac8e4](commit/fbac8e4))
+### Features
+
+- **changelog:** add --regenerate to rebuild CHANGELOG from tags ([4bab144](commit/4bab144))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v7.0.1..v8.0.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Modifier `static` added to property: `releasableCommitTypes`
+
+#### ✨ Minor changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v7.0.1..v8.0.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❌ Modifier `final` removed from property: `releasableCommitTypes`
+- ❇️ Modifier `const` added to property: `releasableCommitTypes`
+- ❇️ Methods added: `regenerateFullChangelog`, `regenerateChangelogFile`
+
+#### 👀 Patch changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v7.0.1..v8.0.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Method added: `_generateReleaseEntry`
+
+
 ## 7.0.1
 Released on: 6/24/2026, changelog automatically generated.
 
