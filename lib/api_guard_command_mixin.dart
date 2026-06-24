@@ -41,7 +41,8 @@ mixin ApiGuardCommandMixinWithRoot on Command {
       argParser.addOption(
         'root',
         abbr: 'r',
-        help: 'Root directory of the Dart project.'
+        help:
+            'Root directory of the Dart project.'
             ' Defaults to auto-detect from the current directory.',
         defaultsTo: null,
       );
@@ -69,7 +70,8 @@ mixin ApiGuardCommandMixinWithBaseNew on Command {
       argParser.addOption(
         'base-ref',
         abbr: 'b',
-        help: 'The previous version to compare against.'
+        help:
+            'The previous version to compare against.'
             'Defaults to previous version from git history.',
       );
     }

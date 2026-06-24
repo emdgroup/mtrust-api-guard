@@ -22,123 +22,132 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
   void visitClassElement(ClassElement element) {
     final superTypeInfo = _getSuperTypeInfo(element);
 
-    components.add(DocComponent(
-      name: element.name!,
-      filePath: filePath,
-      entryPoint: entryPoint,
-      description: _getDescription(element),
-      constructors: _mapConstructors(element.constructors),
-      properties: _mapProperties(_collectFieldsWithInheritance(element)),
-      methods: _mapMethods(_collectMethodsWithInheritance(element)),
-      type: DocComponentType.classType,
-      annotations: _getAnnotations(element),
-      superClasses: superTypeInfo.superClasses,
-      superClassPackages: superTypeInfo.superClassPackages,
-      interfaces: element.interfaces.map((e) => e.element.name!).toList(),
-      mixins: element.mixins.map((e) => e.element.name!).toList(),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name!,
+        filePath: filePath,
+        entryPoint: entryPoint,
+        description: _getDescription(element),
+        constructors: _mapConstructors(element.constructors),
+        properties: _mapProperties(_collectFieldsWithInheritance(element)),
+        methods: _mapMethods(_collectMethodsWithInheritance(element)),
+        type: DocComponentType.classType,
+        annotations: _getAnnotations(element),
+        superClasses: superTypeInfo.superClasses,
+        superClassPackages: superTypeInfo.superClassPackages,
+        interfaces: element.interfaces.map((e) => e.element.name!).toList(),
+        mixins: element.mixins.map((e) => e.element.name!).toList(),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitClassElement(element);
   }
 
   /// Visits a mixin element and extracts its documentation.
   @override
   void visitMixinElement(MixinElement element) {
-    components.add(DocComponent(
-      name: element.name!,
-      filePath: filePath,
-      description: _getDescription(element),
-      constructors: [],
-      properties: _mapProperties(_collectFieldsWithInheritance(element)),
-      methods: _mapMethods(_collectMethodsWithInheritance(element)),
-      type: DocComponentType.mixinType,
-      annotations: _getAnnotations(element),
-      interfaces: element.interfaces.map((e) => e.element.name!).toList(),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name!,
+        filePath: filePath,
+        description: _getDescription(element),
+        constructors: [],
+        properties: _mapProperties(_collectFieldsWithInheritance(element)),
+        methods: _mapMethods(_collectMethodsWithInheritance(element)),
+        type: DocComponentType.mixinType,
+        annotations: _getAnnotations(element),
+        interfaces: element.interfaces.map((e) => e.element.name!).toList(),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitMixinElement(element);
   }
 
   /// Visits an enum element and extracts its documentation.
   @override
   void visitEnumElement(EnumElement element) {
-    components.add(DocComponent(
-      name: element.name!,
-      filePath: filePath,
-      description: _getDescription(element),
-      constructors: _mapConstructors(element.constructors),
-      properties: _mapProperties(element.fields),
-      methods: _mapMethods(element.methods),
-      type: DocComponentType.enumType,
-      annotations: _getAnnotations(element),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name!,
+        filePath: filePath,
+        description: _getDescription(element),
+        constructors: _mapConstructors(element.constructors),
+        properties: _mapProperties(element.fields),
+        methods: _mapMethods(element.methods),
+        type: DocComponentType.enumType,
+        annotations: _getAnnotations(element),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitEnumElement(element);
   }
 
   /// Visits a type alias element and extracts its documentation.
   @override
   void visitTypeAliasElement(TypeAliasElement element) {
-    components.add(DocComponent(
-      name: element.name!,
-      filePath: filePath,
-      description: _getDescription(element),
-      constructors: [],
-      properties: [],
-      methods: [],
-      type: DocComponentType.typedefType,
-      aliasedType: element.aliasedType.toString(),
-      annotations: _getAnnotations(element),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name!,
+        filePath: filePath,
+        description: _getDescription(element),
+        constructors: [],
+        properties: [],
+        methods: [],
+        type: DocComponentType.typedefType,
+        aliasedType: element.aliasedType.toString(),
+        annotations: _getAnnotations(element),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitTypeAliasElement(element);
   }
 
   /// Visits an extension element and extracts its documentation.
   @override
   void visitExtensionElement(ExtensionElement element) {
-    components.add(DocComponent(
-      name: element.name ?? 'extension',
-      filePath: filePath,
-      description: _getDescription(element),
-      constructors: [],
-      properties: _mapProperties(element.fields),
-      methods: _mapMethods(element.methods),
-      type: DocComponentType.extensionType,
-      aliasedType: element.extendedType.toString(),
-      annotations: _getAnnotations(element),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name ?? 'extension',
+        filePath: filePath,
+        description: _getDescription(element),
+        constructors: [],
+        properties: _mapProperties(element.fields),
+        methods: _mapMethods(element.methods),
+        type: DocComponentType.extensionType,
+        aliasedType: element.extendedType.toString(),
+        annotations: _getAnnotations(element),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitExtensionElement(element);
   }
 
   /// Visits a top-level function element and extracts its documentation.
   @override
   void visitTopLevelFunctionElement(TopLevelFunctionElement element) {
-    components.add(DocComponent(
-      name: element.name!,
-      filePath: filePath,
-      description: _getDescription(element),
-      constructors: [],
-      properties: [],
-      methods: [
-        DocMethod(
-          name: element.name!,
-          returnType: _getDocType(element.returnType),
-          description: _getDescription(element),
-          signature: _mapParameters(element.formalParameters),
-          features: [
-            if (element.isStatic) "static",
-            if (element.isExternal) "external",
-          ],
-          annotations: _getAnnotations(element),
-          typeParameters: _getTypeParameters(element.typeParameters),
-        )
-      ],
-      type: DocComponentType.functionType,
-      annotations: _getAnnotations(element),
-      typeParameters: _getTypeParameters(element.typeParameters),
-    ));
+    components.add(
+      DocComponent(
+        name: element.name!,
+        filePath: filePath,
+        description: _getDescription(element),
+        constructors: [],
+        properties: [],
+        methods: [
+          DocMethod(
+            name: element.name!,
+            returnType: _getDocType(element.returnType),
+            description: _getDescription(element),
+            signature: _mapParameters(element.formalParameters),
+            features: [if (element.isStatic) "static", if (element.isExternal) "external"],
+            annotations: _getAnnotations(element),
+            typeParameters: _getTypeParameters(element.typeParameters),
+          ),
+        ],
+        type: DocComponentType.functionType,
+        annotations: _getAnnotations(element),
+        typeParameters: _getTypeParameters(element.typeParameters),
+      ),
+    );
     super.visitTopLevelFunctionElement(element);
   }
 
@@ -199,69 +208,69 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
   /// Maps a list of [ConstructorElement] to [DocConstructor]s.
   List<DocConstructor> _mapConstructors(List<ConstructorElement> constructors) {
     return constructors
-        .map((e) => DocConstructor(
-              name: e.name!,
-              signature: _mapParameters(e.formalParameters),
-              features: [
-                if (e.isConst) "const",
-                if (e.isFactory) "factory",
-                if (e.isExternal) "external",
-              ],
-              annotations: _getAnnotations(e),
-            ))
+        .map(
+          (e) => DocConstructor(
+            name: e.name!,
+            signature: _mapParameters(e.formalParameters),
+            features: [if (e.isConst) "const", if (e.isFactory) "factory", if (e.isExternal) "external"],
+            annotations: _getAnnotations(e),
+          ),
+        )
         .toList();
   }
 
   /// Maps a list of [FieldElement] to [DocProperty]s.
   List<DocProperty> _mapProperties(Iterable<FieldElement> fields) {
     return fields
-        .map((e) => DocProperty(
-              name: e.name!,
-              type: _getDocType(e.type),
-              description: _getDescription(e),
-              features: [
-                if (e.isStatic) "static",
-                if (e.isCovariant) "covariant",
-                if (e.isFinal) "final",
-                if (e.isConst) "const",
-                if (e.isLate) "late",
-              ],
-              annotations: _getAnnotations(e),
-            ))
+        .map(
+          (e) => DocProperty(
+            name: e.name!,
+            type: _getDocType(e.type),
+            description: _getDescription(e),
+            features: [
+              if (e.isStatic) "static",
+              if (e.isCovariant) "covariant",
+              if (e.isFinal) "final",
+              if (e.isConst) "const",
+              if (e.isLate) "late",
+            ],
+            annotations: _getAnnotations(e),
+          ),
+        )
         .toList();
   }
 
   /// Maps a list of [MethodElement] to [DocMethod]s.
   List<DocMethod> _mapMethods(Iterable<MethodElement> methods) {
     return methods
-        .map((e) => DocMethod(
-              name: e.name!,
-              returnType: _getDocType(e.returnType),
-              description: _getDescription(e),
-              signature: _mapParameters(e.formalParameters),
-              features: [
-                if (e.isStatic) "static",
-                if (e.isAbstract) "abstract",
-                if (e.isExternal) "external",
-              ],
-              annotations: _getAnnotations(e),
-              typeParameters: _getTypeParameters(e.typeParameters),
-            ))
+        .map(
+          (e) => DocMethod(
+            name: e.name!,
+            returnType: _getDocType(e.returnType),
+            description: _getDescription(e),
+            signature: _mapParameters(e.formalParameters),
+            features: [if (e.isStatic) "static", if (e.isAbstract) "abstract", if (e.isExternal) "external"],
+            annotations: _getAnnotations(e),
+            typeParameters: _getTypeParameters(e.typeParameters),
+          ),
+        )
         .toList();
   }
 
   /// Maps a list of [FormalParameterElement] to [DocParameter]s.
   List<DocParameter> _mapParameters(List<FormalParameterElement> parameters) {
     return parameters
-        .map((param) => DocParameter(
-              description: _getDescription(param),
-              name: param.name!,
-              type: _getDocType(param.type),
-              named: param.isNamed,
-              required: param.isRequired,
-              defaultValue: param.defaultValueCode,
-              annotations: _getAnnotations(param),
-            ))
+        .map(
+          (param) => DocParameter(
+            description: _getDescription(param),
+            name: param.name!,
+            type: _getDocType(param.type),
+            named: param.isNamed,
+            required: param.isRequired,
+            defaultValue: param.defaultValueCode,
+            annotations: _getAnnotations(param),
+          ),
+        )
         .toList();
   }
 

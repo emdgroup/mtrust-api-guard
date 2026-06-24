@@ -11,17 +11,17 @@ extension MetadataComparator on PackageMetadata {
       newList: newMeta.dependencies,
       keyExtractor: (d) => d.packageName,
       onRemoved: (d) => changes.add(MetaApiChange.dependencyRemoved(dependencyName: d.packageName)),
-      onAdded: (d) => changes.add(MetaApiChange.dependencyAdded(
-        dependencyName: d.packageName,
-        version: d.packageVersion,
-      )),
+      onAdded: (d) =>
+          changes.add(MetaApiChange.dependencyAdded(dependencyName: d.packageName, version: d.packageVersion)),
       onMatched: (oldD, newD) {
         if (oldD.packageVersion != newD.packageVersion) {
-          changes.add(MetaApiChange.dependencyVersionChange(
-            dependencyName: oldD.packageName,
-            version: newD.packageVersion,
-            previousVersion: oldD.packageVersion,
-          ));
+          changes.add(
+            MetaApiChange.dependencyVersionChange(
+              dependencyName: oldD.packageName,
+              version: newD.packageVersion,
+              previousVersion: oldD.packageVersion,
+            ),
+          );
         }
       },
     );
@@ -67,28 +67,16 @@ extension MetadataComparator on PackageMetadata {
       if (baseMin != newMin) {
         if (baseMin == null && newMin != null) {
           // No previous constraint, now there is one
-          changes.add(MetaApiChange.minAndroidSdkVersionIncrease(
-            version: newMin,
-            previousVersion: 0,
-          ));
+          changes.add(MetaApiChange.minAndroidSdkVersionIncrease(version: newMin, previousVersion: 0));
         } else if (baseMin != null && newMin == null) {
           // Had a constraint, now removed
-          changes.add(MetaApiChange.minAndroidSdkVersionDecrease(
-            version: 0,
-            previousVersion: baseMin,
-          ));
+          changes.add(MetaApiChange.minAndroidSdkVersionDecrease(version: 0, previousVersion: baseMin));
         } else if (baseMin != null && newMin != null) {
           // Compare versions
           if (newMin > baseMin) {
-            changes.add(MetaApiChange.minAndroidSdkVersionIncrease(
-              version: newMin,
-              previousVersion: baseMin,
-            ));
+            changes.add(MetaApiChange.minAndroidSdkVersionIncrease(version: newMin, previousVersion: baseMin));
           } else if (newMin < baseMin) {
-            changes.add(MetaApiChange.minAndroidSdkVersionDecrease(
-              version: newMin,
-              previousVersion: baseMin,
-            ));
+            changes.add(MetaApiChange.minAndroidSdkVersionDecrease(version: newMin, previousVersion: baseMin));
           }
         }
       }
@@ -102,28 +90,16 @@ extension MetadataComparator on PackageMetadata {
       if (baseMin != newMin) {
         if (baseMin == null && newMin != null) {
           // No previous constraint, now there is one
-          changes.add(MetaApiChange.minIosSdkVersionIncrease(
-            version: newMin,
-            previousVersion: 0,
-          ));
+          changes.add(MetaApiChange.minIosSdkVersionIncrease(version: newMin, previousVersion: 0));
         } else if (baseMin != null && newMin == null) {
           // Had a constraint, now removed
-          changes.add(MetaApiChange.minIosSdkVersionDecrease(
-            version: 0,
-            previousVersion: baseMin,
-          ));
+          changes.add(MetaApiChange.minIosSdkVersionDecrease(version: 0, previousVersion: baseMin));
         } else if (baseMin != null && newMin != null) {
           // Compare versions
           if (newMin > baseMin) {
-            changes.add(MetaApiChange.minIosSdkVersionIncrease(
-              version: newMin,
-              previousVersion: baseMin,
-            ));
+            changes.add(MetaApiChange.minIosSdkVersionIncrease(version: newMin, previousVersion: baseMin));
           } else if (newMin < baseMin) {
-            changes.add(MetaApiChange.minIosSdkVersionDecrease(
-              version: newMin,
-              previousVersion: baseMin,
-            ));
+            changes.add(MetaApiChange.minIosSdkVersionDecrease(version: newMin, previousVersion: baseMin));
           }
         }
       }

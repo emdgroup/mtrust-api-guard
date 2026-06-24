@@ -30,11 +30,7 @@ Future<PackageApi> getRef({
 
     if (cacheInstance.hasApiFileForRef(repoPath, ref, dartRelativePath)) {
       logger.success('Using cached API documentation for $ref');
-      final cachedContent = await cacheInstance.retrieveApiFile(
-        repoPath,
-        ref,
-        dartRelativePath,
-      );
+      final cachedContent = await cacheInstance.retrieveApiFile(repoPath, ref, dartRelativePath);
       if (cachedContent != null) {
         return parsePackageApiFile(cachedContent);
       }
@@ -46,11 +42,5 @@ Future<PackageApi> getRef({
   }
 
   // Generate the API documentation for the ref
-  return generateDocs(
-    gitRef: ref,
-    out: null,
-    dartRoot: dartRoot,
-    gitRoot: gitRoot,
-    shouldCache: cache,
-  );
+  return generateDocs(gitRef: ref, out: null, dartRoot: dartRoot, gitRoot: gitRoot, shouldCache: cache);
 }

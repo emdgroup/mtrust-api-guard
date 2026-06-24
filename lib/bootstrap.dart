@@ -33,9 +33,7 @@ import 'package:path/path.dart';
   ApiGuardConfig config;
 
   if (analysisOptionsFile.existsSync()) {
-    config = ApiGuardConfig.fromYaml(
-      analysisOptionsFile,
-    );
+    config = ApiGuardConfig.fromYaml(analysisOptionsFile);
   } else {
     config = ApiGuardConfig.defaultConfig();
   }
@@ -43,16 +41,12 @@ import 'package:path/path.dart';
   final targetFiles = <String>{};
 
   for (final include in config.include) {
-    targetFiles.addAll(
-      Glob(include).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))),
-    );
+    targetFiles.addAll(Glob(include).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))));
   }
 
   final exclusions = <String>{};
   for (final exclude in config.exclude) {
-    exclusions.addAll(
-      Glob(exclude).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))),
-    );
+    exclusions.addAll(Glob(exclude).listSync(root: rootDir.path).map((e) => normalize(absolute(e.path))));
   }
 
   return (config, targetFiles.difference(exclusions));

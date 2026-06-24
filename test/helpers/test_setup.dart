@@ -23,11 +23,11 @@ class TestSetup {
       await tempDir.delete(recursive: true); // Ensure a clean state
     }
     await tempDir.create();
-    
+
     // Create a unique cache directory for this test
     cacheDir = Directory(p.join(tempDir.path, 'cache'));
     await cacheDir.create(recursive: true);
-    
+
     await runApiGuard('cache', ['--clear']); // Clear cache before each test
   }
 
@@ -42,32 +42,22 @@ class TestSetup {
     try {
       await runProcess('git', ['remote', 'get-url', 'origin'], workingDir: tempDir.path);
     } catch (_) {
-      await runProcess(
-        'git',
-        ['remote', 'add', 'origin', 'https://github.com/emdgroup/mtrust-api-guard.git'],
-        workingDir: tempDir.path,
-      );
+      await runProcess('git', [
+        'remote',
+        'add',
+        'origin',
+        'https://github.com/emdgroup/mtrust-api-guard.git',
+      ], workingDir: tempDir.path);
     }
-    await runProcess(
-      'git',
-      ['config', 'user.email', TestConstants.testEmail],
-      workingDir: tempDir.path,
-    );
-    await runProcess(
-      'git',
-      ['config', 'user.name', TestConstants.testUser],
-      workingDir: tempDir.path,
-    );
+    await runProcess('git', ['config', 'user.email', TestConstants.testEmail], workingDir: tempDir.path);
+    await runProcess('git', ['config', 'user.name', TestConstants.testUser], workingDir: tempDir.path);
   }
 
   /// Set version in pubspec.yaml.
   void setVersion(String version) {
     final yaml = File(p.join(tempDir.path, 'pubspec.yaml'));
     yaml.writeAsStringSync(
-      yaml.readAsStringSync().replaceFirst(
-            RegExp(r'version: \d+\.\d+\.\d+'),
-            'version: $version',
-          ),
+      yaml.readAsStringSync().replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: $version'),
     );
   }
 
@@ -142,11 +132,14 @@ class TestSetup {
 
   /// Set up a Flutter package in the test directory.
   Future<void> setupFlutterPackage() async {
-    await runProcess(
-      'flutter',
-      ['create', '.', '--template', 'package', '--project-name', 'api_guard_test'],
-      workingDir: tempDir.path,
-    );
+    await runProcess('flutter', [
+      'create',
+      '.',
+      '--template',
+      'package',
+      '--project-name',
+      'api_guard_test',
+    ], workingDir: tempDir.path);
 
     // remove the contents of lib/ and test/ directories
     await _clearDir('lib');
@@ -155,11 +148,14 @@ class TestSetup {
 
   /// Set up a Flutter plugin in the test directory.
   Future<void> setupFlutterPlugin() async {
-    await runProcess(
-      'flutter',
-      ['create', '.', '--template', 'plugin', '--project-name', 'api_guard_test'],
-      workingDir: tempDir.path,
-    );
+    await runProcess('flutter', [
+      'create',
+      '.',
+      '--template',
+      'plugin',
+      '--project-name',
+      'api_guard_test',
+    ], workingDir: tempDir.path);
     // remove the contents of lib/ and test/ directories
     await _clearDir('lib');
     await _clearDir('test');

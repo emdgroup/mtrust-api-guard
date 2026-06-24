@@ -67,10 +67,7 @@ class PubspecAnalyzer {
         // Ignore path/git dependencies for version tracking if needed,
         // or include them with null version.
         // dart_apitool includes hosted, path, and git.
-        dependencies.add(PackageDependency(
-          packageName: key.toString(),
-          packageVersion: version,
-        ));
+        dependencies.add(PackageDependency(packageName: key.toString(), packageVersion: version));
       });
     }
     return dependencies;
@@ -80,8 +77,10 @@ class PubspecAnalyzer {
     final androidDir = Directory(path.join(packagePath, 'android'));
     if (!await androidDir.exists()) return null;
 
-    final gradleFiles =
-        await androidDir.list(recursive: true).where((file) => path.extension(file.path) == '.gradle').toList();
+    final gradleFiles = await androidDir
+        .list(recursive: true)
+        .where((file) => path.extension(file.path) == '.gradle')
+        .toList();
 
     AndroidPlatformConstraints? constraints;
 
@@ -131,8 +130,9 @@ class PubspecAnalyzer {
     if (a == null) return b;
     return AndroidPlatformConstraints(
       minSdkVersion: (a.minSdkVersion ?? 0) > (b.minSdkVersion ?? 0) ? a.minSdkVersion : b.minSdkVersion,
-      compileSdkVersion:
-          (a.compileSdkVersion ?? 0) > (b.compileSdkVersion ?? 0) ? a.compileSdkVersion : b.compileSdkVersion,
+      compileSdkVersion: (a.compileSdkVersion ?? 0) > (b.compileSdkVersion ?? 0)
+          ? a.compileSdkVersion
+          : b.compileSdkVersion,
       targetSdkVersion: (a.targetSdkVersion ?? 0) > (b.targetSdkVersion ?? 0) ? a.targetSdkVersion : b.targetSdkVersion,
     );
   }
@@ -144,8 +144,10 @@ class PubspecAnalyzer {
     IOSPlatformConstraints? constraints;
 
     // Check Info.plist files
-    final plistFiles =
-        await iosDir.list(recursive: true).where((file) => path.extension(file.path) == '.plist').toList();
+    final plistFiles = await iosDir
+        .list(recursive: true)
+        .where((file) => path.extension(file.path) == '.plist')
+        .toList();
 
     for (final file in plistFiles) {
       if (file is File) {
@@ -160,8 +162,10 @@ class PubspecAnalyzer {
     }
 
     // Check Podspec files
-    final podspecFiles =
-        await iosDir.list(recursive: true).where((file) => path.extension(file.path) == '.podspec').toList();
+    final podspecFiles = await iosDir
+        .list(recursive: true)
+        .where((file) => path.extension(file.path) == '.podspec')
+        .toList();
 
     for (final file in podspecFiles) {
       if (file is File) {

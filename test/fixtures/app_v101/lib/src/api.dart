@@ -16,7 +16,8 @@ class User {
 class Product {
   final String id;
   final double price;
-  final String _internalId; // new private property (should be detected as added, private)
+  final String
+  _internalId; // new private property (should be detected as added, private)
 
   Product(this.id, this.price) : _internalId = _generateInternalId();
 

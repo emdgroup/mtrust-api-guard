@@ -20,8 +20,7 @@ Future<void> copyDir(Directory src, Directory dst) async {
 }
 
 /// Run a process and optionally capture stdout.
-Future<String> runProcess(String cmd, List<String> args,
-    {String? workingDir, bool captureOutput = false}) async {
+Future<String> runProcess(String cmd, List<String> args, {String? workingDir, bool captureOutput = false}) async {
   printOnFailure('Running: $cmd ${args.join(' ')} in $workingDir');
   final result = await Process.run(cmd, args, workingDirectory: workingDir);
 
@@ -44,13 +43,9 @@ Future<String> runProcess(String cmd, List<String> args,
 
 /// Strip changelog content for comparison by removing dynamic content like commit hashes and dates.
 String stripChangelog(String changelog) {
-  final commitLinkRegexp =
-      RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
-  final releasedOnLineRegexp = RegExp(
-      r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
-  return changelog
-      .replaceAll(commitLinkRegexp, '')
-      .replaceAll(releasedOnLineRegexp, '');
+  final commitLinkRegexp = RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');
+  final releasedOnLineRegexp = RegExp(r'Released on: \d{1,2}/\d{1,2}/\d{4}, changelog automatically generated.');
+  return changelog.replaceAll(commitLinkRegexp, '').replaceAll(releasedOnLineRegexp, '');
 }
 
 /// Remove sdkVersion from JSON metadata to ignore SDK version differences in tests.
@@ -86,10 +81,10 @@ class TestFixtures {
   final File expectedChangelogFile;
 
   TestFixtures()
-      : fixturesDir = Directory('test/fixtures'),
-        appV100Dir = Directory('test/fixtures/app_v100'),
-        appV101Dir = Directory('test/fixtures/app_v101'),
-        appV110Dir = Directory('test/fixtures/app_v110'),
-        appV200Dir = Directory('test/fixtures/app_v200'),
-        expectedChangelogFile = File('test/fixtures/expected_changelog.md');
+    : fixturesDir = Directory('test/fixtures'),
+      appV100Dir = Directory('test/fixtures/app_v100'),
+      appV101Dir = Directory('test/fixtures/app_v101'),
+      appV110Dir = Directory('test/fixtures/app_v110'),
+      appV200Dir = Directory('test/fixtures/app_v200'),
+      expectedChangelogFile = File('test/fixtures/expected_changelog.md');
 }

@@ -34,11 +34,12 @@ void main() {
     });
 
     Future<void> createTag(String tag) async {
-      final commitResult = await Process.run(
-        'git',
-        ['commit', '--allow-empty', '-m', tag],
-        workingDirectory: tempDir.path,
-      );
+      final commitResult = await Process.run('git', [
+        'commit',
+        '--allow-empty',
+        '-m',
+        tag,
+      ], workingDirectory: tempDir.path);
       expect(commitResult.exitCode, 0, reason: commitResult.stderr.toString());
       final tagResult = await Process.run('git', ['tag', tag], workingDirectory: tempDir.path);
       expect(tagResult.exitCode, 0, reason: tagResult.stderr.toString());
@@ -62,14 +63,7 @@ void main() {
     });
 
     test('starts pre-release for first pre-release bump', () async {
-      final next = await calculateNextVersion(
-        Version.parse('0.0.1'),
-        ApiChangeMagnitude.minor,
-        true,
-        tempDir,
-        'v',
-        '',
-      );
+      final next = await calculateNextVersion(Version.parse('0.0.1'), ApiChangeMagnitude.minor, true, tempDir, 'v', '');
 
       expect(next, '0.1.0-1');
     });
@@ -116,14 +110,7 @@ void main() {
     test('skips existing tags when choosing next pre-release', () async {
       await createTag('v0.1.0-1');
 
-      final next = await calculateNextVersion(
-        Version.parse('0.0.1'),
-        ApiChangeMagnitude.minor,
-        true,
-        tempDir,
-        'v',
-        '',
-      );
+      final next = await calculateNextVersion(Version.parse('0.0.1'), ApiChangeMagnitude.minor, true, tempDir, 'v', '');
 
       expect(next, '0.1.0-2');
     });

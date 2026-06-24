@@ -61,11 +61,7 @@ class DocComponent {
 
   factory DocComponent.fromJson(Map<String, dynamic> json) => _$DocComponentFromJson(json);
 
-  factory DocComponent.meta({
-    required String name,
-    required String description,
-    String? filePath,
-  }) {
+  factory DocComponent.meta({required String name, required String description, String? filePath}) {
     return DocComponent(
       name: name,
       type: DocComponentType.metaType,

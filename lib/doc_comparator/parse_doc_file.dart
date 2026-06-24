@@ -6,10 +6,7 @@ PackageApi parsePackageApiFile(String content) {
   final json = jsonDecode(content);
   if (json is List) {
     // Handle legacy format (List<DocComponent>)
-    return PackageApi(
-      metadata: PackageMetadata(),
-      components: json.map((e) => DocComponent.fromJson(e)).toList(),
-    );
+    return PackageApi(metadata: PackageMetadata(), components: json.map((e) => DocComponent.fromJson(e)).toList());
   }
   return PackageApi.fromJson(json);
 }

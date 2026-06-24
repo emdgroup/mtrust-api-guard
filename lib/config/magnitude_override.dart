@@ -5,12 +5,7 @@ class MagnitudeOverride {
   final OverrideSelection? selection;
   final String? description;
 
-  MagnitudeOverride({
-    required this.operations,
-    required this.magnitude,
-    this.selection,
-    this.description,
-  });
+  MagnitudeOverride({required this.operations, required this.magnitude, this.selection, this.description});
 
   factory MagnitudeOverride.fromMap(Map<String, dynamic> map) {
     var ops = OverrideSelection._parseListOrString(map['operation']);

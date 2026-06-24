@@ -14,17 +14,11 @@ class ApiChangeFormatter {
   ApiChangeFormatter(
     this.changes, {
     this.markdownHeaderLevel = 1,
-    this.magnitudes = const {
-      ApiChangeMagnitude.major,
-      ApiChangeMagnitude.minor,
-      ApiChangeMagnitude.patch,
-    },
+    this.magnitudes = const {ApiChangeMagnitude.major, ApiChangeMagnitude.minor, ApiChangeMagnitude.patch},
     this.fileUrlBuilder,
   });
 
-  bool get hasRelevantChanges => changes.any(
-        (changes) => magnitudes.contains(changes.getMagnitude()),
-      );
+  bool get hasRelevantChanges => changes.any((changes) => magnitudes.contains(changes.getMagnitude()));
 
   String get highestMagnitudeText => _getHighestMagnitudeText(getHighestMagnitude(changes));
 
@@ -41,9 +35,7 @@ class ApiChangeFormatter {
       changelogBuffer.writeln(_getMagnitudeHeader(magnitude));
 
       // Group by component and process them in alphabetical order
-      final componentChanges = _groupByComponent(
-        changesByMagnitude[magnitude]!,
-      );
+      final componentChanges = _groupByComponent(changesByMagnitude[magnitude]!);
       final sortedComponents = componentChanges.keys.toList()..sort();
       for (final component in sortedComponents) {
         final firstChange = componentChanges[component]!.first;
@@ -51,8 +43,9 @@ class ApiChangeFormatter {
         final typeLabel = componentObj.type.name.replaceAll("Type", "").toLowerCase();
         final filePath = componentObj.filePath;
 
-        final linkTarget =
-            (fileUrlBuilder != null && filePath != null) ? fileUrlBuilder!(filePath) ?? filePath : filePath;
+        final linkTarget = (fileUrlBuilder != null && filePath != null)
+            ? fileUrlBuilder!(filePath) ?? filePath
+            : filePath;
 
         changelogBuffer.writeln();
         changelogBuffer.writeln(
@@ -363,31 +356,29 @@ extension ApiChangeFormattingHelpers on List<ApiChange> {
   }
 
   String _formatChanges() {
-    return map(
-      (change) {
-        var changes = '';
-        if (change is PropertyApiChange) {
-          changes = "`" + change.property.name + "`";
-        } else if (change is MethodApiChange) {
-          changes = "`" + change.method.name + "`";
-          if (change.operation == ApiChangeOperation.typeChange) {
-            changes = "`" + change.method.name + "` " + _formatTypeChange(change.method.returnType, change.newType!);
-          }
-        } else if (change is ConstructorApiChange) {
-          changes = "`" + change.constructor.name + "`";
-        } else if (change is ComponentApiChange) {
-          changes = "`" + change.component.name + "`";
-        } else if (change is ParameterApiChange) {
-          changes = _formatParam(change.parameter);
-          if (change.operation == ApiChangeOperation.renaming) {
-            changes = "`" + change.oldName! + "` → `" + change.parameter.name + "`";
-          } else if (change.operation == ApiChangeOperation.typeChange) {
-            changes = "`" + change.parameter.name + "` " + _formatTypeChange(change.parameter.type, change.newType!);
-          }
+    return map((change) {
+      var changes = '';
+      if (change is PropertyApiChange) {
+        changes = "`${change.property.name}`";
+      } else if (change is MethodApiChange) {
+        changes = "`${change.method.name}`";
+        if (change.operation == ApiChangeOperation.typeChange) {
+          changes = "`${change.method.name}` ${_formatTypeChange(change.method.returnType, change.newType!)}";
         }
-        return changes;
-      },
-    ).join(', ');
+      } else if (change is ConstructorApiChange) {
+        changes = "`${change.constructor.name}`";
+      } else if (change is ComponentApiChange) {
+        changes = "`${change.component.name}`";
+      } else if (change is ParameterApiChange) {
+        changes = _formatParam(change.parameter);
+        if (change.operation == ApiChangeOperation.renaming) {
+          changes = "`${change.oldName!}` → `${change.parameter.name}`";
+        } else if (change.operation == ApiChangeOperation.typeChange) {
+          changes = "`${change.parameter.name}` ${_formatTypeChange(change.parameter.type, change.newType!)}";
+        }
+      }
+      return changes;
+    }).join(', ');
   }
 
   String _formatParam(DocParameter parameter) {

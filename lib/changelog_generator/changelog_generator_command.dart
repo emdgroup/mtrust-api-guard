@@ -25,19 +25,11 @@ class ChangelogGeneratorCommand extends Command
 
   @override
   String get usage {
-    return super.usage +
-        "\n\n"
-            "Generates a changelog entry based on API changes between versions and updates CHANGELOG.md.\n"
-            "Uses the current package version from pubspec.yaml.\n";
+    return "${super.usage}\n\nGenerates a changelog entry based on API changes between versions and updates CHANGELOG.md.\nUses the current package version from pubspec.yaml.\n";
   }
 
   ChangelogGeneratorCommand._internal() {
-    argParser.addFlag(
-      'update',
-      abbr: 'u',
-      help: 'Update the CHANGELOG.md file',
-      defaultsTo: true,
-    );
+    argParser.addFlag('update', abbr: 'u', help: 'Update the CHANGELOG.md file', defaultsTo: true);
   }
 
   bool get update {

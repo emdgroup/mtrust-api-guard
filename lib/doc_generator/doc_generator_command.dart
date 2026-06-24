@@ -28,10 +28,7 @@ class DocGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, Api
     }
 
     if (!argParser.hasOptionWithKey('out')) {
-      argParser.addOption(
-        'out',
-        help: 'Write the generated documentation to a file',
-      );
+      argParser.addOption('out', help: 'Write the generated documentation to a file');
     }
 
     return argParser;
@@ -57,12 +54,6 @@ class DocGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, Api
       logger.info(argParser.usage);
       return null;
     }
-    generateDocs(
-      gitRef: ref,
-      out: out,
-      dartRoot: root,
-      gitRoot: Directory.current,
-      shouldCache: cache,
-    );
+    generateDocs(gitRef: ref, out: out, dartRoot: root, gitRoot: Directory.current, shouldCache: cache);
   }
 }

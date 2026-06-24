@@ -9,10 +9,7 @@ class WorkspaceInfo {
   final Directory root;
   final List<String> memberPaths;
 
-  WorkspaceInfo({
-    required this.root,
-    required this.memberPaths,
-  });
+  WorkspaceInfo({required this.root, required this.memberPaths});
 }
 
 class WorkspacePackage {
@@ -20,11 +17,7 @@ class WorkspacePackage {
   final Directory directory;
   final String relativePath;
 
-  WorkspacePackage({
-    required this.name,
-    required this.directory,
-    required this.relativePath,
-  });
+  WorkspacePackage({required this.name, required this.directory, required this.relativePath});
 }
 
 /// Detects if the given directory is a Dart workspace root
@@ -59,10 +52,7 @@ WorkspaceInfo? detectWorkspace(Directory root) {
       return null;
     }
 
-    return WorkspaceInfo(
-      root: root,
-      memberPaths: memberPaths,
-    );
+    return WorkspaceInfo(root: root, memberPaths: memberPaths);
   } catch (e) {
     logger.detail('Error detecting workspace: $e');
     return null;
@@ -75,8 +65,9 @@ List<WorkspacePackage> getWorkspacePackages(WorkspaceInfo workspace) {
 
   for (final memberPath in workspace.memberPaths) {
     // Resolve path relative to workspace root
-    final packageDir =
-        path.isAbsolute(memberPath) ? Directory(memberPath) : Directory(path.join(workspace.root.path, memberPath));
+    final packageDir = path.isAbsolute(memberPath)
+        ? Directory(memberPath)
+        : Directory(path.join(workspace.root.path, memberPath));
 
     if (!packageDir.existsSync()) {
       logger.warn('Workspace member path does not exist: ${packageDir.path}');
@@ -94,11 +85,7 @@ List<WorkspacePackage> getWorkspacePackages(WorkspaceInfo workspace) {
       final packageName = PubspecUtils.getPackageName(pubspecContent);
       final relativePath = path.relative(packageDir.path, from: workspace.root.path);
 
-      packages.add(WorkspacePackage(
-        name: packageName,
-        directory: packageDir,
-        relativePath: relativePath,
-      ));
+      packages.add(WorkspacePackage(name: packageName, directory: packageDir, relativePath: relativePath));
     } catch (e) {
       logger.warn('Error reading package name from ${packageDir.path}: $e');
       continue;
@@ -109,25 +96,16 @@ List<WorkspacePackage> getWorkspacePackages(WorkspaceInfo workspace) {
 }
 
 /// Checks if a package directory has changes between two git refs
-Future<bool> packageHasChanges(
-  String packagePath,
-  String baseRef,
-  String newRef,
-  Directory gitRoot,
-) async {
+Future<bool> packageHasChanges(String packagePath, String baseRef, String newRef, Directory gitRoot) async {
   try {
     // Use git diff to check if any files in the package directory changed
-    final result = await Process.run(
-      'git',
-      [
-        'diff',
-        '--name-only',
-        '$baseRef..$newRef',
-        '--',
-        packagePath,
-      ],
-      workingDirectory: gitRoot.path,
-    );
+    final result = await Process.run('git', [
+      'diff',
+      '--name-only',
+      '$baseRef..$newRef',
+      '--',
+      packagePath,
+    ], workingDirectory: gitRoot.path);
 
     if (result.exitCode != 0) {
       logger.warn('Git diff failed for package $packagePath: ${result.stderr}');

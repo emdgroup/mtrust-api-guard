@@ -5,6 +5,7 @@
 - Upgrade `analyzer` to ^13.3.0 and migrate doc generator to stabilized element model APIs
 - Raise minimum Dart SDK to `>=3.11.0`
 - Upgrade `build_runner`, `json_serializable`, `build`, and related dev dependencies
+- Upgrade `flutter_lints` to ^6.0.0 and fix new lint diagnostics
 - Remove unused direct dependencies: `code_builder`, `dart_style`
 
 ## 6.0.7

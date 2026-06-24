@@ -45,12 +45,7 @@ class Cache {
   }
 
   /// Stores API documentation for a specific git ref and dart root
-  Future<void> storeApiFile(
-    String repoPath,
-    String ref,
-    String dartRelativePath,
-    String content,
-  ) async {
+  Future<void> storeApiFile(String repoPath, String ref, String dartRelativePath, String content) async {
     final repoCacheDir = getRepositoryCacheDir(repoPath);
     if (!repoCacheDir.existsSync()) {
       repoCacheDir.createSync(recursive: true);
@@ -66,11 +61,7 @@ class Cache {
   }
 
   /// Retrieves API documentation for a specific git ref and dart root
-  Future<String?> retrieveApiFile(
-    String repoPath,
-    String ref,
-    String dartRelativePath,
-  ) async {
+  Future<String?> retrieveApiFile(String repoPath, String ref, String dartRelativePath) async {
     final apiFile = getApiFileForRef(repoPath, ref, dartRelativePath);
     if (apiFile.existsSync()) {
       return await apiFile.readAsString();

@@ -111,8 +111,11 @@ void main() {
 
       // 6. Verify that no output file was created since only patch changes exist
       final outputFile = File(compareOutputFile);
-      expect(outputFile.existsSync(), isFalse,
-          reason: 'Output file should not be created when no relevant changes exist');
+      expect(
+        outputFile.existsSync(),
+        isFalse,
+        reason: 'Output file should not be created when no relevant changes exist',
+      );
 
       // 7. Run compare command with all magnitudes to verify changes do exist
       final compareOutputFileAll = p.join(testSetup.tempDir.path, 'compare_output_all.txt');

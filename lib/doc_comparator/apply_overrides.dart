@@ -9,9 +9,7 @@ void applyMagnitudeOverrides(List<ApiChange> changes, ApiGuardConfig config) {
   for (final change in changes) {
     for (final override in config.magnitudeOverrides) {
       if (_matches(override, change)) {
-        final magnitude = ApiChangeMagnitude.values.firstWhereOrNull(
-          (e) => e.name == override.magnitude,
-        );
+        final magnitude = ApiChangeMagnitude.values.firstWhereOrNull((e) => e.name == override.magnitude);
         if (magnitude != null) {
           final originalMagnitude = change.getMagnitude();
           change.overrideMagnitude(magnitude);
@@ -66,9 +64,7 @@ bool _matchesSelection(OverrideSelection selection, _SelectionContext context) {
       if (!regex.hasMatch(context.name)) return false;
     } on FormatException catch (e) {
       // Provide a clearer error message when an invalid regex pattern is configured.
-      throw FormatException(
-        'Invalid namePattern regex "${selection.namePattern}": ${e.message}',
-      );
+      throw FormatException('Invalid namePattern regex "${selection.namePattern}": ${e.message}');
     }
   }
 
