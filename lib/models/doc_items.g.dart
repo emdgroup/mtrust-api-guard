@@ -7,47 +7,52 @@ part of 'doc_items.dart';
 // **************************************************************************
 
 DocComponent _$DocComponentFromJson(Map<String, dynamic> json) => DocComponent(
-      name: json['name'] as String,
-      description: json['description'] as String,
-      constructors: (json['constructors'] as List<dynamic>)
-          .map((e) => DocConstructor.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      properties: (json['properties'] as List<dynamic>)
-          .map((e) => DocProperty.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      methods: (json['methods'] as List<dynamic>)
-          .map((e) => DocMethod.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      filePath: json['filePath'] as String?,
-      entryPoint: json['entryPoint'] as String?,
-      type: $enumDecodeNullable(_$DocComponentTypeEnumMap, json['type']) ??
-          DocComponentType.classType,
-      aliasedType: json['aliasedType'] as String?,
-      annotations: (json['annotations'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      superClasses: (json['superClasses'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      superClassPackages: (json['superClassPackages'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      interfaces: (json['interfaces'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      mixins: (json['mixins'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      typeParameters: (json['typeParameters'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-    );
+  name: json['name'] as String,
+  description: json['description'] as String,
+  constructors: (json['constructors'] as List<dynamic>)
+      .map((e) => DocConstructor.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  properties: (json['properties'] as List<dynamic>)
+      .map((e) => DocProperty.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  methods: (json['methods'] as List<dynamic>)
+      .map((e) => DocMethod.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  filePath: json['filePath'] as String?,
+  entryPoint: json['entryPoint'] as String?,
+  type:
+      $enumDecodeNullable(_$DocComponentTypeEnumMap, json['type']) ??
+      DocComponentType.classType,
+  aliasedType: json['aliasedType'] as String?,
+  annotations:
+      (json['annotations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  superClasses:
+      (json['superClasses'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  superClassPackages:
+      (json['superClassPackages'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  interfaces:
+      (json['interfaces'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  mixins:
+      (json['mixins'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  typeParameters:
+      (json['typeParameters'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$DocComponentToJson(DocComponent instance) =>
     <String, dynamic>{
@@ -79,16 +84,18 @@ const _$DocComponentTypeEnumMap = {
 };
 
 DocProperty _$DocPropertyFromJson(Map<String, dynamic> json) => DocProperty(
-      name: json['name'] as String,
-      type: DocType.fromJson(json['type'] as Map<String, dynamic>),
-      description: json['description'] as String,
-      features:
-          (json['features'] as List<dynamic>).map((e) => e as String).toList(),
-      annotations: (json['annotations'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-    );
+  name: json['name'] as String,
+  type: DocType.fromJson(json['type'] as Map<String, dynamic>),
+  description: json['description'] as String,
+  features: (json['features'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+  annotations:
+      (json['annotations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$DocPropertyToJson(DocProperty instance) =>
     <String, dynamic>{
@@ -105,9 +112,11 @@ DocConstructor _$DocConstructorFromJson(Map<String, dynamic> json) =>
       signature: (json['signature'] as List<dynamic>)
           .map((e) => DocParameter.fromJson(e as Map<String, dynamic>))
           .toList(),
-      features:
-          (json['features'] as List<dynamic>).map((e) => e as String).toList(),
-      annotations: (json['annotations'] as List<dynamic>?)
+      features: (json['features'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      annotations:
+          (json['annotations'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           const [],
@@ -122,17 +131,18 @@ Map<String, dynamic> _$DocConstructorToJson(DocConstructor instance) =>
     };
 
 DocParameter _$DocParameterFromJson(Map<String, dynamic> json) => DocParameter(
-      name: json['name'] as String,
-      type: DocType.fromJson(json['type'] as Map<String, dynamic>),
-      description: json['description'] as String,
-      named: json['named'] as bool,
-      required: json['required'] as bool,
-      defaultValue: json['defaultValue'] as String?,
-      annotations: (json['annotations'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-    );
+  name: json['name'] as String,
+  type: DocType.fromJson(json['type'] as Map<String, dynamic>),
+  description: json['description'] as String,
+  named: json['named'] as bool,
+  required: json['required'] as bool,
+  defaultValue: json['defaultValue'] as String?,
+  annotations:
+      (json['annotations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
     <String, dynamic>{
@@ -146,30 +156,33 @@ Map<String, dynamic> _$DocParameterToJson(DocParameter instance) =>
     };
 
 DocMethod _$DocMethodFromJson(Map<String, dynamic> json) => DocMethod(
-      name: json['name'] as String,
-      returnType: DocType.fromJson(json['returnType'] as Map<String, dynamic>),
-      signature: (json['signature'] as List<dynamic>)
-          .map((e) => DocParameter.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      features:
-          (json['features'] as List<dynamic>).map((e) => e as String).toList(),
-      description: json['description'] as String,
-      annotations: (json['annotations'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-      typeParameters: (json['typeParameters'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
-    );
+  name: json['name'] as String,
+  returnType: DocType.fromJson(json['returnType'] as Map<String, dynamic>),
+  signature: (json['signature'] as List<dynamic>)
+      .map((e) => DocParameter.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  features: (json['features'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+  description: json['description'] as String,
+  annotations:
+      (json['annotations'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+  typeParameters:
+      (json['typeParameters'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$DocMethodToJson(DocMethod instance) => <String, dynamic>{
-      'name': instance.name,
-      'returnType': instance.returnType,
-      'signature': instance.signature,
-      'features': instance.features,
-      'description': instance.description,
-      'annotations': instance.annotations,
-      'typeParameters': instance.typeParameters,
-    };
+  'name': instance.name,
+  'returnType': instance.returnType,
+  'signature': instance.signature,
+  'features': instance.features,
+  'description': instance.description,
+  'annotations': instance.annotations,
+  'typeParameters': instance.typeParameters,
+};

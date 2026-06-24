@@ -1,12 +1,10 @@
-// ignore_for_file: experimental_member_use
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
@@ -257,7 +255,7 @@ Future<PackageApi> generateDocs({
     final normalizedRoot = normalize(absolute(analysisDartRoot.path));
 
     // Recursive visitor function
-    void visitLibraryRecursive(LibraryElement2 library, String entryPoint) {
+    void visitLibraryRecursive(LibraryElement library, String entryPoint) {
       if (visitedLibraries.contains(library.uri.toString())) return;
       visitedLibraries.add(library.uri.toString());
 
@@ -292,10 +290,10 @@ Future<PackageApi> generateDocs({
         filePath: filePath,
         entryPoint: entryPoint,
       );
-      library.accept2(visitor);
+      library.accept(visitor);
       classes.addAll(visitor.components);
 
-      for (final exported in library.exportedLibraries2) {
+      for (final exported in library.exportedLibraries) {
         // Only follow re-exports from within the host package.
         // External packages (e.g. patrol, flutter) may themselves re-export
         // large transitive graphs (vector_math, dart:ui, etc.) — we don't
@@ -318,7 +316,7 @@ Future<PackageApi> generateDocs({
 
         if (useRecursiveAnalysis) {
           visitLibraryRecursive(
-            libraryResult.element2,
+            libraryResult.element,
             relative(file, from: normalizedRoot),
           );
         } else {
@@ -333,7 +331,7 @@ Future<PackageApi> generateDocs({
               from: contextCollection.contextFor(file).contextRoot.root.path,
             ),
           );
-          libraryResult.element2.accept2(visitor);
+          libraryResult.element.accept(visitor);
           classes.addAll(visitor.components);
         }
       } catch (e) {
