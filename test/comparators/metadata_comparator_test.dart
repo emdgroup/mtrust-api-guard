@@ -12,9 +12,7 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(1));
-        final minIncrease = changes.firstWhere(
-          (c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease,
-        );
+        final minIncrease = changes.firstWhere((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease);
         expect(minIncrease.getMagnitude(), ApiChangeMagnitude.major);
         expect(minIncrease.changedValue, contains('^3.0.0'));
         expect(minIncrease.changedValue, contains('^2.0.0'));
@@ -27,9 +25,7 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(1));
-        final minIncrease = changes.firstWhere(
-          (c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease,
-        );
+        final minIncrease = changes.firstWhere((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease);
         expect(minIncrease.getMagnitude(), ApiChangeMagnitude.major);
       });
 
@@ -40,9 +36,7 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(1));
-        final minDecrease = changes.firstWhere(
-          (c) => c.operation == ApiChangeOperation.minDartSdkVersionDecrease,
-        );
+        final minDecrease = changes.firstWhere((c) => c.operation == ApiChangeOperation.minDartSdkVersionDecrease);
         expect(minDecrease.getMagnitude(), ApiChangeMagnitude.patch);
       });
 
@@ -98,14 +92,8 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes, hasLength(2));
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.maxDartSdkVersionIncrease),
-          isTrue,
-        );
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.maxDartSdkVersionIncrease), isTrue);
       });
 
       test('exact version constraint change', () {
@@ -115,14 +103,8 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes, hasLength(2));
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.maxDartSdkVersionIncrease),
-          isTrue,
-        );
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.maxDartSdkVersionIncrease), isTrue);
       });
 
       test('no change when versions are identical', () {
@@ -163,9 +145,7 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(1));
-        final minIncrease = changes.firstWhere(
-          (c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease,
-        );
+        final minIncrease = changes.firstWhere((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease);
         expect(minIncrease.getMagnitude(), ApiChangeMagnitude.major);
       });
 
@@ -176,9 +156,7 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(1));
-        final minDecrease = changes.firstWhere(
-          (c) => c.operation == ApiChangeOperation.minFlutterSdkVersionDecrease,
-        );
+        final minDecrease = changes.firstWhere((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionDecrease);
         expect(minDecrease.getMagnitude(), ApiChangeMagnitude.patch);
       });
 
@@ -233,14 +211,8 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes, hasLength(2));
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.maxFlutterSdkVersionIncrease),
-          isTrue,
-        );
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.maxFlutterSdkVersionIncrease), isTrue);
       });
 
       test('exact version constraint change', () {
@@ -250,14 +222,8 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes, hasLength(2));
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.maxFlutterSdkVersionIncrease),
-          isTrue,
-        );
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.maxFlutterSdkVersionIncrease), isTrue);
       });
 
       test('no change when versions are identical', () {
@@ -292,12 +258,8 @@ void main() {
 
     group('Android Constraint Tests', () {
       test('version increase creates major change', () {
-        final oldMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
-        final newMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 24),
-        );
+        final oldMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
+        final newMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 24));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -309,12 +271,8 @@ void main() {
       });
 
       test('version decrease creates patch change', () {
-        final oldMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 24),
-        );
-        final newMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
+        final oldMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 24));
+        final newMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -325,9 +283,7 @@ void main() {
 
       test('adding constraint from null creates major change', () {
         final oldMeta = PackageMetadata(androidConstraints: null);
-        final newMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
+        final newMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -339,9 +295,7 @@ void main() {
       });
 
       test('removing constraint to null creates patch change', () {
-        final oldMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
+        final oldMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
         final newMeta = PackageMetadata(androidConstraints: null);
 
         final changes = oldMeta.compareTo(newMeta);
@@ -354,12 +308,8 @@ void main() {
       });
 
       test('no change when versions are identical', () {
-        final oldMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
-        final newMeta = PackageMetadata(
-          androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21),
-        );
+        final oldMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
+        final newMeta = PackageMetadata(androidConstraints: AndroidPlatformConstraints(minSdkVersion: 21));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -400,12 +350,8 @@ void main() {
 
     group('iOS Constraint Tests', () {
       test('version increase creates major change', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 13.0),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 13.0));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -417,12 +363,8 @@ void main() {
       });
 
       test('version decrease creates patch change', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 13.0),
-        );
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 13.0));
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -433,9 +375,7 @@ void main() {
 
       test('adding constraint from null creates major change', () {
         final oldMeta = PackageMetadata(iosConstraints: null);
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -447,9 +387,7 @@ void main() {
       });
 
       test('removing constraint to null creates patch change', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
         final newMeta = PackageMetadata(iosConstraints: null);
 
         final changes = oldMeta.compareTo(newMeta);
@@ -462,12 +400,8 @@ void main() {
       });
 
       test('no change when versions are identical', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.0));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -484,12 +418,8 @@ void main() {
       });
 
       test('decimal version changes are detected correctly', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.1),
-        );
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.2),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.1));
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.2));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -499,12 +429,8 @@ void main() {
       });
 
       test('decimal version decrease is detected correctly', () {
-        final oldMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.2),
-        );
-        final newMeta = PackageMetadata(
-          iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.1),
-        );
+        final oldMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.2));
+        final newMeta = PackageMetadata(iosConstraints: IOSPlatformConstraints(minimumOsVersion: 12.1));
 
         final changes = oldMeta.compareTo(newMeta);
 
@@ -532,22 +458,10 @@ void main() {
         final changes = oldMeta.compareTo(newMeta);
 
         expect(changes.length, greaterThanOrEqualTo(4));
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minAndroidSdkVersionIncrease),
-          isTrue,
-        );
-        expect(
-          changes.any((c) => c.operation == ApiChangeOperation.minIosSdkVersionIncrease),
-          isTrue,
-        );
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minDartSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minFlutterSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minAndroidSdkVersionIncrease), isTrue);
+        expect(changes.any((c) => c.operation == ApiChangeOperation.minIosSdkVersionIncrease), isTrue);
       });
     });
   });

@@ -58,11 +58,7 @@ class PubspecUtils {
 
   /// Updates a workspace dependency version while maintaining constraint format
   /// Updates both dependencies and dev_dependencies sections
-  static Future<void> updateWorkspaceDependency(
-    File pubspec,
-    String packageName,
-    Version newVersion,
-  ) async {
+  static Future<void> updateWorkspaceDependency(File pubspec, String packageName, Version newVersion) async {
     final pubspecEditor = await _getPubspec(pubspec.path);
     final pubspecContent = await pubspec.readAsString();
     final pubspecYaml = loadYaml(pubspecContent) as Map;

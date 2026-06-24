@@ -44,16 +44,14 @@ Set<String> detectTargetFiles(String root) {
 
   if (include is YamlList) {
     for (final item in include) {
-      targetFiles.addAll(
-          Glob(item).listSync(root: root).map((e) => normalize(e.path)));
+      targetFiles.addAll(Glob(item).listSync(root: root).map((e) => normalize(e.path)));
     }
   }
 
   // Include parameter is a single string
 
   if (include is String) {
-    targetFiles.addAll(
-        Glob(include).listSync(root: root).map((e) => normalize(e.path)));
+    targetFiles.addAll(Glob(include).listSync(root: root).map((e) => normalize(e.path)));
   }
 
   return targetFiles;

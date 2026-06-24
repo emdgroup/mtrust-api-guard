@@ -75,7 +75,8 @@ class ApiGuardConfig {
       return ApiGuardConfig.defaultConfig();
     }
 
-    final magnitudeOverrides = (apiGuard['magnitude_overrides'] as YamlList?)
+    final magnitudeOverrides =
+        (apiGuard['magnitude_overrides'] as YamlList?)
             ?.map((e) => MagnitudeOverride.fromMap(Map<String, dynamic>.from(e as Map)))
             .toList() ??
         [];

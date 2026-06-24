@@ -20,9 +20,7 @@ Future<List<ApiChange>> compare({
   final baseApi = await getRef(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
   final newApi = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
 
-  final apiChanges = baseApi.components.compareTo(
-    newApi.components,
-  );
+  final apiChanges = baseApi.components.compareTo(newApi.components);
 
   apiChanges.addAll(baseApi.metadata.compareTo(newApi.metadata));
 

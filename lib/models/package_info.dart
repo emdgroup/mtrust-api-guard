@@ -8,10 +8,7 @@ class PackageApi {
   final PackageMetadata metadata;
   final List<DocComponent> components;
 
-  PackageApi({
-    required this.metadata,
-    required this.components,
-  });
+  PackageApi({required this.metadata, required this.components});
 
   factory PackageApi.fromJson(Map<String, dynamic> json) => _$PackageApiFromJson(json);
   Map<String, dynamic> toJson() => _$PackageApiToJson(this);
@@ -46,10 +43,7 @@ class PackageDependency {
   final String packageName;
   final String? packageVersion;
 
-  PackageDependency({
-    required this.packageName,
-    this.packageVersion,
-  });
+  PackageDependency({required this.packageName, this.packageVersion});
 
   factory PackageDependency.fromJson(Map<String, dynamic> json) => _$PackageDependencyFromJson(json);
   Map<String, dynamic> toJson() => _$PackageDependencyToJson(this);
@@ -61,11 +55,7 @@ class AndroidPlatformConstraints {
   final int? compileSdkVersion;
   final int? targetSdkVersion;
 
-  AndroidPlatformConstraints({
-    this.minSdkVersion,
-    this.compileSdkVersion,
-    this.targetSdkVersion,
-  });
+  AndroidPlatformConstraints({this.minSdkVersion, this.compileSdkVersion, this.targetSdkVersion});
 
   factory AndroidPlatformConstraints.fromJson(Map<String, dynamic> json) => _$AndroidPlatformConstraintsFromJson(json);
   Map<String, dynamic> toJson() => _$AndroidPlatformConstraintsToJson(this);
@@ -75,9 +65,7 @@ class AndroidPlatformConstraints {
 class IOSPlatformConstraints {
   final num? minimumOsVersion;
 
-  IOSPlatformConstraints({
-    this.minimumOsVersion,
-  });
+  IOSPlatformConstraints({this.minimumOsVersion});
 
   factory IOSPlatformConstraints.fromJson(Map<String, dynamic> json) => _$IOSPlatformConstraintsFromJson(json);
   Map<String, dynamic> toJson() => _$IOSPlatformConstraintsToJson(this);

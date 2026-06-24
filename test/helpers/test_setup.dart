@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:yaml/yaml.dart';
 
+import 'test_bootstrap.dart';
 import 'test_helpers.dart';
 
 /// Helper class for managing test setup and teardown.
@@ -17,18 +18,18 @@ class TestSetup {
 
   /// Set up the test environment with a temporary directory.
   Future<void> setUp() async {
+    await TestBootstrap.ensureReady();
+
     tempDir = await Directory.systemTemp.createTemp('api_guard_test_');
     tempDir = Directory(p.join(tempDir.path, 'api_guard_test'));
     if (tempDir.existsSync()) {
       await tempDir.delete(recursive: true); // Ensure a clean state
     }
     await tempDir.create();
-    
+
     // Create a unique cache directory for this test
     cacheDir = Directory(p.join(tempDir.path, 'cache'));
     await cacheDir.create(recursive: true);
-    
-    await runApiGuard('cache', ['--clear']); // Clear cache before each test
   }
 
   /// Clean up the test environment.
@@ -42,32 +43,22 @@ class TestSetup {
     try {
       await runProcess('git', ['remote', 'get-url', 'origin'], workingDir: tempDir.path);
     } catch (_) {
-      await runProcess(
-        'git',
-        ['remote', 'add', 'origin', 'https://github.com/emdgroup/mtrust-api-guard.git'],
-        workingDir: tempDir.path,
-      );
+      await runProcess('git', [
+        'remote',
+        'add',
+        'origin',
+        'https://github.com/emdgroup/mtrust-api-guard.git',
+      ], workingDir: tempDir.path);
     }
-    await runProcess(
-      'git',
-      ['config', 'user.email', TestConstants.testEmail],
-      workingDir: tempDir.path,
-    );
-    await runProcess(
-      'git',
-      ['config', 'user.name', TestConstants.testUser],
-      workingDir: tempDir.path,
-    );
+    await runProcess('git', ['config', 'user.email', TestConstants.testEmail], workingDir: tempDir.path);
+    await runProcess('git', ['config', 'user.name', TestConstants.testUser], workingDir: tempDir.path);
   }
 
   /// Set version in pubspec.yaml.
   void setVersion(String version) {
     final yaml = File(p.join(tempDir.path, 'pubspec.yaml'));
     yaml.writeAsStringSync(
-      yaml.readAsStringSync().replaceFirst(
-            RegExp(r'version: \d+\.\d+\.\d+'),
-            'version: $version',
-          ),
+      yaml.readAsStringSync().replaceFirst(RegExp(r'version: \d+\.\d+\.\d+'), 'version: $version'),
     );
   }
 
@@ -86,16 +77,24 @@ class TestSetup {
 
   /// Run the API Guard command and handle output.
   Future<void> runApiGuard(String command, List<String> args) async {
+    final (executable, prefixArgs) = TestBootstrap.resolveApiGuardInvocation();
+    final invocationArgs = [...prefixArgs, command, ...args];
+
     printOnFailure('Running API Guard: $command ${args.join(' ')} on ${tempDir.path}');
-    printOnFailure("dart ${rootDir.path}/bin/mtrust_api_guard.dart $command ${args.join(' ')}");
+    printOnFailure('$executable ${invocationArgs.join(' ')}');
 
     // Set the cache directory environment variable for this test
     final environment = Map<String, String>.from(Platform.environment);
     environment['MTRUST_API_GUARD_CACHE_DIR'] = cacheDir.path;
 
+    final sdkPath = TestBootstrap.dartSdkPath;
+    if (sdkPath != null) {
+      environment['DART_SDK'] = sdkPath;
+    }
+
     final result = await Process.run(
-      'dart',
-      ["${rootDir.path}/bin/mtrust_api_guard.dart", command, ...args],
+      executable,
+      invocationArgs,
       workingDirectory: tempDir.path,
       environment: environment,
     );
@@ -132,36 +131,13 @@ class TestSetup {
     }
   }
 
-  Future<void> _clearDir(String dirName) async {
-    final dir = Directory(p.join(tempDir.path, dirName));
-    if (dir.existsSync()) {
-      await dir.delete(recursive: true);
-      await dir.create();
-    }
-  }
-
   /// Set up a Flutter package in the test directory.
   Future<void> setupFlutterPackage() async {
-    await runProcess(
-      'flutter',
-      ['create', '.', '--template', 'package', '--project-name', 'api_guard_test'],
-      workingDir: tempDir.path,
-    );
-
-    // remove the contents of lib/ and test/ directories
-    await _clearDir('lib');
-    await _clearDir('test');
+    await copyDir(fixtures.packageBaseDir, tempDir);
   }
 
   /// Set up a Flutter plugin in the test directory.
   Future<void> setupFlutterPlugin() async {
-    await runProcess(
-      'flutter',
-      ['create', '.', '--template', 'plugin', '--project-name', 'api_guard_test'],
-      workingDir: tempDir.path,
-    );
-    // remove the contents of lib/ and test/ directories
-    await _clearDir('lib');
-    await _clearDir('test');
+    await copyDir(fixtures.pluginBaseDir, tempDir);
   }
 }

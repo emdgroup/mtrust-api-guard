@@ -32,14 +32,8 @@ class DocComparatorCommand extends Command
       defaultsTo: ['major', 'minor', 'patch'],
       allowed: ['major', 'minor', 'patch'],
     );
-    argParser.addOption(
-      'out',
-      help: 'Write the comparison results to a file',
-    );
-    argParser.addOption(
-      'base-url',
-      help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)',
-    );
+    argParser.addOption('out', help: 'Write the comparison results to a file');
+    argParser.addOption('base-url', help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)');
   }
 
   String? get out {
@@ -53,9 +47,7 @@ class DocComparatorCommand extends Command
   Set<ApiChangeMagnitude> get magnitudes {
     final magnitudes = argResults?['magnitudes'] as List<String>;
     return magnitudes
-        .map((e) => ApiChangeMagnitude.values.firstWhereOrNull(
-              (element) => element.toString().contains(e),
-            ))
+        .map((e) => ApiChangeMagnitude.values.firstWhereOrNull((element) => element.toString().contains(e)))
         .whereType<ApiChangeMagnitude>()
         .toSet();
   }
@@ -74,10 +66,7 @@ class DocComparatorCommand extends Command
     final config = ApiGuardConfig.load(root);
     applyMagnitudeOverrides(changes, config);
 
-    final formatter = ApiChangeFormatter(
-      changes,
-      magnitudes: magnitudes,
-    );
+    final formatter = ApiChangeFormatter(changes, magnitudes: magnitudes);
 
     if (!formatter.hasRelevantChanges) {
       logger.info('No relevant changes detected');

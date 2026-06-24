@@ -77,9 +77,7 @@ Set<String> detectExclusionsFromConfig(String root) {
     final exclusions = <String>{};
     for (final item in apiGuard) {
       if (item is String) {
-        exclusions.addAll(
-          Glob(item).listSync().map((e) => normalize(e.path)),
-        );
+        exclusions.addAll(Glob(item).listSync().map((e) => normalize(e.path)));
       }
     }
     return exclusions;

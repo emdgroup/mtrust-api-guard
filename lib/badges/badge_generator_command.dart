@@ -20,11 +20,7 @@ class BadgeGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot {
     final argParser = super.argParser;
 
     if (!argParser.hasOptionWithKey('out')) {
-      argParser.addOption(
-        'out',
-        defaultsTo: 'version_badge.svg',
-        help: 'Write the generated badge to a file',
-      );
+      argParser.addOption('out', defaultsTo: 'version_badge.svg', help: 'Write the generated badge to a file');
     }
 
     return argParser;

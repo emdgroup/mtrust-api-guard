@@ -55,18 +55,10 @@ PropertyApiChange _propertyChange(DocComponent component) {
 }
 
 ApiGuardConfig _config(List<MagnitudeOverride> overrides) {
-  return ApiGuardConfig(
-    include: {'lib/**.dart'},
-    exclude: {},
-    generateBadge: false,
-    magnitudeOverrides: overrides,
-  );
+  return ApiGuardConfig(include: {'lib/**.dart'}, exclude: {}, generateBadge: false, magnitudeOverrides: overrides);
 }
 
-MagnitudeOverride _fromPackageOverride(
-  List<String> packages, {
-  String magnitude = 'ignore',
-}) {
+MagnitudeOverride _fromPackageOverride(List<String> packages, {String magnitude = 'ignore'}) {
   return MagnitudeOverride(
     operations: ['*'],
     magnitude: magnitude,
@@ -88,7 +80,7 @@ void main() {
         );
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['patrol'])
+          _fromPackageOverride(['patrol']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -97,12 +89,10 @@ void main() {
       });
 
       test('matches when filePath has multiple path segments in the package', () {
-        final component = _component(
-          filePath: 'package:some_pkg/src/deep/nested/file.dart',
-        );
+        final component = _component(filePath: 'package:some_pkg/src/deep/nested/file.dart');
         final change = _componentChange(component);
         final config = _config([
-          _fromPackageOverride(['some_pkg'])
+          _fromPackageOverride(['some_pkg']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -111,12 +101,10 @@ void main() {
       });
 
       test('does NOT match a different package name', () {
-        final component = _component(
-          filePath: 'package:patrol/src/platform/contracts/contracts.dart',
-        );
+        final component = _component(filePath: 'package:patrol/src/platform/contracts/contracts.dart');
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['other_package'])
+          _fromPackageOverride(['other_package']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -126,12 +114,10 @@ void main() {
       });
 
       test('does NOT match a component with a relative (project-owned) filePath', () {
-        final component = _component(
-          filePath: 'lib/src/my_class.dart',
-        );
+        final component = _component(filePath: 'lib/src/my_class.dart');
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['patrol'])
+          _fromPackageOverride(['patrol']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -143,7 +129,7 @@ void main() {
         final component = _component(filePath: null);
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['patrol'])
+          _fromPackageOverride(['patrol']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -152,12 +138,10 @@ void main() {
       });
 
       test('matches any of multiple packages listed', () {
-        final component = _component(
-          filePath: 'package:patrol_finders/src/finder.dart',
-        );
+        final component = _component(filePath: 'package:patrol_finders/src/finder.dart');
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['patrol', 'patrol_finders'])
+          _fromPackageOverride(['patrol', 'patrol_finders']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -166,12 +150,10 @@ void main() {
       });
 
       test('can downgrade (not just ignore) a change from an external package', () {
-        final component = _component(
-          filePath: 'package:patrol/src/platform/contracts/contracts.dart',
-        );
+        final component = _component(filePath: 'package:patrol/src/platform/contracts/contracts.dart');
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['patrol'], magnitude: 'patch')
+          _fromPackageOverride(['patrol'], magnitude: 'patch'),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -192,9 +174,7 @@ void main() {
         final override = MagnitudeOverride(
           operations: ['*'],
           magnitude: 'ignore',
-          selection: OverrideSelection(
-            enclosing: OverrideSelection(fromPackage: ['patrol']),
-          ),
+          selection: OverrideSelection(enclosing: OverrideSelection(fromPackage: ['patrol'])),
         );
         final config = _config([override]);
 
@@ -213,7 +193,7 @@ void main() {
         );
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
-          _fromPackageOverride(['flutter'])
+          _fromPackageOverride(['flutter']),
         ]);
 
         applyMagnitudeOverrides([change], config);
@@ -235,9 +215,7 @@ void main() {
       });
 
       test('first matching override wins, subsequent overrides are skipped', () {
-        final component = _component(
-          filePath: 'package:patrol/src/contracts.dart',
-        );
+        final component = _component(filePath: 'package:patrol/src/contracts.dart');
         final change = _componentChange(component, operation: ApiChangeOperation.removal);
         final config = _config([
           _fromPackageOverride(['patrol'], magnitude: 'patch'),

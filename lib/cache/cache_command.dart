@@ -18,11 +18,7 @@ class CacheCommand extends Command with ApiGuardCommandMixinWithRoot {
     final argParser = super.argParser;
 
     if (!argParser.hasOptionWithKey('clear')) {
-      argParser.addFlag(
-        'clear',
-        help: 'Clear all cached API documentation',
-        negatable: false,
-      );
+      argParser.addFlag('clear', help: 'Clear all cached API documentation', negatable: false);
     }
 
     if (!argParser.hasOptionWithKey('clear-repo')) {
@@ -34,11 +30,7 @@ class CacheCommand extends Command with ApiGuardCommandMixinWithRoot {
     }
 
     if (!argParser.hasOptionWithKey('list')) {
-      argParser.addFlag(
-        'list',
-        help: 'List all cached refs for the current repository',
-        negatable: false,
-      );
+      argParser.addFlag('list', help: 'List all cached refs for the current repository', negatable: false);
     }
 
     return argParser;

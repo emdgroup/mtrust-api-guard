@@ -112,12 +112,7 @@ class ApiChange {
   final String? annotation;
   final String? changedValue;
 
-  ApiChange._({
-    required this.component,
-    required this.operation,
-    this.annotation,
-    this.changedValue,
-  });
+  ApiChange._({required this.component, required this.operation, this.annotation, this.changedValue});
 
   ApiChangeMagnitude? _overriddenMagnitude;
 
@@ -145,15 +140,11 @@ class MetaApiChange extends ApiChange {
     required String title,
     required String description,
     String filePath = 'pubspec.yaml',
-  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for pubspec changes'),
-        super._(
-          component: DocComponent.meta(
-            name: title,
-            description: description,
-            filePath: filePath,
-          ),
-          changedValue: description,
-        );
+  }) : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for pubspec changes'),
+       super._(
+         component: DocComponent.meta(name: title, description: description, filePath: filePath),
+         changedValue: description,
+       );
 
   static const Set<ApiChangeOperation> _allowedOperations = {
     ApiChangeOperation.dependencyVersionChange,
@@ -185,10 +176,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.dependencyAdded({
-    required String dependencyName,
-    required String? version,
-  }) {
+  factory MetaApiChange.dependencyAdded({required String dependencyName, required String? version}) {
     return MetaApiChange(
       operation: ApiChangeOperation.dependencyAddition,
       title: "dependency `$dependencyName`",
@@ -196,9 +184,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.dependencyRemoved({
-    required String dependencyName,
-  }) {
+  factory MetaApiChange.dependencyRemoved({required String dependencyName}) {
     return MetaApiChange(
       operation: ApiChangeOperation.dependencyRemoval,
       title: "dependency `$dependencyName`",
@@ -206,10 +192,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minDartSdkVersionDecrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.minDartSdkVersionDecrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minDartSdkVersionDecrease,
       title: "Minimum Dart SDK version decreased",
@@ -217,10 +200,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minDartSdkVersionIncrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.minDartSdkVersionIncrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minDartSdkVersionIncrease,
       title: "Minimum Dart SDK version increased",
@@ -228,10 +208,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.maxDartSdkVersionDecrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.maxDartSdkVersionDecrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.maxDartSdkVersionDecrease,
       title: "Maximum Dart SDK version decreased",
@@ -239,10 +216,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.maxDartSdkVersionIncrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.maxDartSdkVersionIncrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.maxDartSdkVersionIncrease,
       title: "Maximum Dart SDK version increased",
@@ -250,10 +224,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minFlutterSdkVersionDecrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.minFlutterSdkVersionDecrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minFlutterSdkVersionDecrease,
       title: "Minimum Flutter SDK version decreased",
@@ -261,10 +232,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minFlutterSdkVersionIncrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.minFlutterSdkVersionIncrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minFlutterSdkVersionIncrease,
       title: "Minimum Flutter SDK version increased",
@@ -272,10 +240,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.maxFlutterSdkVersionDecrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.maxFlutterSdkVersionDecrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.maxFlutterSdkVersionDecrease,
       title: "Maximum Flutter SDK version decreased",
@@ -283,10 +248,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.maxFlutterSdkVersionIncrease({
-    required String version,
-    required String previousVersion,
-  }) {
+  factory MetaApiChange.maxFlutterSdkVersionIncrease({required String version, required String previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.maxFlutterSdkVersionIncrease,
       title: "Maximum Flutter SDK version increased",
@@ -294,10 +256,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minAndroidSdkVersionDecrease({
-    required int version,
-    required int previousVersion,
-  }) {
+  factory MetaApiChange.minAndroidSdkVersionDecrease({required int version, required int previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minAndroidSdkVersionDecrease,
       title: "Minimum Android SDK version decreased",
@@ -305,10 +264,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minAndroidSdkVersionIncrease({
-    required int version,
-    required int previousVersion,
-  }) {
+  factory MetaApiChange.minAndroidSdkVersionIncrease({required int version, required int previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minAndroidSdkVersionIncrease,
       title: "Minimum Android SDK version increased",
@@ -316,10 +272,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minIosSdkVersionDecrease({
-    required num version,
-    required num previousVersion,
-  }) {
+  factory MetaApiChange.minIosSdkVersionDecrease({required num version, required num previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minIosSdkVersionDecrease,
       title: "Minimum iOS SDK version decreased",
@@ -327,10 +280,7 @@ class MetaApiChange extends ApiChange {
     );
   }
 
-  factory MetaApiChange.minIosSdkVersionIncrease({
-    required num version,
-    required num previousVersion,
-  }) {
+  factory MetaApiChange.minIosSdkVersionIncrease({required num version, required num previousVersion}) {
     return MetaApiChange(
       operation: ApiChangeOperation.minIosSdkVersionIncrease,
       title: "Minimum iOS SDK version increased",
@@ -347,13 +297,9 @@ class MetaApiChange extends ApiChange {
 /// A change that belongs to a specific component.
 /// A component can be a class, mixin, interface or typedef.
 class ComponentApiChange extends ApiChange {
-  ComponentApiChange({
-    required super.component,
-    required super.operation,
-    super.annotation,
-    super.changedValue,
-  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for component changes'),
-        super._();
+  ComponentApiChange({required super.component, required super.operation, super.annotation, super.changedValue})
+    : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for component changes'),
+      super._();
 
   static const Set<ApiChangeOperation> _allowedOperations = {
     ApiChangeOperation.addition,
@@ -388,8 +334,8 @@ class PropertyApiChange extends ApiChange {
     required this.property,
     super.annotation,
     super.changedValue,
-  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for property changes'),
-        super._();
+  }) : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for property changes'),
+       super._();
 
   static const Set<ApiChangeOperation> _allowedOperations = {
     ApiChangeOperation.addition,
@@ -448,8 +394,8 @@ class MethodApiChange extends ApiChange {
     this.newType,
     super.annotation,
     super.changedValue,
-  })  : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for method changes'),
-        super._();
+  }) : assert(_allowedOperations.contains(operation), 'Operation $operation not allowed for method changes'),
+       super._();
 
   static const Set<ApiChangeOperation> _allowedOperations = {
     ApiChangeOperation.addition,
@@ -516,9 +462,11 @@ abstract class ParameterApiChange extends ApiChange {
     this.oldName,
     this.newType,
     super.annotation,
-  })  : assert(
-            _allowedParameterOperations.contains(operation), 'Operation $operation not allowed for parameter changes'),
-        super._();
+  }) : assert(
+         _allowedParameterOperations.contains(operation),
+         'Operation $operation not allowed for parameter changes',
+       ),
+       super._();
 
   static const Set<ApiChangeOperation> _allowedParameterOperations = {
     ApiChangeOperation.addition,
@@ -605,9 +553,11 @@ class ConstructorApiChange extends ApiChange {
     required this.constructor,
     super.annotation,
     super.changedValue,
-  })  : assert(
-            !_disallowedConstructorOperations.contains(operation), 'Operation $operation not allowed for constructors'),
-        super._();
+  }) : assert(
+         !_disallowedConstructorOperations.contains(operation),
+         'Operation $operation not allowed for constructors',
+       ),
+       super._();
 
   static const Set<ApiChangeOperation> _disallowedConstructorOperations = {
     ApiChangeOperation.mixinApplication,

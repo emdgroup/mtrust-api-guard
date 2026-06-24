@@ -26,42 +26,16 @@ class VersionWorkspaceCommand extends Command
 
   @override
   String get usage {
-    return super.usage +
-        "\n\n"
-            "Calculates the next version for each package in a Dart workspace based on API changes.\n"
-            "Only packages with changes compared to the base ref will be versioned.\n"
-            "Tags are created in format: {package-name}/v{version}\n"
-            "Dependencies between workspace packages are automatically updated.\n";
+    return "${super.usage}\n\nCalculates the next version for each package in a Dart workspace based on API changes.\nOnly packages with changes compared to the base ref will be versioned.\nTags are created in format: {package-name}/v{version}\nDependencies between workspace packages are automatically updated.\n";
   }
 
   VersionWorkspaceCommand._internal() {
     argParser
-      ..addFlag(
-        'badge',
-        abbr: 'g',
-        help: 'Generate a badge for the version',
-      )
-      ..addFlag(
-        'commit',
-        help: 'Commit the version to git',
-        defaultsTo: true,
-      )
-      ..addFlag(
-        'tag',
-        abbr: 't',
-        help: 'Tag the version',
-        defaultsTo: true,
-      )
-      ..addFlag(
-        'generate-changelog',
-        help: 'Generate a changelog entry based on API changes',
-        defaultsTo: true,
-      )
-      ..addOption(
-        'json',
-        help: 'Output the result as JSON to the specified file',
-        valueHelp: 'file',
-      )
+      ..addFlag('badge', abbr: 'g', help: 'Generate a badge for the version')
+      ..addFlag('commit', help: 'Commit the version to git', defaultsTo: true)
+      ..addFlag('tag', abbr: 't', help: 'Tag the version', defaultsTo: true)
+      ..addFlag('generate-changelog', help: 'Generate a changelog entry based on API changes', defaultsTo: true)
+      ..addOption('json', help: 'Output the result as JSON to the specified file', valueHelp: 'file')
       ..addFlag(
         'pre-release',
         abbr: 'p',
@@ -74,11 +48,7 @@ class VersionWorkspaceCommand extends Command
         defaultsTo: '',
         valueHelp: 'prefix',
       )
-      ..addOption(
-        'dart-file',
-        help: 'Output the version as a Dart constant to the specified file',
-        valueHelp: 'file',
-      );
+      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file');
   }
 
   bool get tag {

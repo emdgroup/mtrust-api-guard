@@ -10,11 +10,8 @@ import 'package:mtrust_api_guard/version.dart';
 import 'package:mtrust_api_guard/version/version_command.dart';
 import 'package:mtrust_api_guard/version/version_workspace_command.dart';
 
-main(List<String> args) async {
-  final commandRunner = CommandRunner(
-    'mtrust_api_guard',
-    'A documentation generator and comparator for Dart APIs',
-  )
+Future<void> main(List<String> args) async {
+  final commandRunner = CommandRunner('mtrust_api_guard', 'A documentation generator and comparator for Dart APIs')
     ..addCommand(BadgeGeneratorCommand())
     ..addCommand(CacheCommand())
     ..addCommand(DocGeneratorCommand())
@@ -23,17 +20,9 @@ main(List<String> args) async {
     ..addCommand(VersionCommand())
     ..addCommand(VersionWorkspaceCommand());
 
-  commandRunner.argParser.addFlag(
-    "verbose",
-    help: "Verbose output.",
-    defaultsTo: false,
-  );
+  commandRunner.argParser.addFlag("verbose", help: "Verbose output.", defaultsTo: false);
 
-  commandRunner.argParser.addFlag(
-    "silent",
-    help: "Dont print logs to the console.",
-    defaultsTo: false,
-  );
+  commandRunner.argParser.addFlag("silent", help: "Dont print logs to the console.", defaultsTo: false);
 
   logger.info(" ");
   logger.info('▄████▄ █████▄ ██    ▄████  ██  ██ ▄████▄ █████▄  ████▄  ');

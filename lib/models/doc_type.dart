@@ -8,11 +8,7 @@ class DocType {
   final List<String> superTypes;
   final bool isNullable;
 
-  const DocType({
-    required this.name,
-    this.superTypes = const [],
-    this.isNullable = false,
-  });
+  const DocType({required this.name, this.superTypes = const [], this.isNullable = false});
 
   factory DocType.fromJson(Map<String, dynamic> json) => _$DocTypeFromJson(json);
 

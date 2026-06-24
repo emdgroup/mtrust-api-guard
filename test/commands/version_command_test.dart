@@ -25,7 +25,7 @@ void main() {
     });
 
     /// Helper to update pubspec.yaml using YamlEditor
-    Future<void> _updatePubspec(String filePath, List<Object> path, dynamic value) async {
+    Future<void> updatePubspec(String filePath, List<Object> path, dynamic value) async {
       final pubspecFile = File(filePath);
       final pubspecContent = await pubspecFile.readAsString();
       final editor = YamlEditor(pubspecContent);
@@ -34,7 +34,7 @@ void main() {
     }
 
     /// Helper method to set up initial version state with homepage for changelog links
-    Future<void> _setupInitialVersion({bool plugin = false}) async {
+    Future<void> setupInitialVersion({bool plugin = false}) async {
       await testSetup.setupGitRepo();
       if (plugin) {
         await testSetup.setupFlutterPlugin();
@@ -44,11 +44,7 @@ void main() {
 
       // Add homepage to pubspec.yaml for testing changelog links
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      await _updatePubspec(
-        pubspecFile.path,
-        ['homepage'],
-        'https://github.com/emdgroup/mtrust-api-guard/',
-      );
+      await updatePubspec(pubspecFile.path, ['homepage'], 'https://github.com/emdgroup/mtrust-api-guard/');
 
       // Set up initial version
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
@@ -61,7 +57,7 @@ void main() {
     }
 
     test('detects patch-level API changes', () async {
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // Apply patch-level changes (0.0.0 -> 0.0.1)
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
@@ -77,19 +73,14 @@ void main() {
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.initialVersion}'));
       expect(tags, contains('v${TestConstants.patchVersion}'));
     });
 
     test('detects minor-level API changes', () async {
       printOnFailure("================================================");
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // Apply patch-level changes first to get to 1.0.1
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
@@ -113,17 +104,12 @@ void main() {
       printOnFailure("================================================");
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.minorVersion}'));
     });
 
     test('detects major-level API changes', () async {
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // Apply patch-level changes first to get to 1.0.1
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
@@ -144,17 +130,12 @@ void main() {
       expect(testSetup.getCurrentVersion(), TestConstants.majorVersion);
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.majorVersion}'));
     });
 
     test('generates changelog correctly for multiple version changes', () async {
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // Apply patch-level changes (1.0.0 -> 1.0.1)
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
@@ -172,12 +153,7 @@ void main() {
       await testSetup.runApiGuard('version', ["--verbose"]);
 
       // Verify all version tags were created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.initialVersion}'));
       expect(tags, contains('v${TestConstants.patchVersion}'));
       expect(tags, contains('v${TestConstants.minorVersion}'));
@@ -185,9 +161,7 @@ void main() {
 
       // Verify changelog was generated correctly
       final changelogFile = File(p.join(testSetup.tempDir.path, 'CHANGELOG.md'));
-      final changelogContent = stripChangelog(
-        await changelogFile.readAsString(),
-      );
+      final changelogContent = stripChangelog(await changelogFile.readAsString());
       printOnFailure('Generated Changelog:\n$changelogContent');
 
       if (!testSetup.fixtures.expectedChangelogFile.existsSync()) {
@@ -195,19 +169,17 @@ void main() {
         testSetup.fixtures.expectedChangelogFile.writeAsStringSync(changelogContent);
       }
 
-      final expectedChangelog = stripChangelog(
-        await testSetup.fixtures.expectedChangelogFile.readAsString(),
-      );
+      final expectedChangelog = stripChangelog(await testSetup.fixtures.expectedChangelogFile.readAsString());
 
       expect(changelogContent, equalsIgnoringWhitespace(expectedChangelog));
     });
 
     test('detects version change when adding a dependency', () async {
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // Add a dependency
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      await _updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
+      await updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
 
       await testSetup.commitChanges('chore: add path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
@@ -217,21 +189,16 @@ void main() {
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.patchVersion}'));
     });
 
     test('detects version change when removing a dependency', () async {
-      await _setupInitialVersion();
+      await setupInitialVersion();
 
       // First add a dependency
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      await _updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
+      await updatePubspec(pubspecFile.path, ['dependencies', 'path'], '^1.8.0');
       await testSetup.commitChanges('chore: add path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
 
@@ -248,20 +215,15 @@ void main() {
       expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.minorVersion}'));
     });
 
     test('detects patch version change when changing SDK constraints', () async {
-      await _setupInitialVersion(plugin: true);
+      await setupInitialVersion(plugin: true);
 
       final pubspecFile = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
-      await _updatePubspec(pubspecFile.path, ['environment', 'sdk'], '>=3.2.0 <4.0.0');
+      await updatePubspec(pubspecFile.path, ['environment', 'sdk'], '>=3.2.0 <4.0.0');
 
       await testSetup.commitChanges('chore: update SDK constraints');
       await testSetup.runApiGuard('version', ["--verbose"]);
@@ -272,12 +234,7 @@ void main() {
       print(File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsStringSync());
 
       // Verify tag was created
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('v${TestConstants.patchVersion}'));
     });
 
@@ -382,12 +339,7 @@ void main() {
       expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
 
       // 3. Verify tag was created with custom prefix
-      final tags = await runProcess(
-        'git',
-        ['tag'],
-        workingDir: testSetup.tempDir.path,
-        captureOutput: true,
-      );
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
       expect(tags, contains('release/${TestConstants.initialVersion}'));
       expect(tags, contains('release/${TestConstants.patchVersion}'));
       expect(tags, isNot(contains('v${TestConstants.patchVersion}')));

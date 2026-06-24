@@ -26,7 +26,7 @@ void compareLists<T>({
     if (!newMap.containsKey(key)) {
       onRemoved(oldItem);
     } else {
-      onMatched(oldItem, newMap[key]!);
+      onMatched(oldItem, newMap[key] as T);
     }
   }
 

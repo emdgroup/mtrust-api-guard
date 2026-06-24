@@ -396,7 +396,7 @@
         "BaseClass"
       ],
       "superClassPackages": [
-        "api_guard_test"
+        "project"
       ],
       "interfaces": [
         "InterfaceA"

@@ -21,12 +21,7 @@ class ChangelogGenerator {
   /// Used for generating comparison URLs.
   final String? newRef;
 
-  ChangelogGenerator({
-    required this.apiChanges,
-    required this.projectRoot,
-    this.baseRef,
-    this.newRef,
-  });
+  ChangelogGenerator({required this.apiChanges, required this.projectRoot, this.baseRef, this.newRef});
 
   /// Gets the commits since the last version tag
   /// If the latest tag matches the current version (e.g. CI running on tagged commit),
@@ -61,11 +56,7 @@ class ChangelogGenerator {
       return GitUtils.buildCompareUrl(remoteUrl, baseRef, newRef, filePath);
     }
 
-    final apiChangesFormatter = ApiChangeFormatter(
-      apiChanges,
-      markdownHeaderLevel: 4,
-      fileUrlBuilder: fileUrlBuilder,
-    );
+    final apiChangesFormatter = ApiChangeFormatter(apiChanges, markdownHeaderLevel: 4, fileUrlBuilder: fileUrlBuilder);
     final formattedChanges = apiChangesFormatter.format();
     final commits = await _getCommitsSinceLastVersion();
 
@@ -75,9 +66,7 @@ class ChangelogGenerator {
     final time = DateTime.now();
 
     buffer.writeln('## $version');
-    buffer.writeln(
-      'Released on: ${time.month}/${time.day}/${time.year}, changelog automatically generated.',
-    );
+    buffer.writeln('Released on: ${time.month}/${time.day}/${time.year}, changelog automatically generated.');
 
     if (_hasReleasableCommits(commits)) {
       logger.detail("Has releasable commits, generating changelog summary");
@@ -139,10 +128,7 @@ class ChangelogGenerator {
 
       final homepage = pubspec['homepage']?.toString() ?? pubspec['repository']?.toString();
 
-      return {
-        'version': version.toString(),
-        'homepage': homepage,
-      };
+      return {'version': version.toString(), 'homepage': homepage};
     } catch (e) {
       logger.err('Error retrieving package info: $e');
       rethrow;

@@ -68,11 +68,7 @@ class GitUtils {
   /// Checks if the current directory is a Git repository
   static Future<bool> isGitRepository(String? root) async {
     try {
-      final result = await Process.run(
-        'git',
-        ['rev-parse', '--git-dir'],
-        workingDirectory: root,
-      );
+      final result = await Process.run('git', ['rev-parse', '--git-dir'], workingDirectory: root);
       return result.exitCode == 0;
     } catch (e) {
       return false;
@@ -171,8 +167,12 @@ class GitUtils {
     return result.stdout.toString().trim().isNotEmpty;
   }
 
-  static Future<void> commitVersion(String version, String? root,
-      {bool? commitBadge, bool commitChangelog = true}) async {
+  static Future<void> commitVersion(
+    String version,
+    String? root, {
+    bool? commitBadge,
+    bool commitChangelog = true,
+  }) async {
     final filesToCommit = [
       'pubspec.yaml',
       if (commitChangelog) 'CHANGELOG.md',
@@ -180,25 +180,18 @@ class GitUtils {
     ];
 
     // Add files to git to ensure they are tracked
-    final addResult = await Process.run(
-      'git',
-      ['add', ...filesToCommit],
-      workingDirectory: root,
-    );
+    final addResult = await Process.run('git', ['add', ...filesToCommit], workingDirectory: root);
 
     if (addResult.exitCode != 0) {
       throw GitException('Failed to add files to git: ${addResult.stderr.toString()}');
     }
 
-    final result = await Process.run(
-        'git',
-        [
-          'commit',
-          '-m',
-          'chore: bump version to $version [skip ci]',
-          ...filesToCommit,
-        ],
-        workingDirectory: root);
+    final result = await Process.run('git', [
+      'commit',
+      '-m',
+      'chore: bump version to $version [skip ci]',
+      ...filesToCommit,
+    ], workingDirectory: root);
     if (result.exitCode != 0) {
       throw GitException('Failed to commit version $version: ${result.stderr.toString()}');
     }
@@ -213,11 +206,12 @@ class GitUtils {
     // file state from the bump commit but carries no [skip ci]), the tag-triggered
     // publish pipeline fires normally, while the branch push is still suppressed
     // because branch HEAD remains the [skip ci] bump commit.
-    final releaseCommit = await Process.run(
-      'git',
-      ['commit', '--allow-empty', '-m', 'chore(release): $tag'],
-      workingDirectory: root,
-    );
+    final releaseCommit = await Process.run('git', [
+      'commit',
+      '--allow-empty',
+      '-m',
+      'chore(release): $tag',
+    ], workingDirectory: root);
     if (releaseCommit.exitCode != 0) {
       throw GitException('Failed to create release commit: ${releaseCommit.stderr.toString()}');
     }
@@ -281,11 +275,7 @@ class GitUtils {
 
   /// Gets the previous tag ref for a specific package in a workspace
   /// Returns null if no tags exist for the package
-  static Future<String?> getPreviousRefForPackage(
-    String? root,
-    String packageName, {
-    String tagPrefix = 'v',
-  }) async {
+  static Future<String?> getPreviousRefForPackage(String? root, String packageName, {String tagPrefix = 'v'}) async {
     try {
       final tags = await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix);
       if (tags.isEmpty) {
@@ -299,14 +289,7 @@ class GitUtils {
   }
 
   static Future<String> gitShow(String ref, String? root, String path) async {
-    final result = await Process.run(
-      'git',
-      [
-        'show',
-        '$ref:$path',
-      ],
-      workingDirectory: root,
-    );
+    final result = await Process.run('git', ['show', '$ref:$path'], workingDirectory: root);
     if (result.exitCode != 0) {
       throw GitException('Failed to show ref $ref:$path: ${result.stderr.toString()}');
     }
@@ -316,11 +299,7 @@ class GitUtils {
   /// Gets the remote URL of the git repository
   static Future<String?> getRemoteUrl(String? root) async {
     try {
-      final result = await Process.run(
-        'git',
-        ['config', '--get', 'remote.origin.url'],
-        workingDirectory: root,
-      );
+      final result = await Process.run('git', ['config', '--get', 'remote.origin.url'], workingDirectory: root);
       if (result.exitCode == 0) {
         var url = result.stdout.toString().trim();
         if (url.startsWith('git@')) {
@@ -338,12 +317,7 @@ class GitUtils {
   }
 
   /// Builds a comparison URL for a file between two refs
-  static String? buildCompareUrl(
-    String? remoteUrl,
-    String? baseRef,
-    String? newRef,
-    String filePath,
-  ) {
+  static String? buildCompareUrl(String? remoteUrl, String? baseRef, String? newRef, String filePath) {
     if (remoteUrl == null || baseRef == null || newRef == null) {
       return null;
     }
@@ -353,11 +327,7 @@ class GitUtils {
 
   /// Gets the commits between two refs
   /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
-  static Future<List<Commit>> getCommits({
-    required String root,
-    String? fromRef,
-    String? toRef,
-  }) async {
+  static Future<List<Commit>> getCommits({required String root, String? fromRef, String? toRef}) async {
     try {
       final gitArgs = ['--no-pager', 'log', '--no-decorate'];
       if (fromRef != null) {
@@ -366,11 +336,7 @@ class GitUtils {
         gitArgs.add(toRef);
       }
 
-      final commitResult = await Process.run(
-        'git',
-        gitArgs,
-        workingDirectory: root,
-      );
+      final commitResult = await Process.run('git', gitArgs, workingDirectory: root);
 
       if (commitResult.exitCode == 0) {
         return Commit.parseCommits(commitResult.stdout.toString().trim());
@@ -386,17 +352,10 @@ class GitUtils {
   /// If the latest tag matches the current version (e.g. CI running on tagged commit),
   /// it gets the commits since the previous tag.
   /// If they do not match (e.g. preparing for a new release), it gets commits since the latest tag.
-  static Future<List<Commit>> getCommitsSinceLastTag(
-    String root,
-    String currentVersion,
-  ) async {
+  static Future<List<Commit>> getCommitsSinceLastTag(String root, String currentVersion) async {
     try {
       // Get all tags sorted by creation date (newest first)
-      final tagsResult = await Process.run(
-        'git',
-        ['tag', '--sort=-creatordate'],
-        workingDirectory: root,
-      );
+      final tagsResult = await Process.run('git', ['tag', '--sort=-creatordate'], workingDirectory: root);
 
       if (tagsResult.exitCode == 0) {
         final tags = tagsResult.stdout.toString().trim().split('\n').where((tag) => tag.isNotEmpty).toList();
@@ -457,11 +416,7 @@ class GitUtils {
       }
 
       // Create the worktree
-      final result = await Process.run(
-        'git',
-        ['worktree', 'add', worktreePath, ref],
-        workingDirectory: gitRoot,
-      );
+      final result = await Process.run('git', ['worktree', 'add', worktreePath, ref], workingDirectory: gitRoot);
       if (result.exitCode != 0) {
         throw GitException('Failed to create worktree for ref $ref at $worktreePath: ${result.stderr}');
       }
@@ -478,11 +433,12 @@ class GitUtils {
   static Future<void> removeWorktree(String gitRoot, String worktreePath) async {
     try {
       // Use --force to handle cases where worktree has uncommitted changes or is locked
-      final result = await Process.run(
-        'git',
-        ['worktree', 'remove', '--force', worktreePath],
-        workingDirectory: gitRoot,
-      );
+      final result = await Process.run('git', [
+        'worktree',
+        'remove',
+        '--force',
+        worktreePath,
+      ], workingDirectory: gitRoot);
       if (result.exitCode != 0) {
         // If worktree remove fails, try to remove the directory manually
         final dir = Directory(worktreePath);
@@ -492,7 +448,8 @@ class GitUtils {
             dir.deleteSync(recursive: true);
           } catch (e) {
             throw GitException(
-                'Failed to remove worktree at $worktreePath: ${result.stderr}. Manual cleanup also failed: $e');
+              'Failed to remove worktree at $worktreePath: ${result.stderr}. Manual cleanup also failed: $e',
+            );
           }
         } else {
           // Directory doesn't exist, consider it cleaned up
@@ -510,11 +467,7 @@ class GitUtils {
   /// Checks if a worktree exists at the specified path
   static Future<bool> worktreeExists(String gitRoot, String worktreePath) async {
     try {
-      final result = await Process.run(
-        'git',
-        ['worktree', 'list'],
-        workingDirectory: gitRoot,
-      );
+      final result = await Process.run('git', ['worktree', 'list'], workingDirectory: gitRoot);
       if (result.exitCode != 0) {
         return false;
       }
@@ -537,11 +490,7 @@ class GitUtils {
   /// Returns a list of worktree paths
   static Future<List<String>> listWorktrees(String gitRoot) async {
     try {
-      final result = await Process.run(
-        'git',
-        ['worktree', 'list'],
-        workingDirectory: gitRoot,
-      );
+      final result = await Process.run('git', ['worktree', 'list'], workingDirectory: gitRoot);
       if (result.exitCode != 0) {
         return [];
       }

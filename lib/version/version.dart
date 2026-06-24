@@ -20,19 +20,10 @@ class VersionResult {
   final String? changelog;
   final String? badge;
 
-  VersionResult({
-    required this.version,
-    required this.apiChanges,
-    required this.changelog,
-    required this.badge,
-  });
+  VersionResult({required this.version, required this.apiChanges, required this.changelog, required this.badge});
 
   Map<String, dynamic> toJson() {
-    return {
-      'version': version.toString(),
-      'changelog': changelog,
-      'badge': badge,
-    };
+    return {'version': version.toString(), 'changelog': changelog, 'badge': badge};
   }
 }
 
@@ -63,10 +54,11 @@ Future<VersionResult> version({
     exit(1);
   }
 
-  final effectiveBaseRef = baseRef ??
+  final effectiveBaseRef =
+      baseRef ??
       (packageName != null
           ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
-              (throw Exception('No previous version found for package $packageName'))
+                (throw Exception('No previous version found for package $packageName'))
           : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
 
   final changes = await compare(
@@ -77,18 +69,15 @@ Future<VersionResult> version({
     cache: cache,
   );
 
-  final pubspecPath =
-      packageName != null ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml') : 'pubspec.yaml';
+  final pubspecPath = packageName != null
+      ? join(relative(dartRoot.path, from: gitRoot.path), 'pubspec.yaml')
+      : 'pubspec.yaml';
 
   // Load config and apply magnitude overrides
   final config = ApiGuardConfig.load(dartRoot);
   applyMagnitudeOverrides(changes, config);
 
-  final basePubSpec = await GitUtils.gitShow(
-    effectiveBaseRef,
-    gitRoot.path,
-    pubspecPath,
-  );
+  final basePubSpec = await GitUtils.gitShow(effectiveBaseRef, gitRoot.path, pubspecPath);
 
   final baseVersion = PubspecUtils.getVersion(basePubSpec);
 
@@ -146,12 +135,7 @@ Future<VersionResult> version({
     // For workspace packages, commit from the package directory
     // For single packages, commit from git root
     final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
-    await GitUtils.commitVersion(
-      nextVersion,
-      commitRoot,
-      commitBadge: badge,
-      commitChangelog: generateChangelog,
-    );
+    await GitUtils.commitVersion(nextVersion, commitRoot, commitBadge: badge, commitChangelog: generateChangelog);
     logger.info('Committed version $nextVersion');
   }
 

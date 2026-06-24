@@ -1,17 +1,16 @@
-// ignore_for_file: experimental_member_use
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/results.dart';
-import 'package:analyzer/dart/element/element2.dart';
+import 'package:analyzer/dart/element/element.dart';
 import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
@@ -140,12 +139,9 @@ Future<PackageApi> generateDocs({
       }
 
       logger.info(
-          'Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath');
-      final result = Process.runSync(
-        command,
-        args,
-        workingDirectory: packagePath,
+        'Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath',
       );
+      final result = Process.runSync(command, args, workingDirectory: packagePath);
       if (result.exitCode != 0) {
         logger.err('Failed to run $command ${args.join(' ')}: ${result.stderr} in $packagePath');
         if (result.stdout.toString().isNotEmpty) {
@@ -164,11 +160,7 @@ Future<PackageApi> generateDocs({
   if (shouldCache) {
     if (cache.hasApiFileForRef(repoPath, effectiveRef, dartRelativePath)) {
       logger.success('Using cached API documentation for $effectiveRef');
-      final cachedContent = await cache.retrieveApiFile(
-        repoPath,
-        effectiveRef,
-        dartRelativePath,
-      );
+      final cachedContent = await cache.retrieveApiFile(repoPath, effectiveRef, dartRelativePath);
       if (cachedContent != null) {
         logger.success('Using cached API documentation for $effectiveRef in $dartRelativePath');
 
@@ -231,8 +223,9 @@ Future<PackageApi> generateDocs({
       // We do this only if the include configuration is the default one
       final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
 
-      final mainLibrary =
-          normalize(absolute(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart')));
+      final mainLibrary = normalize(
+        absolute(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart')),
+      );
 
       if (isDefaultInclude && File(mainLibrary).existsSync()) {
         useRecursiveAnalysis = true;
@@ -250,6 +243,7 @@ Future<PackageApi> generateDocs({
     final contextCollection = AnalysisContextCollection(
       includedPaths: [normalize(absolute(analysisDartRoot.path))],
       excludedPaths: config.exclude.toList(),
+      sdkPath: getSdkPath(),
     );
 
     final progress = logger.progress("Analyzing dart files");
@@ -257,7 +251,7 @@ Future<PackageApi> generateDocs({
     final normalizedRoot = normalize(absolute(analysisDartRoot.path));
 
     // Recursive visitor function
-    void visitLibraryRecursive(LibraryElement2 library, String entryPoint) {
+    void visitLibraryRecursive(LibraryElement library, String entryPoint) {
       if (visitedLibraries.contains(library.uri.toString())) return;
       visitedLibraries.add(library.uri.toString());
 
@@ -288,14 +282,11 @@ Future<PackageApi> generateDocs({
         // Ignore resolution errors, fallback to uri
       }
 
-      final visitor = DocVisitor(
-        filePath: filePath,
-        entryPoint: entryPoint,
-      );
-      library.accept2(visitor);
+      final visitor = DocVisitor(filePath: filePath, entryPoint: entryPoint);
+      library.accept(visitor);
       classes.addAll(visitor.components);
 
-      for (final exported in library.exportedLibraries2) {
+      for (final exported in library.exportedLibraries) {
         // Only follow re-exports from within the host package.
         // External packages (e.g. patrol, flutter) may themselves re-export
         // large transitive graphs (vector_math, dart:ui, etc.) — we don't
@@ -317,48 +308,32 @@ Future<PackageApi> generateDocs({
         }
 
         if (useRecursiveAnalysis) {
-          visitLibraryRecursive(
-            libraryResult.element2,
-            relative(file, from: normalizedRoot),
-          );
+          visitLibraryRecursive(libraryResult.element, relative(file, from: normalizedRoot));
         } else {
           // Legacy / Glob mode: non-recursive, just the file
           final visitor = DocVisitor(
-            filePath: relative(
-              file,
-              from: contextCollection.contextFor(file).contextRoot.root.path,
-            ),
-            entryPoint: relative(
-              file,
-              from: contextCollection.contextFor(file).contextRoot.root.path,
-            ),
+            filePath: relative(file, from: contextCollection.contextFor(file).contextRoot.root.path),
+            entryPoint: relative(file, from: contextCollection.contextFor(file).contextRoot.root.path),
           );
-          libraryResult.element2.accept2(visitor);
+          libraryResult.element.accept(visitor);
           classes.addAll(visitor.components);
         }
       } catch (e) {
         logger.err('Error analyzing file $file: $e');
       }
       if (!useRecursiveAnalysis) {
-        progress.update(
-          "Analyzed $file [${filesToAnalyze.toList().indexOf(file) + 1}/${filesToAnalyze.length}]",
-        );
+        progress.update("Analyzed $file [${filesToAnalyze.toList().indexOf(file) + 1}/${filesToAnalyze.length}]");
       }
     }
 
     progress.complete();
 
-    logger.success(
-      'Found ${classes.length} classes: ${classes.map((e) => e.name).join(', ')}',
-    );
+    logger.success('Found ${classes.length} classes: ${classes.map((e) => e.name).join(', ')}');
     contextCollection.dispose();
 
     final outputProgress = logger.progress("Generating output");
 
-    final packageApi = PackageApi(
-      metadata: packageMetadata,
-      components: classes,
-    );
+    final packageApi = PackageApi(metadata: packageMetadata, components: classes);
 
     // Generate output
     final output = const JsonEncoder.withIndent('  ').convert(packageApi);

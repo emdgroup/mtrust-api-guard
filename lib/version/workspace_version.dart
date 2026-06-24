@@ -12,15 +12,10 @@ class WorkspaceVersionResult {
   final Map<String, VersionResult> packageResults;
   final Map<String, Version> packageVersions;
 
-  WorkspaceVersionResult({
-    required this.packageResults,
-    required this.packageVersions,
-  });
+  WorkspaceVersionResult({required this.packageResults, required this.packageVersions});
 
   Map<String, dynamic> toJson() {
-    return {
-      'packages': packageResults.map((key, value) => MapEntry(key, value.toJson())),
-    };
+    return {'packages': packageResults.map((key, value) => MapEntry(key, value.toJson()))};
   }
 }
 
@@ -54,16 +49,12 @@ Future<WorkspaceVersionResult> versionWorkspace({
 
     // Determine the base ref for this package
     // If baseRef is provided, use it; otherwise get the previous tag for this package
-    final packageBaseRef = baseRef ??
+    final packageBaseRef =
+        baseRef ??
         (await GitUtils.getPreviousRefForPackage(gitRoot.path, package.name, tagPrefix: 'v') ?? effectiveNewRef);
 
     // Check if package has changes
-    final hasChanges = await packageHasChanges(
-      package.relativePath,
-      packageBaseRef,
-      effectiveNewRef,
-      gitRoot,
-    );
+    final hasChanges = await packageHasChanges(package.relativePath, packageBaseRef, effectiveNewRef, gitRoot);
 
     if (!hasChanges) {
       logger.info('Package ${package.name} has no changes, skipping versioning');
@@ -106,18 +97,11 @@ Future<WorkspaceVersionResult> versionWorkspace({
   // Step 2: Update dependencies between workspace packages
   if (packageVersions.isNotEmpty) {
     logger.info('Updating workspace dependencies...');
-    await updateWorkspaceDependencies(
-      workspace: workspace,
-      packages: packages,
-      updatedVersions: packageVersions,
-    );
+    await updateWorkspaceDependencies(workspace: workspace, packages: packages, updatedVersions: packageVersions);
     logger.success('Updated workspace dependencies');
   }
 
-  return WorkspaceVersionResult(
-    packageResults: packageResults,
-    packageVersions: packageVersions,
-  );
+  return WorkspaceVersionResult(packageResults: packageResults, packageVersions: packageVersions);
 }
 
 /// Updates dependencies in workspace packages that reference other workspace packages
@@ -162,11 +146,7 @@ Future<void> updateWorkspaceDependencies({
         // Check if this package depends on this workspace package
         if (dependencies.containsKey(dependencyName)) {
           try {
-            await PubspecUtils.updateWorkspaceDependency(
-              pubspecFile,
-              dependencyName,
-              newVersion,
-            );
+            await PubspecUtils.updateWorkspaceDependency(pubspecFile, dependencyName, newVersion);
             logger.info('Updated dependency $dependencyName to $newVersion in ${package.name}');
           } catch (e) {
             logger.warn('Failed to update dependency $dependencyName in ${package.name}: $e');

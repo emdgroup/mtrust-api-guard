@@ -23,40 +23,16 @@ class VersionCommand extends Command
 
   @override
   String get usage {
-    return super.usage +
-        "\n\n"
-            "Calculates the next version based on API changes between versions.\n"
-            "Uses the current package version from the base file.\n";
+    return "${super.usage}\n\nCalculates the next version based on API changes between versions.\nUses the current package version from the base file.\n";
   }
 
   VersionCommand._internal() {
     argParser
-      ..addFlag(
-        'badge',
-        abbr: 'g',
-        help: 'Generate a badge for the version',
-      )
-      ..addFlag(
-        'commit',
-        help: 'Commit the version to git',
-        defaultsTo: true,
-      )
-      ..addFlag(
-        'tag',
-        abbr: 't',
-        help: 'Tag the version',
-        defaultsTo: true,
-      )
-      ..addFlag(
-        'generate-changelog',
-        help: 'Generate a changelog entry based on API changes',
-        defaultsTo: true,
-      )
-      ..addOption(
-        'json',
-        help: 'Output the result as JSON to the specified file',
-        valueHelp: 'file',
-      )
+      ..addFlag('badge', abbr: 'g', help: 'Generate a badge for the version')
+      ..addFlag('commit', help: 'Commit the version to git', defaultsTo: true)
+      ..addFlag('tag', abbr: 't', help: 'Tag the version', defaultsTo: true)
+      ..addFlag('generate-changelog', help: 'Generate a changelog entry based on API changes', defaultsTo: true)
+      ..addOption('json', help: 'Output the result as JSON to the specified file', valueHelp: 'file')
       ..addFlag(
         'pre-release',
         abbr: 'p',
@@ -75,11 +51,7 @@ class VersionCommand extends Command
         defaultsTo: 'v',
         valueHelp: 'prefix',
       )
-      ..addOption(
-        'dart-file',
-        help: 'Output the version as a Dart constant to the specified file',
-        valueHelp: 'file',
-      );
+      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file');
   }
 
   bool get tag {

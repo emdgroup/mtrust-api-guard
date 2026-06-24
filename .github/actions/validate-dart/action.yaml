@@ -17,7 +17,9 @@ runs:
       run: flutter analyze
     - name: Run tests
       shell: bash
-      run: flutter test --coverage
+      run: |
+        dart run tool/cleanup_legacy_scaffolds.dart
+        flutter test test/commands test/comparators test/version --coverage
     - name: Report test results
       uses: dorny/test-reporter@v2
       with:
