@@ -263,7 +263,7 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
         .map(
           (param) => DocParameter(
             description: _getDescription(param),
-            name: param.name!,
+            name: _parameterName(param),
             type: _getDocType(param.type),
             named: param.isNamed,
             required: param.isRequired,
@@ -272,6 +272,15 @@ class DocVisitor extends RecursiveElementVisitor2<void> {
           ),
         )
         .toList();
+  }
+
+  /// Uses [FieldFormalParameterElement.privateName] when set so private field
+  /// formal parameters keep their declared name (e.g. `_internalId`).
+  String _parameterName(FormalParameterElement param) {
+    if (param is FieldFormalParameterElement) {
+      return param.privateName ?? param.name!;
+    }
+    return param.name!;
   }
 
   /// Extracts type parameters from an element.
