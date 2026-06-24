@@ -40,6 +40,7 @@ class ApiChangeFormatter {
       for (final component in sortedComponents) {
         final firstChange = componentChanges[component]!.first;
         final componentObj = firstChange.component;
+        final isMetaGroup = componentObj.type == DocComponentType.metaType;
         final typeLabel = componentObj.type.name.replaceAll("Type", "").toLowerCase();
         final filePath = componentObj.filePath;
 
@@ -47,9 +48,11 @@ class ApiChangeFormatter {
             ? fileUrlBuilder!(filePath) ?? filePath
             : filePath;
 
+        final displayName = isMetaGroup ? (filePath ?? 'pubspec.yaml') : componentObj.genericName;
+
         changelogBuffer.writeln();
         changelogBuffer.writeln(
-          '**`${typeLabel.toLowerCase()}` ${componentObj.genericName}** '
+          '**`${typeLabel.toLowerCase()}` $displayName** '
           '${filePath != null ? '([$filePath]($linkTarget))' : ''}',
         );
 
@@ -73,7 +76,12 @@ class ApiChangeFormatter {
 
   // Group changes by component
   Map<String, List<ApiChange>> _groupByComponent(List<ApiChange> changes) {
-    return groupBy(changes, (change) => change.component.name);
+    return groupBy(changes, (change) {
+      if (change.component.type == DocComponentType.metaType) {
+        return '__meta__${change.component.filePath ?? 'pubspec.yaml'}';
+      }
+      return change.component.name;
+    });
   }
 
   // Group changes by generating a change category that considers the type,
@@ -85,7 +93,12 @@ class ApiChangeFormatter {
       // and, for parameter changes, the parent (constructor/method) name
       (change) {
         var key = '${change.runtimeType}-${change.operation}';
-        if (change is ConstructorParameterApiChange) {
+        if (change is MetaApiChange &&
+            (change.operation == ApiChangeOperation.dependencyRemoval ||
+                change.operation == ApiChangeOperation.dependencyAddition ||
+                change.operation == ApiChangeOperation.dependencyVersionChange)) {
+          key += '-${change.component.name}';
+        } else if (change is ConstructorParameterApiChange) {
           key += '-${change.constructor.name}';
         } else if (change is MethodParameterApiChange) {
           key += '-${change.method.name}';
@@ -238,13 +251,13 @@ extension ApiChangeFormattingHelpers on List<ApiChange> {
         return '➖ Mixin removed: ${_formatChangedValues()}';
 
       case ApiChangeOperation.dependencyAddition:
-        return '📦 Dependency added: ${change.changedValue}';
+        return '📦 Added `${_dependencyName(change)}`: ${change.changedValue}';
 
       case ApiChangeOperation.dependencyRemoval:
-        return '📦 Dependency removed: ${change.changedValue}';
+        return '📦 Removed `${_dependencyName(change)}`';
 
       case ApiChangeOperation.dependencyVersionChange:
-        return '📦 Dependency version changed: ${change.changedValue}';
+        return '📦 `${_dependencyName(change)}` version changed: ${change.changedValue}';
 
       case ApiChangeOperation.minDartSdkVersionDecrease:
         return '🎯 Minimum Dart SDK version decreased: ${change.changedValue}';
@@ -296,6 +309,15 @@ extension ApiChangeFormattingHelpers on List<ApiChange> {
 
   String _formatChangedValues() {
     return map((change) => change.changedValue).join(', ');
+  }
+
+  String _dependencyName(ApiChange change) {
+    final name = change.component.name;
+    const prefix = 'dependency `';
+    if (name.startsWith(prefix) && name.endsWith('`')) {
+      return name.substring(prefix.length, name.length - 1);
+    }
+    return name;
   }
 
   String _formatAnnotations() {

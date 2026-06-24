@@ -440,6 +440,49 @@ void main() {
       });
     });
 
+    group('Dependency Tests', () {
+      test('dependency removal creates patch change', () {
+        final oldMeta = PackageMetadata(
+          dependencies: [PackageDependency(packageName: 'path', packageVersion: '^1.8.0')],
+        );
+        final newMeta = PackageMetadata(dependencies: []);
+
+        final changes = oldMeta.compareTo(newMeta);
+
+        expect(changes, hasLength(1));
+        expect(changes.first.operation, ApiChangeOperation.dependencyRemoval);
+        expect(changes.first.getMagnitude(), ApiChangeMagnitude.patch);
+      });
+
+      test('dependency addition creates patch change', () {
+        final oldMeta = PackageMetadata(dependencies: []);
+        final newMeta = PackageMetadata(
+          dependencies: [PackageDependency(packageName: 'path', packageVersion: '^1.8.0')],
+        );
+
+        final changes = oldMeta.compareTo(newMeta);
+
+        expect(changes, hasLength(1));
+        expect(changes.first.operation, ApiChangeOperation.dependencyAddition);
+        expect(changes.first.getMagnitude(), ApiChangeMagnitude.patch);
+      });
+
+      test('dependency version change creates patch change', () {
+        final oldMeta = PackageMetadata(
+          dependencies: [PackageDependency(packageName: 'path', packageVersion: '^1.8.0')],
+        );
+        final newMeta = PackageMetadata(
+          dependencies: [PackageDependency(packageName: 'path', packageVersion: '^1.9.0')],
+        );
+
+        final changes = oldMeta.compareTo(newMeta);
+
+        expect(changes, hasLength(1));
+        expect(changes.first.operation, ApiChangeOperation.dependencyVersionChange);
+        expect(changes.first.getMagnitude(), ApiChangeMagnitude.patch);
+      });
+    });
+
     group('Combined Constraint Tests', () {
       test('multiple constraint changes are detected together', () {
         final oldMeta = PackageMetadata(

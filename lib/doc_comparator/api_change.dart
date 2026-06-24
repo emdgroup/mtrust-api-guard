@@ -75,7 +75,7 @@ enum ApiChangeOperation {
   // Pubspec-specific changes
   dependencyVersionChange(ApiChangeMagnitude.patch),
   dependencyAddition(ApiChangeMagnitude.patch),
-  dependencyRemoval(ApiChangeMagnitude.minor),
+  dependencyRemoval(ApiChangeMagnitude.patch),
   // Dart SDK constraints
   minDartSdkVersionDecrease(ApiChangeMagnitude.patch),
   minDartSdkVersionIncrease(ApiChangeMagnitude.major),

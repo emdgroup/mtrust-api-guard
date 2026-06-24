@@ -211,12 +211,12 @@ void main() {
       await testSetup.commitChanges('chore: remove path dependency');
       await testSetup.runApiGuard('version', ["--verbose"]);
 
-      // Removing a dependency might trigger a minor or patch change
-      expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
+      // Removing an unused dependency is a patch-level pubspec change
+      expect(testSetup.getCurrentVersion(), '0.0.3');
 
       // Verify tag was created
       final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
-      expect(tags, contains('v${TestConstants.minorVersion}'));
+      expect(tags, contains('v0.0.3'));
     });
 
     test('detects patch version change when changing SDK constraints', () async {
