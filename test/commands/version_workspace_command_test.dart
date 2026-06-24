@@ -32,6 +32,35 @@ void main() {
       await pubspecFile.writeAsString(editor.toString());
     }
 
+    Future<Directory> setupWorkspacePackage({
+      required String packageName,
+      required String version,
+      Map<String, String>? dependencies,
+    }) async {
+      final packageDir = Directory(p.join(testSetup.tempDir.path, 'packages', packageName));
+      await packageDir.create(recursive: true);
+      await copyPackageBase(packageDir, packageName: packageName);
+
+      final pubspecFile = File(p.join(packageDir.path, 'pubspec.yaml'));
+      await updatePubspec(pubspecFile.path, ['version'], version);
+      await updatePubspec(pubspecFile.path, ['resolution'], 'workspace');
+
+      for (final entry in dependencies?.entries ?? const <MapEntry<String, String>>[]) {
+        await updatePubspec(pubspecFile.path, ['dependencies', entry.key], entry.value);
+      }
+
+      final libDir = Directory(p.join(packageDir.path, 'lib'));
+      await libDir.create(recursive: true);
+      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), libDir);
+
+      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
+      if (v100AnalysisOptions.existsSync()) {
+        await v100AnalysisOptions.copy(p.join(packageDir.path, 'analysis_options.yaml'));
+      }
+
+      return packageDir;
+    }
+
     test('versions workspace packages with changes and updates dependencies', () async {
       // 1. Initialize git repo
       await testSetup.setupGitRepo();
@@ -48,53 +77,15 @@ workspace:
 ''');
 
       // 3. Create shared package
-      final sharedDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'shared'));
-      await sharedDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: sharedDir.path);
-
-      // Clear lib and test directories
-      await Directory(p.join(sharedDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(sharedDir.path, 'lib')).create();
-      await Directory(p.join(sharedDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(sharedDir.path, 'test')).create();
-
-      // Update shared package pubspec.yaml
-      final sharedPubspec = File(p.join(sharedDir.path, 'pubspec.yaml'));
-      await updatePubspec(sharedPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(sharedPubspec.path, ['resolution'], 'workspace');
-
-      // Copy API files to shared package
+      final sharedDir = await setupWorkspacePackage(packageName: 'shared', version: '0.0.1');
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
-      await sharedLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), sharedLibDir);
-
-      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
-      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
-      if (v100AnalysisOptions.existsSync()) {
-        await v100AnalysisOptions.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
-      }
 
       // 4. Create consumer package that depends on shared
-      final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
-      await consumerDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: consumerDir.path);
-
-      // Clear lib and test directories
-      await Directory(p.join(consumerDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(consumerDir.path, 'lib')).create();
-      await Directory(p.join(consumerDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(consumerDir.path, 'test')).create();
-
-      // Update consumer package pubspec.yaml
-      final consumerPubspec = File(p.join(consumerDir.path, 'pubspec.yaml'));
-      await updatePubspec(consumerPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(consumerPubspec.path, ['resolution'], 'workspace');
-      await updatePubspec(consumerPubspec.path, ['dependencies', 'shared'], '^0.0.1');
-
-      // Copy API files to consumer package
-      final consumerLibDir = Directory(p.join(consumerDir.path, 'lib'));
-      await consumerLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), consumerLibDir);
+      await setupWorkspacePackage(
+        packageName: 'consumer',
+        version: '0.0.1',
+        dependencies: {'shared': '^0.0.1'},
+      );
 
       // 5. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -124,6 +115,7 @@ workspace:
       expect(sharedPubspecYaml['version'], '0.0.2');
 
       // 11. Verify consumer package was NOT versioned (no changes)
+      final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
       final consumerPubspecAfter = File(p.join(consumerDir.path, 'pubspec.yaml'));
       final consumerPubspecYaml = loadYaml(await consumerPubspecAfter.readAsString()) as YamlMap;
       expect(consumerPubspecYaml['version'], '0.0.1');
@@ -161,46 +153,11 @@ workspace:
 ''');
 
       // 3. Create package_a
-      final packageADir = Directory(p.join(testSetup.tempDir.path, 'packages', 'package_a'));
-      await packageADir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: packageADir.path);
-
-      await Directory(p.join(packageADir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(packageADir.path, 'lib')).create();
-      await Directory(p.join(packageADir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(packageADir.path, 'test')).create();
-
-      final packageAPubspec = File(p.join(packageADir.path, 'pubspec.yaml'));
-      await updatePubspec(packageAPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(packageAPubspec.path, ['resolution'], 'workspace');
-
+      final packageADir = await setupWorkspacePackage(packageName: 'package_a', version: '0.0.1');
       final packageALibDir = Directory(p.join(packageADir.path, 'lib'));
-      await packageALibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), packageALibDir);
-
-      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
-      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
-      if (v100AnalysisOptions.existsSync()) {
-        await v100AnalysisOptions.copy(p.join(packageADir.path, 'analysis_options.yaml'));
-      }
 
       // 4. Create package_b
-      final packageBDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'package_b'));
-      await packageBDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: packageBDir.path);
-
-      await Directory(p.join(packageBDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(packageBDir.path, 'lib')).create();
-      await Directory(p.join(packageBDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(packageBDir.path, 'test')).create();
-
-      final packageBPubspec = File(p.join(packageBDir.path, 'pubspec.yaml'));
-      await updatePubspec(packageBPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(packageBPubspec.path, ['resolution'], 'workspace');
-
-      final packageBLibDir = Directory(p.join(packageBDir.path, 'lib'));
-      await packageBLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), packageBLibDir);
+      await setupWorkspacePackage(packageName: 'package_b', version: '0.0.1');
 
       // 5. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -227,6 +184,7 @@ workspace:
       expect(packageAPubspecYaml['version'], '0.0.2');
 
       // 9. Verify package_b was NOT versioned
+      final packageBDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'package_b'));
       final packageBPubspecAfter = File(p.join(packageBDir.path, 'pubspec.yaml'));
       final packageBPubspecYaml = loadYaml(await packageBPubspecAfter.readAsString()) as YamlMap;
       expect(packageBPubspecYaml['version'], '0.0.1');
@@ -269,75 +227,22 @@ workspace:
 ''');
 
       // 3. Create base package
-      final baseDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'base'));
-      await baseDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: baseDir.path);
-      await Directory(p.join(baseDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(baseDir.path, 'lib')).create();
-      await Directory(p.join(baseDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(baseDir.path, 'test')).create();
-
-      final basePubspec = File(p.join(baseDir.path, 'pubspec.yaml'));
-      await updatePubspec(basePubspec.path, ['version'], '0.0.1');
-      await updatePubspec(basePubspec.path, ['resolution'], 'workspace');
-
+      final baseDir = await setupWorkspacePackage(packageName: 'base', version: '0.0.1');
       final baseLibDir = Directory(p.join(baseDir.path, 'lib'));
-      await baseLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), baseLibDir);
-
-      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
-      final v100AnalysisOptions = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
-      if (v100AnalysisOptions.existsSync()) {
-        await v100AnalysisOptions.copy(p.join(baseDir.path, 'analysis_options.yaml'));
-      }
 
       // 4. Create shared package (depends on base)
-      final sharedDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'shared'));
-      await sharedDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: sharedDir.path);
-      await Directory(p.join(sharedDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(sharedDir.path, 'lib')).create();
-      await Directory(p.join(sharedDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(sharedDir.path, 'test')).create();
-
-      final sharedPubspec = File(p.join(sharedDir.path, 'pubspec.yaml'));
-      await updatePubspec(sharedPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(sharedPubspec.path, ['resolution'], 'workspace');
-      await updatePubspec(sharedPubspec.path, ['dependencies', 'base'], '^0.0.1');
-
-      final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
-      await sharedLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), sharedLibDir);
-
-      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
-      final v100AnalysisOptionsShared = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
-      if (v100AnalysisOptionsShared.existsSync()) {
-        await v100AnalysisOptionsShared.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
-      }
+      await setupWorkspacePackage(
+        packageName: 'shared',
+        version: '0.0.1',
+        dependencies: {'base': '^0.0.1'},
+      );
 
       // 5. Create consumer package (depends on shared)
-      final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
-      await consumerDir.create(recursive: true);
-      await runProcess('flutter', ['create', '.', '--template', 'package'], workingDir: consumerDir.path);
-      await Directory(p.join(consumerDir.path, 'lib')).delete(recursive: true);
-      await Directory(p.join(consumerDir.path, 'lib')).create();
-      await Directory(p.join(consumerDir.path, 'test')).delete(recursive: true);
-      await Directory(p.join(consumerDir.path, 'test')).create();
-
-      final consumerPubspec = File(p.join(consumerDir.path, 'pubspec.yaml'));
-      await updatePubspec(consumerPubspec.path, ['version'], '0.0.1');
-      await updatePubspec(consumerPubspec.path, ['resolution'], 'workspace');
-      await updatePubspec(consumerPubspec.path, ['dependencies', 'shared'], '^0.0.1');
-
-      final consumerLibDir = Directory(p.join(consumerDir.path, 'lib'));
-      await consumerLibDir.create(recursive: true);
-      await copyDir(Directory(p.join(testSetup.fixtures.appV100Dir.path, 'lib')), consumerLibDir);
-
-      // Copy analysis_options.yaml from fixtures to ensure consistent entry points
-      final v100AnalysisOptionsConsumer = File(p.join(testSetup.fixtures.appV100Dir.path, 'analysis_options.yaml'));
-      if (v100AnalysisOptionsConsumer.existsSync()) {
-        await v100AnalysisOptionsConsumer.copy(p.join(consumerDir.path, 'analysis_options.yaml'));
-      }
+      await setupWorkspacePackage(
+        packageName: 'consumer',
+        version: '0.0.1',
+        dependencies: {'shared': '^0.0.1'},
+      );
 
       // 6. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -365,6 +270,7 @@ workspace:
       expect(basePubspecYaml['version'], '0.1.0');
 
       // 10. Verify shared dependency on base was updated
+      final sharedDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'shared'));
       final sharedPubspecAfter = File(p.join(sharedDir.path, 'pubspec.yaml'));
       final sharedPubspecYaml = loadYaml(await sharedPubspecAfter.readAsString()) as YamlMap;
       final sharedDeps = sharedPubspecYaml['dependencies'] as YamlMap;
@@ -374,6 +280,7 @@ workspace:
       }
 
       // 11. Verify consumer dependency on shared was NOT updated (shared didn't change)
+      final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
       final consumerPubspecAfter = File(p.join(consumerDir.path, 'pubspec.yaml'));
       final consumerPubspecYaml = loadYaml(await consumerPubspecAfter.readAsString()) as YamlMap;
       final consumerDeps = consumerPubspecYaml['dependencies'] as YamlMap;

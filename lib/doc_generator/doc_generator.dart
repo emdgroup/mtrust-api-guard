@@ -10,6 +10,7 @@ import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
@@ -242,6 +243,7 @@ Future<PackageApi> generateDocs({
     final contextCollection = AnalysisContextCollection(
       includedPaths: [normalize(absolute(analysisDartRoot.path))],
       excludedPaths: config.exclude.toList(),
+      sdkPath: getSdkPath(),
     );
 
     final progress = logger.progress("Analyzing dart files");

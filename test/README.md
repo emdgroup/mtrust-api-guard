@@ -7,44 +7,36 @@ This directory contains the test files for the mtrust-api-guard project, organiz
 ```
 test/
 ├── README.md                    # This file
-├── mtrust_api_guard_test.dart  # Main test runner
 ├── test_config.dart            # Global test configuration
 ├── helpers/                    # Common test utilities
+│   ├── test_bootstrap.dart    # Auto compile binary + Flutter scaffolds
 │   ├── test_helpers.dart      # Helper functions and constants
 │   └── test_setup.dart        # Test setup and teardown utilities
 └── commands/                   # Command-specific test files
-    ├── generate_command_test.dart  # Tests for the generate command
-    ├── compare_command_test.dart   # Tests for the compare command
-    └── version_command_test.dart   # Tests for the version command
+    ├── generate_command_test.dart
+    ├── compare_command_test.dart
+    └── version_command_test.dart
 ```
-
-## Test Organization
-
-### Main Test Runner
-- `mtrust_api_guard_test.dart` - Imports and runs all test files
-
-### Helper Files
-- `test_helpers.dart` - Contains common utility functions like `copyDir`, `runProcess`, and `stripChangelog`
-- `test_setup.dart` - Manages test environment setup, teardown, and common operations like git setup
-
-### Command Tests
-Each command has its own test file:
-- **Generate Command**: Tests API documentation generation functionality
-- **Compare Command**: Tests API comparison between different versions
-- **Version Command**: Tests version management and changelog generation
 
 ## Running Tests
 
-To run all tests:
+No manual setup is required. Integration tests bootstrap automatically on first `setUp()`:
+
+- Compiles `build/mtrust_api_guard` when missing or when `lib/` / `bin/` changed
+- Generates `.test_scaffolds/package_base/` and `plugin_base/` when missing (always on CI)
+
 ```bash
-dart test
+flutter test
 ```
 
-To run specific test files:
+`test/flutter_test_config.dart` bootstraps binaries and fixtures and removes any legacy scaffolds under `test/fixtures/` before tests run.
+
+To run specific integration test files:
+
 ```bash
-dart test test/commands/generate_command_test.dart
-dart test test/commands/compare_command_test.dart
-dart test test/commands/version_command_test.dart
+flutter test test/commands/generate_command_test.dart
+flutter test test/commands/compare_command_test.dart
+flutter test test/commands/version_command_test.dart
 ```
 
 ## Test Constants
@@ -57,9 +49,11 @@ Common test constants are defined in `TestConstants` class:
 ## Test Fixtures
 
 Test fixtures are managed through the `TestFixtures` class, which provides access to:
-- Different app versions for testing
+- Different app versions for testing (`app_v100`, `app_v101`, etc.)
+- Generated Flutter scaffolds (`package_base`, `plugin_base` in `.test_scaffolds/`) — not committed, created by bootstrap
 - Expected output files
-- Test data directories
+
+If scaffold drift occurs after a Flutter SDK upgrade locally, delete `.test_scaffolds/` and re-run tests.
 
 ## Benefits of This Structure
 

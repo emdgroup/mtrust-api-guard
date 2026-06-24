@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
+import 'package:yaml_edit/yaml_edit.dart';
 
 /// Recursively copy [src] directory to [dst].
 Future<void> copyDir(Directory src, Directory dst) async {
@@ -16,6 +17,23 @@ Future<void> copyDir(Directory src, Directory dst) async {
     } else if (entity is Directory) {
       await Directory(newPath).create(recursive: true);
     }
+  }
+}
+
+/// Copies the pre-generated package scaffold into [target].
+Future<void> copyPackageBase(Directory target, {String? packageName}) async {
+  final packageBase = Directory(p.join('.test_scaffolds', 'package_base'));
+  if (!packageBase.existsSync()) {
+    throw StateError('Package base fixture missing at ${packageBase.path}. Run flutter test to bootstrap.');
+  }
+
+  await copyDir(packageBase, target);
+
+  if (packageName != null) {
+    final pubspecFile = File(p.join(target.path, 'pubspec.yaml'));
+    final editor = YamlEditor(await pubspecFile.readAsString());
+    editor.update(['name'], packageName);
+    await pubspecFile.writeAsString(editor.toString());
   }
 }
 
@@ -78,6 +96,8 @@ class TestFixtures {
   final Directory appV101Dir;
   final Directory appV110Dir;
   final Directory appV200Dir;
+  final Directory packageBaseDir;
+  final Directory pluginBaseDir;
   final File expectedChangelogFile;
 
   TestFixtures()
@@ -86,5 +106,7 @@ class TestFixtures {
       appV101Dir = Directory('test/fixtures/app_v101'),
       appV110Dir = Directory('test/fixtures/app_v110'),
       appV200Dir = Directory('test/fixtures/app_v200'),
+      packageBaseDir = Directory('.test_scaffolds/package_base'),
+      pluginBaseDir = Directory('.test_scaffolds/plugin_base'),
       expectedChangelogFile = File('test/fixtures/expected_changelog.md');
 }
