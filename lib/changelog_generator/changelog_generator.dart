@@ -94,7 +94,7 @@ class ChangelogGenerator {
 
     if (pubspecVersion > latestTaggedVersion) {
       final latestTag = tags.last.$1;
-      logger.info('Regenerating unreleased section (${latestTag}..HEAD)');
+      logger.info('Regenerating unreleased section ($latestTag..HEAD)');
 
       final unreleasedChanges = await compare(
         baseRef: latestTag,
