@@ -325,6 +325,38 @@ class GitUtils {
     return '$remoteUrl/compare/$baseRef..$newRef#diff-$digest';
   }
 
+  static Future<String?> getRootCommit(String? root) async {
+    try {
+      final result = await Process.run('git', ['rev-list', '--max-parents=0', 'HEAD'], workingDirectory: root);
+      if (result.exitCode != 0) {
+        return null;
+      }
+      final commits = result.stdout.toString().trim().split('\n').where((line) => line.isNotEmpty);
+      return commits.isEmpty ? null : commits.first;
+    } catch (e) {
+      logger.detail('Error retrieving root commit: $e');
+      return null;
+    }
+  }
+
+  /// Gets the date of a git tag
+  static Future<DateTime?> getTagDate(String tag, String? root) async {
+    try {
+      final result = await Process.run('git', ['log', '-1', '--format=%ci', tag], workingDirectory: root);
+      if (result.exitCode != 0) {
+        return null;
+      }
+      final date = result.stdout.toString().trim();
+      if (date.isEmpty) {
+        return null;
+      }
+      return DateTime.tryParse(date);
+    } catch (e) {
+      logger.detail('Error retrieving tag date for $tag: $e');
+      return null;
+    }
+  }
+
   /// Gets the commits between two refs
   /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
   static Future<List<Commit>> getCommits({required String root, String? fromRef, String? toRef}) async {

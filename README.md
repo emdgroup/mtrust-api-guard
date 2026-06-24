@@ -238,6 +238,12 @@ Generate a changelog for the specified interval. Defaults to generating a change
 mtrust_api_guard changelog
 ```
 
+Regenerate the entire `CHANGELOG.md` by walking version tags and comparing each consecutive release pair. This overwrites the file.
+
+```sh
+mtrust_api_guard changelog --regenerate
+```
+
 ```
 -r, --root           Root directory of the Dart project. Defaults to auto-detect from the current directory.
 -b, --base-ref       The previous version to compare against. Defaults to previous version from git history.
@@ -248,6 +254,12 @@ mtrust_api_guard changelog
 -h, --help           Print this usage information.
 -u, --[no-]update    Update the CHANGELOG.md file
                      (defaults to on)
+    --[no-]regenerate
+                       Regenerate the entire CHANGELOG.md from version tags,
+                       overwriting the file
+    --tag-prefix=<prefix>
+                       Prefix for version tags (defaults to "v")
+    --package=<name>   Package name for workspace tags (package/vX.Y.Z)
 ```
 
 ## Version
