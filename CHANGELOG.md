@@ -1,3 +1,43 @@
+## 7.0.0
+Released on: 6/24/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **ci:** revert flutter_lints to ^1.0.0 ([e5cb918](commit/e5cb918))
+- **doc_visitor:** use privateName for field formal params ([2037f0e](commit/2037f0e))
+- **test:** bootstrap compiled binary and shared flutter scaffolds ([e6af2bf](commit/e6af2bf))
+
+### API Changes
+
+#### 💣 Breaking changes
+
+**`meta` Minimum Dart SDK version increased** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 🎯 Minimum Dart SDK version increased: from `>=3.0.0 <4.0.0` to `>=3.11.0 <4.0.0`
+
+#### ✨ Minor changes
+
+**`meta` dependency `build_config`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency removed: removed
+
+**`meta` dependency `build`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency removed: removed
+
+**`meta` dependency `code_builder`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency removed: removed
+
+**`meta` dependency `dart_style`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency removed: removed
+
+#### 👀 Patch changes
+
+**`meta` dependency `analyzer`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency version changed: from `^7.4.5` to `^13.3.0`
+
+**`meta` dependency `json_annotation`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
+- 📦 Dependency version changed: from `^4.9.0` to `^4.12.0`
+
+
 ## Unreleased
 
 ### Dependencies
