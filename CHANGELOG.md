@@ -1,3 +1,11 @@
+## 7.0.1
+Released on: 6/24/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **changelog:** group pubspec changes and fix dependency text ([10e59e0](commit/10e59e0))
+
 ## 7.0.0
 Released on: 6/24/2026, changelog automatically generated.
 
