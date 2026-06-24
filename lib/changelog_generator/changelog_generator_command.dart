@@ -29,21 +29,78 @@ class ChangelogGeneratorCommand extends Command
   }
 
   ChangelogGeneratorCommand._internal() {
-    argParser.addFlag('update', abbr: 'u', help: 'Update the CHANGELOG.md file', defaultsTo: true);
+    argParser
+      ..addFlag('update', abbr: 'u', help: 'Update the CHANGELOG.md file', defaultsTo: true)
+      ..addFlag(
+        'regenerate',
+        help: 'Regenerate the entire CHANGELOG.md from version tags, overwriting the file',
+        defaultsTo: false,
+      )
+      ..addOption(
+        'tag-prefix',
+        help: 'Prefix for version tags (e.g. v for v1.0.0)',
+        defaultsTo: 'v',
+        valueHelp: 'prefix',
+      )
+      ..addOption(
+        'package',
+        help: 'Package name for workspace tags in the format package/vX.Y.Z',
+        valueHelp: 'name',
+      );
   }
 
   bool get update {
     return argResults?['update'] as bool;
   }
 
+  bool get regenerate {
+    return argResults?['regenerate'] as bool;
+  }
+
+  String get tagPrefix {
+    return argResults?['tag-prefix'] as String? ?? 'v';
+  }
+
+  String? get packageName {
+    return argResults?['package'] as String?;
+  }
+
   @override
   FutureOr? run() async {
-    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(Directory.current.path);
+    final gitRoot = Directory.current;
+
+    if (regenerate) {
+      final changelogGenerator = ChangelogGenerator(
+        apiChanges: const [],
+        projectRoot: root,
+      );
+
+      if (update) {
+        logger.info('Regenerating CHANGELOG.md from version tags');
+        await changelogGenerator.regenerateChangelogFile(
+          gitRoot: gitRoot,
+          cache: cache,
+          tagPrefix: tagPrefix,
+          packageName: packageName,
+        );
+      } else {
+        final changelog = await changelogGenerator.regenerateFullChangelog(
+          gitRoot: gitRoot,
+          cache: cache,
+          tagPrefix: tagPrefix,
+          packageName: packageName,
+        );
+        print('\n$changelog');
+      }
+      return;
+    }
+
+    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix);
     final changes = await compare(
       baseRef: resolvedBaseRef,
       newRef: newRef,
       dartRoot: root,
-      gitRoot: Directory.current,
+      gitRoot: gitRoot,
       cache: cache,
     );
 
