@@ -75,7 +75,16 @@ class ChangelogGenerator {
     String tagPrefix = 'v',
     String? packageName,
     int concurrency = 4,
+    bool ignoreLaggingTags = false,
   }) async {
+    if (!ignoreLaggingTags) {
+      await GitUtils.ensureLocalTagsAreCurrent(
+        root: gitRoot.path,
+        tagPrefix: tagPrefix,
+        packageName: packageName,
+      );
+    }
+
     final tags = packageName != null
         ? await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: tagPrefix)
         : await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix);
@@ -290,6 +299,7 @@ class ChangelogGenerator {
     String tagPrefix = 'v',
     String? packageName,
     int concurrency = 4,
+    bool ignoreLaggingTags = false,
   }) async {
     final changelogFile = File(join(projectRoot.path, 'CHANGELOG.md'));
     final content = await regenerateFullChangelog(
@@ -298,6 +308,7 @@ class ChangelogGenerator {
       tagPrefix: tagPrefix,
       packageName: packageName,
       concurrency: concurrency,
+      ignoreLaggingTags: ignoreLaggingTags,
     );
     await changelogFile.writeAsString(content);
     logger.info('${changelogFile.absolute.path} regenerated successfully.');

@@ -46,7 +46,7 @@ void main() {
       await testSetup.commitChanges('fix: API changes for v${TestConstants.patchVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.patchVersion}'], workingDir: testSetup.tempDir.path);
 
-      await testSetup.runApiGuard('changelog', ['--regenerate']);
+      await testSetup.runApiGuard('changelog', ['--regenerate', '--ignore-lagging-tags']);
 
       final changelogFile = File(p.join(testSetup.tempDir.path, 'CHANGELOG.md'));
       expect(changelogFile.existsSync(), isTrue);
@@ -80,7 +80,7 @@ void main() {
       await testSetup.commitChanges('fix: API changes for v${TestConstants.patchVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.patchVersion}'], workingDir: testSetup.tempDir.path);
 
-      await testSetup.runApiGuard('changelog', ['--regenerate']);
+      await testSetup.runApiGuard('changelog', ['--regenerate', '--ignore-lagging-tags']);
 
       final changelog = await File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsString();
       printOnFailure('Regenerated changelog:\n$changelog');
@@ -88,6 +88,39 @@ void main() {
       final versionHeaders = RegExp(r'^## (.+)$', multiLine: true).allMatches(changelog).map((m) => m.group(1)).toList();
       expect(versionHeaders, contains(TestConstants.initialVersion));
       expect(versionHeaders, contains(TestConstants.patchVersion));
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
+    test('regenerate fails when local tags lag behind origin', () async {
+      final bareDir = await Directory.systemTemp.createTemp('api_guard_bare_');
+      await runProcess('git', ['init', '--bare'], workingDir: bareDir.path);
+
+      await testSetup.setupGitRepo();
+      await runProcess('git', ['remote', 'set-url', 'origin', bareDir.path], workingDir: testSetup.tempDir.path);
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['push', '-u', 'origin', 'HEAD'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['push', 'origin', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      testSetup.setVersion(TestConstants.minorVersion);
+      await testSetup.commitChanges('feat: API changes for v${TestConstants.minorVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.minorVersion}'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['push', 'origin', 'v${TestConstants.minorVersion}'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['tag', '-d', 'v${TestConstants.minorVersion}'], workingDir: testSetup.tempDir.path);
+
+      await expectLater(
+        testSetup.runApiGuard('changelog', ['--regenerate']),
+        throwsA(predicate<Object>((error) => error.toString().contains('v${TestConstants.minorVersion}'))),
+      );
+
+      await testSetup.runApiGuard('changelog', ['--regenerate', '--ignore-lagging-tags']);
+
+      final changelog = await File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsString();
+      expect(changelog, contains('## ${TestConstants.initialVersion}'));
+      expect(changelog, isNot(contains('## ${TestConstants.minorVersion}')));
     }, timeout: const Timeout(Duration(minutes: 3)));
 
     test('regenerate includes unreleased section when pubspec is ahead of latest tag', () async {
@@ -102,7 +135,7 @@ void main() {
       await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
       await testSetup.commitChanges('fix: unreleased API changes');
 
-      await testSetup.runApiGuard('changelog', ['--regenerate']);
+      await testSetup.runApiGuard('changelog', ['--regenerate', '--ignore-lagging-tags']);
 
       final changelog = await File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsString();
       printOnFailure('Regenerated changelog:\n$changelog');

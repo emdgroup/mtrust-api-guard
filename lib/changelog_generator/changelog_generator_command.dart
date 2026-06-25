@@ -52,6 +52,11 @@ class ChangelogGeneratorCommand extends Command
         help: 'Number of refs to analyze in parallel when regenerating',
         defaultsTo: '4',
         valueHelp: 'count',
+      )
+      ..addFlag(
+        'ignore-lagging-tags',
+        help: 'Allow regeneration when local tags are behind origin',
+        defaultsTo: false,
       );
   }
 
@@ -75,6 +80,10 @@ class ChangelogGeneratorCommand extends Command
     return int.tryParse(argResults?['concurrency'] as String? ?? '4') ?? 4;
   }
 
+  bool get ignoreLaggingTags {
+    return argResults?['ignore-lagging-tags'] as bool;
+  }
+
   @override
   FutureOr? run() async {
     final gitRoot = Directory.current;
@@ -93,6 +102,7 @@ class ChangelogGeneratorCommand extends Command
           tagPrefix: tagPrefix,
           packageName: packageName,
           concurrency: concurrency,
+          ignoreLaggingTags: ignoreLaggingTags,
         );
       } else {
         final changelog = await changelogGenerator.regenerateFullChangelog(
@@ -101,6 +111,7 @@ class ChangelogGeneratorCommand extends Command
           tagPrefix: tagPrefix,
           packageName: packageName,
           concurrency: concurrency,
+          ignoreLaggingTags: ignoreLaggingTags,
         );
         print('\n$changelog');
       }

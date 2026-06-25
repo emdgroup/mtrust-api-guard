@@ -273,6 +273,112 @@ class GitUtils {
     return sortedVersions;
   }
 
+  /// Lists tag names from the `origin` remote via `git ls-remote --tags`.
+  static Future<List<String>> getRemoteTags(String? root) async {
+    final remoteUrl = await getRemoteUrl(root);
+    if (remoteUrl == null) {
+      throw const GitException('No git remote configured; cannot verify local tags are up to date');
+    }
+
+    final result = await Process.run('git', ['ls-remote', '--tags', 'origin'], workingDirectory: root);
+    if (result.exitCode != 0) {
+      throw GitException('Failed to list remote tags: ${result.stderr}');
+    }
+
+    final tags = <String>[];
+    for (final line in result.stdout.toString().trim().split('\n')) {
+      if (line.trim().isEmpty) {
+        continue;
+      }
+
+      final parts = line.split('\t');
+      if (parts.length < 2) {
+        continue;
+      }
+
+      final ref = parts[1].trim();
+      if (ref.endsWith('^{}')) {
+        continue;
+      }
+      if (!ref.startsWith('refs/tags/')) {
+        continue;
+      }
+
+      tags.add(ref.substring('refs/tags/'.length));
+    }
+
+    return tags;
+  }
+
+  /// Returns version tags that exist on `origin` but not in the local repository.
+  static Future<List<String>> findMissingLocalTags({
+    required String? root,
+    String tagPrefix = 'v',
+    String? packageName,
+  }) async {
+    final localTags = packageName != null
+        ? await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix)
+        : await getVersions(root, tagPrefix: tagPrefix);
+
+    final remoteTagNames = await getRemoteTags(root);
+    final remoteTags = _parseVersionTags(
+      remoteTagNames,
+      tagPrefix: tagPrefix,
+      packagePrefix: packageName != null ? '$packageName/' : null,
+    );
+
+    final localTagSet = localTags.map((entry) => entry.$1).toSet();
+    return remoteTags.where((entry) => !localTagSet.contains(entry.$1)).map((entry) => entry.$1).toList();
+  }
+
+  /// Fails when local tags are behind `origin`.
+  static Future<void> ensureLocalTagsAreCurrent({
+    required String? root,
+    String tagPrefix = 'v',
+    String? packageName,
+  }) async {
+    final missing = await findMissingLocalTags(root: root, tagPrefix: tagPrefix, packageName: packageName);
+    if (missing.isEmpty) {
+      return;
+    }
+
+    throw GitException(
+      'Local tags are missing ${missing.length} release(s) present on origin: ${missing.join(', ')}. '
+      'Run `git fetch --tags` or pass --ignore-lagging-tags to regenerate anyway.',
+    );
+  }
+
+  static List<(String, Version)> _parseVersionTags(
+    Iterable<String> tagNames, {
+    required String tagPrefix,
+    String? packagePrefix,
+  }) {
+    final versions = tagNames
+        .where((tag) => tag.isNotEmpty)
+        .where((tag) => packagePrefix == null || tag.startsWith(packagePrefix))
+        .map((tag) {
+          var versionPart = tag;
+          if (packagePrefix != null) {
+            versionPart = tag.substring(packagePrefix.length);
+          }
+          if (versionPart.startsWith(tagPrefix)) {
+            versionPart = versionPart.substring(tagPrefix.length);
+          }
+
+          try {
+            return (tag, Version.parse(versionPart));
+          } catch (e) {
+            logger.detail('Skipping tag $tag. Not a valid version.');
+            return null;
+          }
+        })
+        .whereType<(String, Version)>()
+        .toList();
+
+    versions.sort((a, b) => a.$2.compareTo(b.$2));
+    return versions;
+  }
+
   /// Gets the previous tag ref for a specific package in a workspace
   /// Returns null if no tags exist for the package
   static Future<String?> getPreviousRefForPackage(String? root, String packageName, {String tagPrefix = 'v'}) async {

@@ -263,7 +263,11 @@ mtrust_api_guard changelog --regenerate
     --concurrency=<count>
                        Number of refs to analyze in parallel when regenerating
                        (defaults to "4")
+    --ignore-lagging-tags
+                       Allow regeneration when local tags are behind origin
 ```
+
+When regenerating, the command compares local tags against `origin` and fails if any release tags are missing locally (run `git fetch --tags` first). Pass `--ignore-lagging-tags` to regenerate with only the tags present locally.
 
 When regenerating, the API documentation for each tag is analyzed in parallel (bounded by `--concurrency`). The first tagged release is diffed against the repository's root commit; if that commit has no analyzable Dart project (e.g. an empty initial commit), the API diff for that release is skipped and only its commit summary is shown.
 
