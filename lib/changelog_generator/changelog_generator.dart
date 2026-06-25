@@ -4,8 +4,10 @@ import 'package:conventional/conventional.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
+import 'package:mtrust_api_guard/doc_comparator/get_ref.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/models/package_info.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:yaml/yaml.dart';
@@ -60,11 +62,19 @@ class ChangelogGenerator {
   }
 
   /// Regenerates the entire CHANGELOG.md by walking version tags and comparing each release.
+  ///
+  /// The API documentation for each unique ref is analyzed up front, in parallel
+  /// (bounded by [concurrency]), since that is the expensive part. The per-release
+  /// diffs are then computed from the in-memory results. Refs that cannot be
+  /// analyzed (e.g. an empty initial commit with no pubspec.yaml) are skipped
+  /// gracefully: the affected release still gets its commit-based entry, just
+  /// without an API Changes section.
   Future<String> regenerateFullChangelog({
     required Directory gitRoot,
     required bool cache,
     String tagPrefix = 'v',
     String? packageName,
+    int concurrency = 4,
   }) async {
     final tags = packageName != null
         ? await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: tagPrefix)
@@ -75,34 +85,57 @@ class ChangelogGenerator {
     }
 
     final rootCommit = await GitUtils.getRootCommit(gitRoot.path);
-    final releasePairs = <({String tag, Version version, String baseRef})>[];
+    final releasePairs = <({String tag, Version version, String? baseRef})>[];
 
     String? previousTag;
     for (final (tag, version) in tags) {
+      // The very first release has no previous tag. We fall back to the repo
+      // root commit, but it may be an empty initial commit without a Dart
+      // project, in which case the diff is skipped further down.
       final compareBase = previousTag ?? rootCommit;
-      if (compareBase == null) {
-        throw Exception('Could not determine base ref for first release $tag');
-      }
       releasePairs.add((tag: tag, version: version, baseRef: compareBase));
       previousTag = tag;
     }
 
-    final buffer = StringBuffer();
     final pubspecInfo = await _getPubspecInfo();
     final pubspecVersion = Version.parse(pubspecInfo['version']!);
     final latestTaggedVersion = tags.last.$2;
+    final latestTag = tags.last.$1;
+    final hasUnreleased = pubspecVersion > latestTaggedVersion;
 
-    if (pubspecVersion > latestTaggedVersion) {
-      final latestTag = tags.last.$1;
+    // Analyze all unique cacheable refs (tags + base commits) in parallel.
+    // HEAD is handled separately because it is analyzed from the working
+    // directory and is never cached.
+    final cacheableRefs = <String>{};
+    for (final release in releasePairs) {
+      if (release.baseRef != null) cacheableRefs.add(release.baseRef!);
+      cacheableRefs.add(release.tag);
+    }
+
+    final apisByRef = await _analyzeRefsInParallel(
+      refs: cacheableRefs,
+      gitRoot: gitRoot,
+      cache: cache,
+      concurrency: concurrency,
+    );
+
+    PackageApi? headApi;
+    if (hasUnreleased) {
+      headApi = await _tryAnalyzeRef('HEAD', gitRoot: gitRoot, cache: cache);
+    }
+
+    final buffer = StringBuffer();
+
+    if (hasUnreleased) {
       logger.info('Regenerating unreleased section ($latestTag..HEAD)');
 
-      final unreleasedChanges = await compare(
-        baseRef: latestTag,
-        newRef: 'HEAD',
-        dartRoot: projectRoot,
-        gitRoot: gitRoot,
-        cache: cache,
-      );
+      final baseApi = apisByRef[latestTag];
+      final unreleasedChanges = (baseApi != null && headApi != null)
+          ? compareApis(baseApi, headApi)
+          : <ApiChange>[];
+      if (baseApi == null || headApi == null) {
+        logger.warn('Skipping API diff for unreleased section: could not analyze $latestTag or HEAD');
+      }
 
       final unreleasedCommits = await GitUtils.getCommits(
         root: gitRoot.path,
@@ -122,15 +155,22 @@ class ChangelogGenerator {
     }
 
     for (final release in releasePairs.reversed) {
-      logger.info('Regenerating changelog for ${release.version} (${release.baseRef}..${release.tag})');
+      logger.info('Regenerating changelog for ${release.version} (${release.baseRef ?? 'initial'}..${release.tag})');
 
-      final changes = await compare(
-        baseRef: release.baseRef,
-        newRef: release.tag,
-        dartRoot: projectRoot,
-        gitRoot: gitRoot,
-        cache: cache,
-      );
+      final baseApi = release.baseRef != null ? apisByRef[release.baseRef] : null;
+      final newApi = apisByRef[release.tag];
+
+      List<ApiChange> changes;
+      if (baseApi != null && newApi != null) {
+        changes = compareApis(baseApi, newApi);
+      } else {
+        changes = <ApiChange>[];
+        final missing = newApi == null ? release.tag : (release.baseRef ?? 'initial commit');
+        logger.warn(
+          'Skipping API diff for ${release.version}: could not analyze $missing '
+          '(e.g. missing pubspec.yaml at that ref)',
+        );
+      }
 
       final commits = await GitUtils.getCommits(
         root: gitRoot.path,
@@ -153,6 +193,71 @@ class ChangelogGenerator {
     }
 
     return buffer.toString();
+  }
+
+  /// Analyzes the API documentation for each ref, deduplicating by resolved
+  /// commit hash and running up to [concurrency] analyses at a time.
+  ///
+  /// Returns a map of every input ref to its [PackageApi], or `null` when the
+  /// ref could not be analyzed.
+  Future<Map<String, PackageApi?>> _analyzeRefsInParallel({
+    required Set<String> refs,
+    required Directory gitRoot,
+    required bool cache,
+    required int concurrency,
+  }) async {
+    // Deduplicate by resolved commit hash. Distinct refs that point at the same
+    // commit must not be analyzed concurrently, since they would race on the
+    // same worktree path.
+    final refToHash = <String, String>{};
+    for (final ref in refs) {
+      try {
+        refToHash[ref] = await GitUtils.resolveRef(ref, gitRoot.path);
+      } catch (e) {
+        logger.warn('Could not resolve ref $ref: $e');
+      }
+    }
+
+    final representativeRefByHash = <String, String>{};
+    for (final entry in refToHash.entries) {
+      representativeRefByHash.putIfAbsent(entry.value, () => entry.key);
+    }
+
+    final uniqueRefs = representativeRefByHash.values.toList();
+    final batchSize = concurrency < 1 ? 1 : concurrency;
+    final apiByHash = <String, PackageApi?>{};
+
+    for (var i = 0; i < uniqueRefs.length; i += batchSize) {
+      final batch = uniqueRefs.skip(i).take(batchSize).toList();
+      final results = await Future.wait(
+        batch.map((ref) async {
+          final api = await _tryAnalyzeRef(ref, gitRoot: gitRoot, cache: cache);
+          return MapEntry(refToHash[ref]!, api);
+        }),
+      );
+      for (final entry in results) {
+        apiByHash[entry.key] = entry.value;
+      }
+    }
+
+    final result = <String, PackageApi?>{};
+    for (final entry in refToHash.entries) {
+      result[entry.key] = apiByHash[entry.value];
+    }
+    return result;
+  }
+
+  Future<PackageApi?> _tryAnalyzeRef(
+    String ref, {
+    required Directory gitRoot,
+    required bool cache,
+  }) async {
+    try {
+      return await getRef(ref: ref, dartRoot: projectRoot, gitRoot: gitRoot, cache: cache);
+    } catch (e) {
+      logger.warn('Failed to analyze ref $ref: $e');
+      return null;
+    }
   }
 
   /// Updates the CHANGELOG.md file with the new entry at the top
@@ -184,6 +289,7 @@ class ChangelogGenerator {
     required bool cache,
     String tagPrefix = 'v',
     String? packageName,
+    int concurrency = 4,
   }) async {
     final changelogFile = File(join(projectRoot.path, 'CHANGELOG.md'));
     final content = await regenerateFullChangelog(
@@ -191,6 +297,7 @@ class ChangelogGenerator {
       cache: cache,
       tagPrefix: tagPrefix,
       packageName: packageName,
+      concurrency: concurrency,
     );
     await changelogFile.writeAsString(content);
     logger.info('${changelogFile.absolute.path} regenerated successfully.');

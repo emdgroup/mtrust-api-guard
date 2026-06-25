@@ -20,6 +20,11 @@ Future<List<ApiChange>> compare({
   final baseApi = await getRef(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
   final newApi = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
 
+  return compareApis(baseApi, newApi);
+}
+
+/// Computes the API changes between two already-resolved package APIs.
+List<ApiChange> compareApis(PackageApi baseApi, PackageApi newApi) {
   final apiChanges = baseApi.components.compareTo(newApi.components);
 
   apiChanges.addAll(baseApi.metadata.compareTo(newApi.metadata));

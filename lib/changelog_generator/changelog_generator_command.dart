@@ -46,6 +46,12 @@ class ChangelogGeneratorCommand extends Command
         'package',
         help: 'Package name for workspace tags in the format package/vX.Y.Z',
         valueHelp: 'name',
+      )
+      ..addOption(
+        'concurrency',
+        help: 'Number of refs to analyze in parallel when regenerating',
+        defaultsTo: '4',
+        valueHelp: 'count',
       );
   }
 
@@ -65,6 +71,10 @@ class ChangelogGeneratorCommand extends Command
     return argResults?['package'] as String?;
   }
 
+  int get concurrency {
+    return int.tryParse(argResults?['concurrency'] as String? ?? '4') ?? 4;
+  }
+
   @override
   FutureOr? run() async {
     final gitRoot = Directory.current;
@@ -82,6 +92,7 @@ class ChangelogGeneratorCommand extends Command
           cache: cache,
           tagPrefix: tagPrefix,
           packageName: packageName,
+          concurrency: concurrency,
         );
       } else {
         final changelog = await changelogGenerator.regenerateFullChangelog(
@@ -89,6 +100,7 @@ class ChangelogGeneratorCommand extends Command
           cache: cache,
           tagPrefix: tagPrefix,
           packageName: packageName,
+          concurrency: concurrency,
         );
         print('\n$changelog');
       }

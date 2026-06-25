@@ -260,7 +260,12 @@ mtrust_api_guard changelog --regenerate
     --tag-prefix=<prefix>
                        Prefix for version tags (defaults to "v")
     --package=<name>   Package name for workspace tags (package/vX.Y.Z)
+    --concurrency=<count>
+                       Number of refs to analyze in parallel when regenerating
+                       (defaults to "4")
 ```
+
+When regenerating, the API documentation for each tag is analyzed in parallel (bounded by `--concurrency`). The first tagged release is diffed against the repository's root commit; if that commit has no analyzable Dart project (e.g. an empty initial commit), the API diff for that release is skipped and only its commit summary is shown.
 
 ## Version
 

@@ -63,6 +63,33 @@ void main() {
       expect(changelog, contains('Released on:'));
     }, timeout: const Timeout(Duration(minutes: 3)));
 
+    test('regenerate tolerates an empty initial commit with no Dart project', () async {
+      await testSetup.setupGitRepo();
+
+      // Empty initial commit without a pubspec.yaml, mirroring the broken
+      // first-commit scenario that previously crashed regeneration.
+      await runProcess('git', ['commit', '--allow-empty', '-m', 'chore: init'], workingDir: testSetup.tempDir.path);
+
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      testSetup.setVersion(TestConstants.patchVersion);
+      await testSetup.commitChanges('fix: API changes for v${TestConstants.patchVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.patchVersion}'], workingDir: testSetup.tempDir.path);
+
+      await testSetup.runApiGuard('changelog', ['--regenerate']);
+
+      final changelog = await File(p.join(testSetup.tempDir.path, 'CHANGELOG.md')).readAsString();
+      printOnFailure('Regenerated changelog:\n$changelog');
+
+      final versionHeaders = RegExp(r'^## (.+)$', multiLine: true).allMatches(changelog).map((m) => m.group(1)).toList();
+      expect(versionHeaders, contains(TestConstants.initialVersion));
+      expect(versionHeaders, contains(TestConstants.patchVersion));
+    }, timeout: const Timeout(Duration(minutes: 3)));
+
     test('regenerate includes unreleased section when pubspec is ahead of latest tag', () async {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
