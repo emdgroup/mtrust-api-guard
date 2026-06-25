@@ -1,3 +1,25 @@
+## 8.1.0
+Released on: 6/25/2026, changelog automatically generated.
+
+
+### Features
+
+- **changelog:** parallelize regenerate and tolerate empty first commit ([010e09e](commit/010e09e))
+
+### API Changes
+
+#### ✨ Minor changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.0.0..v8.1.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Param added in method `regenerateFullChangelog`: `concurrency` (named, optional, default: 4)
+- ❇️ Param added in method `regenerateChangelogFile`: `concurrency` (named, optional, default: 4)
+
+#### 👀 Patch changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.0.0..v8.1.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Methods added: `_analyzeRefsInParallel`, `_tryAnalyzeRef`
+
+
 ## 8.0.0
 Released on: 6/24/2026, changelog automatically generated.
 
