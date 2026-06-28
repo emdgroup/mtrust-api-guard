@@ -1,3 +1,11 @@
+## 8.1.2
+Released on: 6/28/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **workspace:** topological sort and incremental dep propagation ([#34](issues/34)) ([05e46e0](commit/05e46e0))
+
 ## 8.1.1
 Released on: 6/28/2026, changelog automatically generated.
 
