@@ -39,12 +39,21 @@ Future<WorkspaceVersionResult> versionWorkspace({
 
   logger.info('Found ${packages.length} packages in workspace');
 
+  // Sort packages so dependencies are versioned before their consumers.
+  // This ensures that when a consumer is versioned, its pubspec already
+  // reflects the updated sibling constraint, making the dep bump part of
+  // the same versioned commit and preventing cascade bumps on the next run.
+  final sortedPackages = sortPackagesTopologically(packages);
+
   // Track which packages were versioned and their new versions
   final packageResults = <String, VersionResult>{};
   final packageVersions = <String, Version>{};
 
-  // Step 1: Version each changed package
-  for (final package in packages) {
+  // Version each changed package in topological order.
+  // After each versioned package, immediately update its consumers' pubspecs
+  // so that subsequent packages in the loop see the new constraint when they
+  // are checked for changes and versioned.
+  for (final package in sortedPackages) {
     logger.info('Processing package: ${package.name}');
 
     // Determine the base ref for this package
@@ -88,17 +97,19 @@ Future<WorkspaceVersionResult> versionWorkspace({
       packageResults[package.name] = result;
       packageVersions[package.name] = result.version;
       logger.success('Versioned ${package.name} to ${result.version}');
+
+      // Immediately propagate this package's new version into the pubspecs of
+      // any workspace packages that depend on it, so they see the updated
+      // constraint when they are versioned later in this same loop.
+      await updateWorkspaceDependencies(
+        workspace: workspace,
+        packages: sortedPackages,
+        updatedVersions: {package.name: result.version},
+      );
     } catch (e) {
       logger.err('Failed to version package ${package.name}: $e');
       rethrow;
     }
-  }
-
-  // Step 2: Update dependencies between workspace packages
-  if (packageVersions.isNotEmpty) {
-    logger.info('Updating workspace dependencies...');
-    await updateWorkspaceDependencies(workspace: workspace, packages: packages, updatedVersions: packageVersions);
-    logger.success('Updated workspace dependencies');
   }
 
   return WorkspaceVersionResult(packageResults: packageResults, packageVersions: packageVersions);
