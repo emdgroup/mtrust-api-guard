@@ -9,7 +9,7 @@ Version stableVersion(Version version) => Version(version.major, version.minor, 
 
 Version targetStableForPreRelease(Version original, ApiChangeMagnitude magnitude) {
   final stable = stableVersion(original);
-  if (original.isPreRelease && magnitude == ApiChangeMagnitude.patch) {
+  if (original.isPreRelease) {
     return stable;
   }
   return bumpStable(stable, magnitude);
