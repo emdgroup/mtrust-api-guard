@@ -286,16 +286,18 @@ void main() {
       expect(testSetup.getCurrentVersion(), '0.1.0-1');
 
       // 3. Apply major changes and create another pre-release
+      // Since 0.1.0 has not been released yet, major changes still accumulate
+      // under the same stable target — the pre-release counter increments.
       await copyDir(testSetup.fixtures.appV200Dir, testSetup.tempDir);
       await testSetup.commitChanges('feat: implement compatibility with v${TestConstants.majorVersion}');
 
       await testSetup.runApiGuard('version', ['--pre-release']);
-      expect(testSetup.getCurrentVersion(), '1.0.0-1');
+      expect(testSetup.getCurrentVersion(), '0.1.0-2');
 
       // 4. Finalize the release (removes pre-release suffix)
       await testSetup.runApiGuard('version', []);
 
-      expect(testSetup.getCurrentVersion(), '1.0.0');
+      expect(testSetup.getCurrentVersion(), '0.1.0');
     });
 
     test('pre-release prefix option applies custom suffix including incrementing numbers', () async {
