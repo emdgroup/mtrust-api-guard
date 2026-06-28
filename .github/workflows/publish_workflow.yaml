@@ -1,7 +1,12 @@
-name: M-Trust API Guard PR
+name: M-Trust API Guard Release
 on:
   workflow_call:
     inputs:
+      app_id:
+        type: string
+        description: "GitHub App ID for the bumper bot (used to generate a token for pushing)"
+        required: true
+
       pre_release:
         type: boolean
         description: "Whether to run the version command with the pre-release flag"
@@ -32,58 +37,30 @@ on:
         default: "main"
 
     secrets:
-      # GitHub App credentials (app_id + app_private_key) take precedence over token.
-      # Setting up a GitHub App is generally preferred: the identity is org-owned,
-      # credentials don't expire, and bypass permissions can be scoped precisely per
-      # ruleset — unlike a PAT which is tied to an individual user.
-      app_id:
-        description: "The app id to use for cloning and pushing (takes precedence over token)"
-        required: false
       app_private_key:
-        description: "The private key to use for cloning and pushing (takes precedence over token)"
-        required: false
-      token:
-        description: "A PAT or elevated token to use for cloning and pushing (used when app_id/app_private_key are not provided)"
-        required: false
+        description: "GitHub App private key for the bumper bot"
+        required: true
 
 jobs:
   compare_api_changes:
     runs-on: ubuntu-latest
     steps:
-      # Determine which auth method to use (app > token > github default)
-      - name: Check which auth method to use
-        id: check-secrets
-        run: |
-          if [ -n "${{ secrets.app_id }}" ] && [ -n "${{ secrets.app_private_key }}" ]; then
-            echo "auth_method=app" >> $GITHUB_OUTPUT
-          elif [ -n "${{ secrets.token }}" ]; then
-            echo "auth_method=token" >> $GITHUB_OUTPUT
-          else
-            echo "auth_method=github" >> $GITHUB_OUTPUT
-          fi
-      # Authenticate and clone as github app
-      - name: 🔑 Get token for bumper app
-        if: steps.check-secrets.outputs.auth_method == 'app'
+      # Authenticate as the bumper GitHub App so that pushes and tag pushes
+      # can trigger downstream workflows (e.g. pub.dev publish on tag push).
+      # The default GITHUB_TOKEN is explicitly blocked from triggering further
+      # workflow runs, which is why we need the app token here.
+      - name: Get token for bumper app
         uses: actions/create-github-app-token@v1
         id: app-token
         with:
-          app-id: ${{ secrets.app_id }}
+          app-id: ${{ inputs.app_id }}
           private-key: ${{ secrets.app_private_key }}
-      - name: Checkout code using app token
-        if: steps.check-secrets.outputs.auth_method == 'app'
+
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
-      # Authenticate and clone using provided token
-      - name: Checkout code using provided token
-        if: steps.check-secrets.outputs.auth_method == 'token'
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.token }}
-      # Authenticate and clone as github user
-      - name: Checkout code using github token
-        if: steps.check-secrets.outputs.auth_method == 'github'
-        uses: actions/checkout@v4
+
       # Fetch tags and configure git
       - name: Fetch all tags
         run: git fetch --tags

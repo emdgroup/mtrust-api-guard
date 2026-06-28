@@ -3,9 +3,11 @@ on:
   push:
     branches:
       - main
+
 jobs:
   # Validate the Dart code
   validate_dart:
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -18,9 +20,9 @@ jobs:
     needs: validate_dart
     uses: ./.github/workflows/publish_workflow.yaml
     secrets:
-      app_id: ${{ secrets.BUMPER_APP_ID }}
-      app_private_key: ${{ secrets.BUMPER_APP_PRIVATE_KEY }}
+      app_private_key: ${{ secrets.BUMPER_APP_KEY }}
     with:
+      app_id: ${{ vars.BUMPER_APP_ID }}
       git_push_branch: main
       git_push: true
       use_local_version: true
