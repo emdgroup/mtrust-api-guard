@@ -95,6 +95,83 @@ List<WorkspacePackage> getWorkspacePackages(WorkspaceInfo workspace) {
   return packages;
 }
 
+/// Returns the workspace packages sorted in topological order so that a package
+/// always appears before any other package that depends on it.
+/// Packages with no intra-workspace dependencies come first.
+List<WorkspacePackage> sortPackagesTopologically(List<WorkspacePackage> packages) {
+  // Build a name -> package map and a dependency graph
+  final packageNames = {for (final p in packages) p.name};
+  final deps = <String, Set<String>>{};
+
+  for (final package in packages) {
+    final pubspecFile = File(path.join(package.directory.path, 'pubspec.yaml'));
+    if (!pubspecFile.existsSync()) {
+      deps[package.name] = {};
+      continue;
+    }
+    try {
+      final content = pubspecFile.readAsStringSync();
+      final pubspec = loadYaml(content) as Map;
+      final workspaceDeps = <String>{};
+      for (final section in ['dependencies', 'dev_dependencies']) {
+        final sectionMap = pubspec[section];
+        if (sectionMap is Map) {
+          for (final dep in sectionMap.keys) {
+            if (packageNames.contains(dep as String)) {
+              workspaceDeps.add(dep);
+            }
+          }
+        }
+      }
+      deps[package.name] = workspaceDeps;
+    } catch (e) {
+      logger.warn('Error reading dependencies for ${package.name}: $e');
+      deps[package.name] = {};
+    }
+  }
+
+  // Kahn's algorithm for topological sort
+  final inDegree = <String, int>{for (final p in packages) p.name: 0};
+  for (final entry in deps.entries) {
+    for (final _ in entry.value) {
+      inDegree[entry.key] = (inDegree[entry.key] ?? 0) + 1;
+    }
+  }
+
+  // Build reverse map: dependency -> list of packages that depend on it
+  final dependents = <String, List<String>>{};
+  for (final entry in deps.entries) {
+    for (final dep in entry.value) {
+      dependents.putIfAbsent(dep, () => []).add(entry.key);
+    }
+  }
+
+  final queue = <String>[
+    for (final p in packages)
+      if ((inDegree[p.name] ?? 0) == 0) p.name,
+  ];
+  final sorted = <String>[];
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeAt(0);
+    sorted.add(current);
+    for (final dependent in (dependents[current] ?? [])) {
+      inDegree[dependent] = (inDegree[dependent] ?? 1) - 1;
+      if (inDegree[dependent] == 0) {
+        queue.add(dependent);
+      }
+    }
+  }
+
+  if (sorted.length != packages.length) {
+    logger.warn('Cycle detected in workspace dependency graph; falling back to original order');
+    return packages;
+  }
+
+  final packageMap = {for (final p in packages) p.name: p};
+  return sorted.map((name) => packageMap[name]!).toList();
+}
+
 /// Checks if a package directory has changes between two git refs
 Future<bool> packageHasChanges(String packagePath, String baseRef, String newRef, Directory gitRoot) async {
   try {
