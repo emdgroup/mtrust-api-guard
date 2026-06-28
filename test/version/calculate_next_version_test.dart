@@ -81,7 +81,7 @@ void main() {
       expect(next, '0.1.0-dev.1');
     });
 
-    test('bumps stable base and restarts pre-release suffix', () async {
+    test('keeps stable base when pre-release has minor change', () async {
       final next = await calculateNextVersion(
         Version.parse('0.1.0-dev.3'),
         ApiChangeMagnitude.minor,
@@ -91,7 +91,24 @@ void main() {
         'dev',
       );
 
-      expect(next, '0.2.0-dev.1');
+      expect(next, '0.1.0-dev.4');
+    });
+
+    test('keeps stable base when pre-release has major change', () async {
+      await createTag('liquid_flutter/v23.0.0-1');
+      await createTag('liquid_flutter/v23.0.0-2');
+      await createTag('liquid_flutter/v23.0.0-3');
+
+      final next = await calculateNextVersion(
+        Version.parse('23.0.0-3'),
+        ApiChangeMagnitude.major,
+        true,
+        tempDir,
+        'liquid_flutter/v',
+        '',
+      );
+
+      expect(next, '23.0.0-4');
     });
 
     test('increments dev pre-release on same stable base', () async {
