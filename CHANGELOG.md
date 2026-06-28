@@ -1,3 +1,11 @@
+## 8.1.1
+Released on: 6/28/2026, changelog automatically generated.
+
+
+### Bug Fixes
+
+- **version:** keep stable base for all magnitudes when bumping from pre-release ([#33](issues/33)) ([3a02e30](commit/3a02e30))
+
 ## 8.1.0
 Released on: 6/25/2026, changelog automatically generated.
 
