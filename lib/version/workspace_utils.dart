@@ -133,7 +133,7 @@ List<WorkspacePackage> sortPackagesTopologically(List<WorkspacePackage> packages
   // Kahn's algorithm for topological sort
   final inDegree = <String, int>{for (final p in packages) p.name: 0};
   for (final entry in deps.entries) {
-    for (final dep in entry.value) {
+    for (final _ in entry.value) {
       inDegree[entry.key] = (inDegree[entry.key] ?? 0) + 1;
     }
   }
