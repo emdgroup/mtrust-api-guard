@@ -26,7 +26,7 @@ class VersionWorkspaceCommand extends Command
 
   @override
   String get usage {
-    return "${super.usage}\n\nCalculates the next version for each package in a Dart workspace based on API changes.\nOnly packages with changes compared to the base ref will be versioned.\nTags are created in format: {package-name}/v{version}\nDependencies between workspace packages are automatically updated.\n";
+    return "${super.usage}\n\nCalculates the next version for each package in a Dart workspace based on API changes.\nOnly packages with changes compared to the base ref will be versioned.\nTags are created in format: {package}/v{version} by default, configurable via --tag-format.\nDependencies between workspace packages are automatically updated.\n";
   }
 
   VersionWorkspaceCommand._internal() {
@@ -48,7 +48,15 @@ class VersionWorkspaceCommand extends Command
         defaultsTo: '',
         valueHelp: 'prefix',
       )
-      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file');
+      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file')
+      ..addOption(
+        'tag-format',
+        help:
+            'Format of the version tags. Must contain {package} and end with {version}. '
+            'Example: --tag-format "{package}-v{version}" for melos style tags',
+        defaultsTo: WorkspaceTagFormat.defaultFormat,
+        valueHelp: 'format',
+      );
   }
 
   bool get tag {
@@ -83,6 +91,14 @@ class VersionWorkspaceCommand extends Command
     return argResults?['dart-file'] as String?;
   }
 
+  WorkspaceTagFormat get tagFormat {
+    try {
+      return WorkspaceTagFormat.parse(argResults?['tag-format'] as String? ?? WorkspaceTagFormat.defaultFormat);
+    } on FormatException catch (e) {
+      usageException(e.message);
+    }
+  }
+
   @override
   FutureOr? run() async {
     final rootDir = root;
@@ -111,6 +127,7 @@ class VersionWorkspaceCommand extends Command
       isPreRelease: preRelease,
       preReleasePrefix: preReleasePrefix,
       dartFile: dartFile,
+      tagFormat: tagFormat,
     );
 
     if (json != null) {

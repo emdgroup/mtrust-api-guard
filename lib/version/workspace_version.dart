@@ -33,6 +33,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
   required bool generateChangelog,
   required bool cache,
   String? dartFile,
+  WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
 }) async {
   final packages = getWorkspacePackages(workspace);
   final effectiveNewRef = newRef ?? 'HEAD';
@@ -60,7 +61,13 @@ Future<WorkspaceVersionResult> versionWorkspace({
     // If baseRef is provided, use it; otherwise get the previous tag for this package
     final packageBaseRef =
         baseRef ??
-        (await GitUtils.getPreviousRefForPackage(gitRoot.path, package.name, tagPrefix: 'v') ?? effectiveNewRef);
+        (await GitUtils.getPreviousRefForPackage(
+              gitRoot.path,
+              package.name,
+              tagPrefix: tagFormat.versionPrefix,
+              separator: tagFormat.separator,
+            ) ??
+            effectiveNewRef);
 
     // Check if package has changes
     final hasChanges = await packageHasChanges(package.relativePath, packageBaseRef, effectiveNewRef, gitRoot);
@@ -72,8 +79,8 @@ Future<WorkspaceVersionResult> versionWorkspace({
 
     logger.info('Package ${package.name} has changes, versioning...');
 
-    // Determine tag prefix for this package (format: package-name/v)
-    final tagPrefix = '${package.name}/v';
+    // Determine tag prefix for this package from the tag format (e.g. package-name/v)
+    final tagPrefix = tagFormat.prefixFor(package.name);
 
     // Version the package
     try {
@@ -92,6 +99,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
         tagPrefix: tagPrefix,
         dartFile: dartFile != null ? path.join(package.directory.path, dartFile) : null,
         packageName: package.name,
+        tagFormat: tagFormat,
       );
 
       packageResults[package.name] = result;

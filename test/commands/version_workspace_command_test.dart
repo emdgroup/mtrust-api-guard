@@ -195,6 +195,60 @@ workspace:
       expect(tags, isNot(contains('package_b/v0.0.2')));
     });
 
+    test('supports melos style tags via --tag-format', () async {
+      // 1. Initialize git repo
+      await testSetup.setupGitRepo();
+
+      // 2. Create workspace structure
+      final rootPubspec = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      await rootPubspec.writeAsString('''
+name: test_workspace
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+workspace:
+  - packages/shared
+  - packages/consumer
+''');
+
+      // 3. Create packages
+      final sharedDir = await setupWorkspacePackage(packageName: 'shared', version: '0.0.1');
+      final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
+      await setupWorkspacePackage(packageName: 'consumer', version: '0.0.1');
+
+      // 4. Commit and tag initial versions in melos format ({package}-v{version})
+      await testSetup.commitChanges('chore!: Initial workspace setup');
+      await runProcess('git', ['tag', 'shared-v0.0.1'], workingDir: testSetup.tempDir.path);
+      await runProcess('git', ['tag', 'consumer-v0.0.1'], workingDir: testSetup.tempDir.path);
+
+      // 5. Make changes only to shared package (patch-level change)
+      await copyDir(Directory(p.join(testSetup.fixtures.appV101Dir.path, 'lib')), sharedLibDir);
+      final v101AnalysisOptions = File(p.join(testSetup.fixtures.appV101Dir.path, 'analysis_options.yaml'));
+      if (v101AnalysisOptions.existsSync()) {
+        await v101AnalysisOptions.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
+      }
+      await testSetup.commitChanges('fix: update shared package');
+
+      // 6. Run version-workspace with the melos tag format
+      await testSetup.runApiGuard('version-workspace', ['--tag-format', '{package}-v{version}']);
+
+      // 7. Verify shared was versioned against its melos style tag (0.0.1 -> 0.0.2)
+      final sharedPubspecAfter = File(p.join(sharedDir.path, 'pubspec.yaml'));
+      final sharedPubspecYaml = loadYaml(await sharedPubspecAfter.readAsString()) as YamlMap;
+      expect(sharedPubspecYaml['version'], '0.0.2');
+
+      // 8. Verify consumer was not versioned
+      final consumerDir = Directory(p.join(testSetup.tempDir.path, 'packages', 'consumer'));
+      final consumerPubspecYaml =
+          loadYaml(await File(p.join(consumerDir.path, 'pubspec.yaml')).readAsString()) as YamlMap;
+      expect(consumerPubspecYaml['version'], '0.0.1');
+
+      // 9. Verify the new tag uses the melos format and no slash tags were created
+      final tags = await runProcess('git', ['tag'], workingDir: testSetup.tempDir.path, captureOutput: true);
+      expect(tags, contains('shared-v0.0.2'));
+      expect(tags, isNot(contains('shared/v0.0.2')));
+      expect(tags, isNot(contains('consumer-v0.0.2')));
+    });
+
     test('fails when workspace is not detected', () async {
       // 1. Initialize git repo without workspace
       await testSetup.setupGitRepo();
