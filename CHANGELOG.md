@@ -1,3 +1,11 @@
+## 8.1.5
+Released on: 7/22/2026, changelog automatically generated.
+
+
+### Features
+
+- configurable tag format for version-workspace ([6798ee6](commit/6798ee6))
+
 ## 8.1.4
 Released on: 6/28/2026, changelog automatically generated.
 
