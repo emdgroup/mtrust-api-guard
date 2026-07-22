@@ -311,6 +311,22 @@ mtrust_api_guard version --tag-prefix ""
 # This will create tags like: 1.0.0, 1.1.0, etc.
 ```
 
+## Version Workspace
+
+Same as `version`, but for Dart workspaces: every package listed in the root pubspec's `workspace` property is versioned and tagged individually. Only packages with changes since their last tag are versioned, and version constraints between workspace packages are updated automatically.
+
+```sh
+mtrust_api_guard version-workspace
+```
+
+Tags are created per package as `{package}/v{version}` (e.g. `my_pkg/v1.2.0`). The format can be changed with `--tag-format`, which also controls how existing tags are looked up. Useful when migrating from melos, which tags as `my_pkg-v1.2.0`:
+
+```sh
+mtrust_api_guard version-workspace --tag-format "{package}-v{version}"
+```
+
+The format must contain `{package}` and end with `{version}`.
+
 ## Usage in CI
 
 - It is reccommended to version on the target branch you release from (e.g. main).

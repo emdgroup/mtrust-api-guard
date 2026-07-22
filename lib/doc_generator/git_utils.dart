@@ -239,19 +239,21 @@ class GitUtils {
   }
 
   /// Gets version tags for a specific package in a workspace
-  /// Tags are expected to be in format: {package-name}/v{version}
+  /// Tags are expected to be in format: {package-name}{separator}{tagPrefix}{version},
+  /// e.g. my_pkg/v1.2.3 (default) or my_pkg-v1.2.3. The tagPrefix is optional when matching.
   static Future<List<(String, Version)>> getVersionsForPackage(
     String? root,
     String packageName, {
     String tagPrefix = 'v',
+    String separator = '/',
   }) async {
     final allTags = await getTags(root);
-    final packageTagPrefix = '$packageName/';
+    final packageTagPrefix = '$packageName$separator';
 
     final packageVersions = allTags
         .where((tag) => tag.isNotEmpty && tag.startsWith(packageTagPrefix))
         .map((tag) {
-          // Extract version part after package-name/
+          // Extract version part after the package name and separator
           final versionPart = tag.substring(packageTagPrefix.length);
           String version = versionPart;
           if (versionPart.startsWith(tagPrefix)) {
@@ -275,9 +277,14 @@ class GitUtils {
 
   /// Gets the previous tag ref for a specific package in a workspace
   /// Returns null if no tags exist for the package
-  static Future<String?> getPreviousRefForPackage(String? root, String packageName, {String tagPrefix = 'v'}) async {
+  static Future<String?> getPreviousRefForPackage(
+    String? root,
+    String packageName, {
+    String tagPrefix = 'v',
+    String separator = '/',
+  }) async {
     try {
-      final tags = await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix);
+      final tags = await getVersionsForPackage(root, packageName, tagPrefix: tagPrefix, separator: separator);
       if (tags.isEmpty) {
         return null;
       }

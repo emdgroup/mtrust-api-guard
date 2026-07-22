@@ -10,6 +10,7 @@ import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/calculate_next_version.dart';
+import 'package:mtrust_api_guard/version/workspace_utils.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
 import 'package:recase/recase.dart';
@@ -42,14 +43,20 @@ Future<VersionResult> version({
   required String tagPrefix,
   String? dartFile,
   String? packageName,
+  WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
 }) async {
   // For workspace packages, use package-specific tag methods
   final hasPreviousVersion = packageName != null
-      ? (await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: 'v')).isNotEmpty
+      ? (await GitUtils.getVersionsForPackage(
+          gitRoot.path,
+          packageName,
+          tagPrefix: tagFormat.versionPrefix,
+          separator: tagFormat.separator,
+        )).isNotEmpty
       : (await GitUtils.getVersions(gitRoot.path, tagPrefix: tagPrefix)).isNotEmpty;
 
   if (baseRef == null && !hasPreviousVersion) {
-    final exampleTag = packageName != null ? '$packageName/v0.0.1' : '${tagPrefix}0.0.1';
+    final exampleTag = packageName != null ? tagFormat.tagFor(packageName, '0.0.1') : '${tagPrefix}0.0.1';
     logger.err('No previous version found. Please tag the first version. e.g. git tag $exampleTag');
     exit(1);
   }
@@ -57,7 +64,12 @@ Future<VersionResult> version({
   final effectiveBaseRef =
       baseRef ??
       (packageName != null
-          ? await GitUtils.getPreviousRefForPackage(gitRoot.path, packageName, tagPrefix: 'v') ??
+          ? await GitUtils.getPreviousRefForPackage(
+                  gitRoot.path,
+                  packageName,
+                  tagPrefix: tagFormat.versionPrefix,
+                  separator: tagFormat.separator,
+                ) ??
                 (throw Exception('No previous version found for package $packageName'))
           : await GitUtils.getPreviousRef(gitRoot.path, tagPrefix: tagPrefix));
 

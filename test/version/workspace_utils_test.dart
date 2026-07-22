@@ -141,4 +141,35 @@ dependencies:
       expect(sorted.map((p) => p.name).toList(), equals(['pkg_x', 'pkg_y']));
     });
   });
+
+  group('WorkspaceTagFormat', () {
+    test('default format', () {
+      final format = WorkspaceTagFormat.parse(WorkspaceTagFormat.defaultFormat);
+      expect(format.separator, '/');
+      expect(format.versionPrefix, 'v');
+      expect(format.prefixFor('my_pkg'), 'my_pkg/v');
+      expect(format.tagFor('my_pkg', '1.2.3'), 'my_pkg/v1.2.3');
+    });
+
+    test('melos style format', () {
+      final format = WorkspaceTagFormat.parse('{package}-v{version}');
+      expect(format.separator, '-');
+      expect(format.versionPrefix, 'v');
+      expect(format.tagFor('my_pkg', '1.2.3'), 'my_pkg-v1.2.3');
+    });
+
+    test('format without v prefix', () {
+      final format = WorkspaceTagFormat.parse('{package}/{version}');
+      expect(format.separator, '/');
+      expect(format.versionPrefix, '');
+      expect(format.tagFor('my_pkg', '1.2.3'), 'my_pkg/1.2.3');
+    });
+
+    test('rejects invalid formats', () {
+      expect(() => WorkspaceTagFormat.parse('v{version}'), throwsFormatException);
+      expect(() => WorkspaceTagFormat.parse('{package}{version}'), throwsFormatException);
+      expect(() => WorkspaceTagFormat.parse('{version}-{package}'), throwsFormatException);
+      expect(() => WorkspaceTagFormat.parse('{package}-v{version}-suffix'), throwsFormatException);
+    });
+  });
 }

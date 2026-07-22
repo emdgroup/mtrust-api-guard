@@ -20,6 +20,42 @@ class WorkspacePackage {
   WorkspacePackage({required this.name, required this.directory, required this.relativePath});
 }
 
+/// Tag naming scheme for workspace packages.
+///
+/// Parsed from a format string containing the placeholders {package} and
+/// {version}, e.g. "{package}/v{version}" (default) or "{package}-v{version}"
+/// (melos style). The text between the placeholders is split into [separator]
+/// and an optional "v" [versionPrefix], so tag matching stays lenient about
+/// the "v" the same way it always has been.
+class WorkspaceTagFormat {
+  static const String defaultFormat = '{package}/v{version}';
+
+  final String separator;
+  final String versionPrefix;
+
+  const WorkspaceTagFormat({this.separator = '/', this.versionPrefix = 'v'});
+
+  static WorkspaceTagFormat parse(String format) {
+    final match = RegExp(r'^\{package\}(.+)\{version\}$').firstMatch(format);
+    if (match == null) {
+      throw FormatException(
+        'Invalid tag format "$format". Expected {package}<separator>{version}, '
+        'e.g. "{package}/v{version}" or "{package}-v{version}".',
+      );
+    }
+    final middle = match.group(1)!;
+    if (middle.endsWith('v')) {
+      return WorkspaceTagFormat(separator: middle.substring(0, middle.length - 1), versionPrefix: 'v');
+    }
+    return WorkspaceTagFormat(separator: middle, versionPrefix: '');
+  }
+
+  /// Prefix of all version tags of [packageName], e.g. "my_pkg/v".
+  String prefixFor(String packageName) => '$packageName$separator$versionPrefix';
+
+  String tagFor(String packageName, Object version) => '${prefixFor(packageName)}$version';
+}
+
 /// Detects if the given directory is a Dart workspace root
 WorkspaceInfo? detectWorkspace(Directory root) {
   final pubspecFile = File(path.join(root.path, 'pubspec.yaml'));
