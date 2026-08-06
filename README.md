@@ -267,6 +267,8 @@ mtrust_api_guard changelog --regenerate
 
 When regenerating, the API documentation for each tag is analyzed in parallel (bounded by `--concurrency`). The first tagged release is diffed against the repository's root commit; if that commit has no analyzable Dart project (e.g. an empty initial commit), the API diff for that release is skipped and only its commit summary is shown.
 
+pub.dev rejects publishes when `CHANGELOG.md` exceeds **262144 bytes**. After updating or regenerating a changelog, older `##` version sections are moved into `CHANGELOG_ARCHIVE.md` (with a markdown link left in `CHANGELOG.md`) so the published changelog stays under that limit.
+
 ## Version
 
 Detects the API changes that occured and creates a changelog, version bump, version badge and tag automatically.

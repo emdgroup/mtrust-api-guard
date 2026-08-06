@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:conventional/conventional.dart';
+import 'package:mtrust_api_guard/changelog_generator/changelog_archive.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
@@ -130,18 +131,12 @@ class ChangelogGenerator {
       logger.info('Regenerating unreleased section ($latestTag..HEAD)');
 
       final baseApi = apisByRef[latestTag];
-      final unreleasedChanges = (baseApi != null && headApi != null)
-          ? compareApis(baseApi, headApi)
-          : <ApiChange>[];
+      final unreleasedChanges = (baseApi != null && headApi != null) ? compareApis(baseApi, headApi) : <ApiChange>[];
       if (baseApi == null || headApi == null) {
         logger.warn('Skipping API diff for unreleased section: could not analyze $latestTag or HEAD');
       }
 
-      final unreleasedCommits = await GitUtils.getCommits(
-        root: gitRoot.path,
-        fromRef: latestTag,
-        toRef: 'HEAD',
-      );
+      final unreleasedCommits = await GitUtils.getCommits(root: gitRoot.path, fromRef: latestTag, toRef: 'HEAD');
 
       buffer.write(
         await _generateReleaseEntry(
@@ -172,11 +167,7 @@ class ChangelogGenerator {
         );
       }
 
-      final commits = await GitUtils.getCommits(
-        root: gitRoot.path,
-        fromRef: release.baseRef,
-        toRef: release.tag,
-      );
+      final commits = await GitUtils.getCommits(root: gitRoot.path, fromRef: release.baseRef, toRef: release.tag);
 
       final releasedAt = await GitUtils.getTagDate(release.tag, gitRoot.path);
 
@@ -247,11 +238,7 @@ class ChangelogGenerator {
     return result;
   }
 
-  Future<PackageApi?> _tryAnalyzeRef(
-    String ref, {
-    required Directory gitRoot,
-    required bool cache,
-  }) async {
+  Future<PackageApi?> _tryAnalyzeRef(String ref, {required Directory gitRoot, required bool cache}) async {
     try {
       return await getRef(ref: ref, dartRoot: projectRoot, gitRoot: gitRoot, cache: cache);
     } catch (e) {
@@ -263,6 +250,7 @@ class ChangelogGenerator {
   /// Updates the CHANGELOG.md file with the new entry at the top
   Future<void> updateChangelogFile() async {
     final changelogFile = File(join(projectRoot.path, 'CHANGELOG.md'));
+    final archiveFile = File(join(projectRoot.path, changelogArchiveFileName));
     final newEntry = await generateChangelogEntry();
 
     String existingContent = '';
@@ -278,7 +266,13 @@ class ChangelogGenerator {
     }
 
     final updatedContent = '$newEntry$existingContent';
-    await changelogFile.writeAsString(updatedContent);
+    final existingArchive = archiveFile.existsSync() ? await archiveFile.readAsString() : null;
+    await _writeChangelogWithArchiveLimit(
+      changelogFile: changelogFile,
+      archiveFile: archiveFile,
+      content: updatedContent,
+      existingArchive: existingArchive,
+    );
 
     logger.info('${changelogFile.absolute.path} updated successfully.');
   }
@@ -292,6 +286,7 @@ class ChangelogGenerator {
     int concurrency = 4,
   }) async {
     final changelogFile = File(join(projectRoot.path, 'CHANGELOG.md'));
+    final archiveFile = File(join(projectRoot.path, changelogArchiveFileName));
     final content = await regenerateFullChangelog(
       gitRoot: gitRoot,
       cache: cache,
@@ -299,8 +294,36 @@ class ChangelogGenerator {
       packageName: packageName,
       concurrency: concurrency,
     );
-    await changelogFile.writeAsString(content);
+    // Rebuild archive from overflow only; do not merge a stale prior archive.
+    await _writeChangelogWithArchiveLimit(
+      changelogFile: changelogFile,
+      archiveFile: archiveFile,
+      content: content,
+      existingArchive: null,
+    );
     logger.info('${changelogFile.absolute.path} regenerated successfully.');
+  }
+
+  Future<void> _writeChangelogWithArchiveLimit({
+    required File changelogFile,
+    required File archiveFile,
+    required String content,
+    required String? existingArchive,
+  }) async {
+    final split = splitChangelogForPubLimit(content, existingArchive: existingArchive);
+
+    await changelogFile.writeAsString(split.changelog);
+
+    if (split.archive != null) {
+      await archiveFile.writeAsString(split.archive!);
+      logger.info(
+        'Archived older changelog entries to ${archiveFile.absolute.path} '
+        'to stay under the pub.dev CHANGELOG.md size limit ($pubChangelogMaxBytes bytes).',
+      );
+    } else if (archiveFile.existsSync()) {
+      await archiveFile.delete();
+      logger.info('Removed ${archiveFile.absolute.path}; full changelog fits under the pub.dev limit.');
+    }
   }
 
   Future<String> _generateReleaseEntry({
