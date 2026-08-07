@@ -1,3 +1,18 @@
+## 8.1.6
+Released on: 8/7/2026, changelog automatically generated.
+
+
+### Features
+
+- **ChangelogGenerator:** archive oversized CHANGELOG.md for pub.dev ([#37](issues/37)) ([a67c14b](commit/a67c14b))
+
+### API Changes
+
+#### 👀 Patch changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.5..v8.1.6#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Method added: `_writeChangelogWithArchiveLimit`
+
 ## 8.1.5
 Released on: 7/22/2026, changelog automatically generated.
 
@@ -49,7 +64,6 @@ Released on: 6/25/2026, changelog automatically generated.
 **`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.0.0..v8.1.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
 - ❇️ Methods added: `_analyzeRefsInParallel`, `_tryAnalyzeRef`
 
-
 ## 8.0.0
 Released on: 6/24/2026, changelog automatically generated.
 
@@ -79,7 +93,6 @@ Released on: 6/24/2026, changelog automatically generated.
 
 **`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v7.0.1..v8.0.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
 - ❇️ Method added: `_generateReleaseEntry`
-
 
 ## 7.0.1
 Released on: 6/24/2026, changelog automatically generated.
@@ -127,7 +140,6 @@ Released on: 6/24/2026, changelog automatically generated.
 
 **`meta` dependency `json_annotation`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v6.0.7..v7.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
 - 📦 Dependency version changed: from `^4.9.0` to `^4.12.0`
-
 
 ## Unreleased
 
@@ -245,7 +257,6 @@ Released on: 2/20/2026, changelog automatically generated.
 **`meta` dependency `recase`** ([pubspec.yaml](https://github.com/emdgroup/mtrust-api-guard/compare/v5.1.0..v6.0.0#diff-8b7e9df87668ffa6a04b32e1769a33434999e54ae081c52e5d943c541d4c0d25))
 - 📦 Dependency added: with version `^4.1.0`
 
-
 ## 5.1.0
 Released on: 1/19/2026, changelog automatically generated.
 
@@ -262,7 +273,6 @@ Released on: 1/19/2026, changelog automatically generated.
 **`class` DocComponent** ([lib/models/doc_items.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v5.0.0..v5.1.0#diff-e861dc0986be85ff54e02c2da71f4efaaf4282de2bc415167fb3bdee08f74f6c))
 - ❇️ Params added in default constructor: `entryPoint` (named, optional), `superClassPackages` (named, optional, default: const [])
 - ❇️ Properties added: `entryPoint`, `superClassPackages`
-
 
 ## 5.0.0
 Released on: 1/19/2026, changelog automatically generated.
@@ -408,7 +418,6 @@ Released on: 1/19/2026, changelog automatically generated.
 
 **`function` _matchesSelection** ([lib/doc_comparator/apply_overrides.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v4.0.0..v5.0.0#diff-baffdbfb7ed3c531b882144a33b807bb8d6bb0bc5facab076d2a7922e7a65581))
 - ❇️ Function added: `_matchesSelection`
-
 
 ## 4.0.0
 Released on: 1/12/2026, changelog automatically generated.
@@ -582,7 +591,6 @@ Released on: 1/12/2026, changelog automatically generated.
 **`function` _compareParameters** ([lib/doc_comparator/comparators/member_comparator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v3.0.0..v4.0.0#diff-4772c3af431b3a73e98ddca164add4c5c83ca88afe4433ada26a477be5e0185e))
 - ❇️ Function added: `_compareParameters`
 
-
 ## 3.0.0
 Released on: 1/7/2026, changelog automatically generated.
 
@@ -609,7 +617,6 @@ Released on: 1/7/2026, changelog automatically generated.
 
 **`class` VersionCommand** ([lib/version/version_command.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v2.1.0..v3.0.0#diff-1bd91b8c544635bcfb05c7b6fdf3b0661744e925b67a60b606bf8f89f56386fa))
 - ❇️ Property added: `tagPrefix`
-
 
 ## 2.1.0
 Released on: 12/17/2025, changelog automatically generated.
@@ -718,7 +725,6 @@ Released on: 12/17/2025, changelog automatically generated.
 - ❌ Methods removed: `_parseCommitLog`, `_getPackageVersion`
 - ❇️ Method added: `_getPubspecInfo`
 
-
 ## 2.0.0
 Released on: 12/11/2025, changelog automatically generated.
 
@@ -783,7 +789,6 @@ Released on: 12/11/2025, changelog automatically generated.
 
 **_$DocMethodToJson** (lib/models/doc_items.dart)
 - ❇️ Function added: `_$DocMethodToJson`
-
 
 ## 1.0.1
 Released on: 12/8/2025, changelog automatically generated.
@@ -890,7 +895,6 @@ Released on: 12/8/2025, changelog automatically generated.
 
 **ApiChange** (lib/doc_comparator/api_change.dart)
 - 🔄 Param type changed in private constructor _: `component`
-
 
 ## 1.0.2
 Released on: 12/8/2025, changelog automatically generated.
@@ -1000,7 +1004,6 @@ Released on: 11/4/2025, changelog automatically generated.
 
 **ApiChange** (lib/doc_comparator/api_change.dart)
 - 🔄 Param type changed in private constructor _: `component`
-
 
 ## 0.0.1
 
