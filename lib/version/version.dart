@@ -143,19 +143,8 @@ Future<VersionResult> version({
     logger.info('Generated version badge for version $nextVersion');
   }
 
-  if (commit) {
-    // For workspace packages, commit from the package directory
-    // For single packages, commit from git root
-    final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
-    await GitUtils.commitVersion(nextVersion, commitRoot, commitBadge: badge, commitChangelog: generateChangelog);
-    logger.info('Committed version $nextVersion');
-  }
-
-  if (tag) {
-    await GitUtils.gitTag("$tagPrefix$nextVersion", gitRoot.path);
-    logger.info('Tagged version $tagPrefix$nextVersion');
-  }
-
+  // Write the Dart version constant before committing so it is included in the bump commit.
+  String? dartFileForCommit;
   if (dartFile != null) {
     final pubspecFile = File(join(dartRoot.path, 'pubspec.yaml'));
     if (!pubspecFile.existsSync()) {
@@ -173,6 +162,36 @@ Future<VersionResult> version({
     }
     await dartOutputFile.writeAsString(dartFileContent);
     logger.info('Generated Dart file with version constant at $dartFile');
+
+    // Commit paths are relative to the package/git root used for the bump commit.
+    // Resolve symlinks (e.g. /var vs /private/var on macOS) so relative() stays inside the repo.
+    final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
+    if (isAbsolute(dartFile)) {
+      final resolvedFile = dartOutputFile.resolveSymbolicLinksSync();
+      final resolvedRoot = Directory(commitRoot).resolveSymbolicLinksSync();
+      dartFileForCommit = relative(resolvedFile, from: resolvedRoot);
+    } else {
+      dartFileForCommit = dartFile;
+    }
+  }
+
+  if (commit) {
+    // For workspace packages, commit from the package directory
+    // For single packages, commit from git root
+    final commitRoot = packageName != null ? dartRoot.path : gitRoot.path;
+    await GitUtils.commitVersion(
+      nextVersion,
+      commitRoot,
+      commitBadge: badge,
+      commitChangelog: generateChangelog,
+      dartFile: dartFileForCommit,
+    );
+    logger.info('Committed version $nextVersion');
+  }
+
+  if (tag) {
+    await GitUtils.gitTag("$tagPrefix$nextVersion", gitRoot.path);
+    logger.info('Tagged version $tagPrefix$nextVersion');
   }
 
   return VersionResult(

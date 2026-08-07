@@ -174,6 +174,7 @@ class GitUtils {
     String? root, {
     bool? commitBadge,
     bool commitChangelog = true,
+    String? dartFile,
   }) async {
     final archivePath = p.join(root ?? '.', changelogArchiveFileName);
     final archiveExists = File(archivePath).existsSync();
@@ -184,6 +185,7 @@ class GitUtils {
       if (commitChangelog) 'CHANGELOG.md',
       if (commitChangelog && (archiveExists || archiveTracked)) changelogArchiveFileName,
       if (commitBadge == true) 'version_badge.svg',
+      if (dartFile != null) dartFile,
     ];
 
     // Add files to git to ensure they are tracked (and stage archive deletions).
