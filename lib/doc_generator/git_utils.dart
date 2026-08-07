@@ -3,7 +3,9 @@ import 'dart:io';
 
 import 'package:conventional/conventional.dart';
 import 'package:crypto/crypto.dart';
+import 'package:mtrust_api_guard/changelog_generator/changelog_archive.dart';
 import 'package:mtrust_api_guard/logger.dart';
+import 'package:path/path.dart' as p;
 import 'package:pub_semver/pub_semver.dart';
 
 /// Utility functions for Git operations
@@ -173,14 +175,19 @@ class GitUtils {
     bool? commitBadge,
     bool commitChangelog = true,
   }) async {
+    final archivePath = p.join(root ?? '.', changelogArchiveFileName);
+    final archiveExists = File(archivePath).existsSync();
+    final archiveTracked = commitChangelog && _isGitTracked(changelogArchiveFileName, root);
+
     final filesToCommit = [
       'pubspec.yaml',
       if (commitChangelog) 'CHANGELOG.md',
+      if (commitChangelog && (archiveExists || archiveTracked)) changelogArchiveFileName,
       if (commitBadge == true) 'version_badge.svg',
     ];
 
-    // Add files to git to ensure they are tracked
-    final addResult = await Process.run('git', ['add', ...filesToCommit], workingDirectory: root);
+    // Add files to git to ensure they are tracked (and stage archive deletions).
+    final addResult = await Process.run('git', ['add', '--', ...filesToCommit], workingDirectory: root);
 
     if (addResult.exitCode != 0) {
       throw GitException('Failed to add files to git: ${addResult.stderr.toString()}');
@@ -190,11 +197,17 @@ class GitUtils {
       'commit',
       '-m',
       'chore: bump version to $version [skip ci]',
+      '--',
       ...filesToCommit,
     ], workingDirectory: root);
     if (result.exitCode != 0) {
       throw GitException('Failed to commit version $version: ${result.stderr.toString()}');
     }
+  }
+
+  static bool _isGitTracked(String path, String? root) {
+    final result = Process.runSync('git', ['ls-files', '--error-unmatch', '--', path], workingDirectory: root);
+    return result.exitCode == 0;
   }
 
   static Future<void> gitTag(String tag, String? root) async {
