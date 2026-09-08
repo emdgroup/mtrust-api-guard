@@ -10,8 +10,8 @@ import 'package:yaml/yaml.dart';
 /// and extracts file exclusion patterns from the 'analyzer.exclude' section.
 /// It returns a Set of normalized file paths that match the exclusion patterns.
 ///
-/// If the analysis_options.yaml file doesn't exist or doesn't contain exclusion patterns,
-/// an empty Set is returned and a message is printed.
+/// If the analysis_options.yaml file doesn't exist, has no `analyzer` section
+/// or no exclusions in it, an empty Set is returned.
 
 Set<String> detectExclusionsFromAnalyzer(String root) {
   final analysisOptions = File('$root/analysis_options.yaml');
@@ -20,18 +20,25 @@ Set<String> detectExclusionsFromAnalyzer(String root) {
     return <String>{};
   }
 
+  final yaml = loadYaml(analysisOptions.readAsStringSync());
+  if (yaml is! Map) {
+    return <String>{};
+  }
+
+  final analyzerSection = yaml['analyzer'];
+  if (analyzerSection is! Map) {
+    return <String>{};
+  }
+
+  final exclude = analyzerSection['exclude'];
+  if (exclude is! YamlList) {
+    return <String>{};
+  }
+
   final exclusions = <String>{};
-  final analysisOptionsContent = analysisOptions.readAsStringSync();
-  final yaml = loadYaml(analysisOptionsContent);
-
-  final exclude = yaml['analyzer']['exclude'] as YamlList?;
-
-  if (exclude != null) {
-    for (final path in exclude) {
-      var pattern = Glob(path);
-      for (final file in pattern.listSync(root: root)) {
-        exclusions.add(normalize(file.path));
-      }
+  for (final path in exclude) {
+    for (final file in Glob(path.toString()).listSync(root: root)) {
+      exclusions.add(normalize(absolute(file.path)));
     }
   }
 
