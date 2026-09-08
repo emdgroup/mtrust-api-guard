@@ -1,13 +1,10 @@
-// Prints what the dead code scan produces for each test fixture, as markdown.
+// Prints what api_guard produces for the test fixtures, as markdown.
 //
-// `generate` and `compare` have their fixture output checked in already, as
-// test/fixtures/apiV100.json and test/fixtures/expected_compare_v100_v101.txt.
-// The dead code scan has no such file, its tests assert on the findings
-// structurally, so this is how you look at the report itself:
+// CI appends this to the job summary, so every pull request shows the tool's
+// actual output on our own examples: the API diff between consecutive fixture
+// versions, and the dead code report for each one. Run it the same way locally:
 //
 //   dart run tool/dump_fixture_reports.dart
-//
-// Nothing in CI runs this. It is here to be read by a person.
 
 import 'dart:io';
 
@@ -17,73 +14,136 @@ import 'package:mtrust_api_guard/logger.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
-/// The fixtures worth showing, and what each one is there to demonstrate.
-const _fixtures = <String, String>{
+/// The fixtures, oldest first. Consecutive pairs get diffed.
+const _fixtures = ['app_v100', 'app_v101', 'app_v110', 'app_v200'];
+
+/// What each fixture is set up to demonstrate.
+const _notes = <String, String>{
   'app_v100':
-      'Entry point `lib/src/api.dart`. Everything it exports is API surface; '
-      '`lib/src/internal.dart` and `lib/src/dead_code_cases.dart` are outside '
-      'the closure.',
-  'app_v101': 'Entry point `lib/main.dart`, which re-exports `lib/src/api.dart`.',
-  'app_v110': 'Every declaration is exported, so nothing is dead.',
+      'Entry point `lib/src/api.dart`. `lib/src/internal.dart` and '
+      '`lib/src/dead_code_cases.dart` sit outside the closure.',
+  'app_v101': 'Entry point moves to `lib/main.dart`, which re-exports `lib/src/api.dart`.',
+  'app_v110': 'Everything is exported.',
+  'app_v200': 'Carries the magnitude_overrides examples.',
 };
 
 Future<void> main() async {
-  // The scan is chatty by design; the report is the output here.
   logger.level = Level.error;
 
-  final buffer = StringBuffer()
-    ..writeln('## Dead code scan on the test fixtures')
-    ..writeln()
-    ..writeln('What `mtrust_api_guard dead-code` reports for each fixture.')
+  final out = StringBuffer()
+    ..writeln('## What api_guard produces for the test fixtures')
     ..writeln();
 
-  for (final entry in _fixtures.entries) {
-    final fixture = Directory(p.join('test', 'fixtures', entry.key));
-    if (!fixture.existsSync()) {
-      stderr.writeln('Skipping ${entry.key}: not found');
-      continue;
-    }
+  final packages = <String, Directory>{};
+  final apiDocs = <String, String>{};
 
-    final package = await _materialize(fixture);
-    try {
-      final report = await DeadCodeFinder(root: package).run();
-      final formatter = DeadCodeFormatter(report, markdownHeaderLevel: 4);
+  for (final fixture in _fixtures) {
+    final source = Directory(p.join('test', 'fixtures', fixture));
+    if (!source.existsSync()) continue;
 
-      buffer
-        ..writeln('### `${entry.key}`')
-        ..writeln()
-        ..writeln(entry.value)
-        ..writeln();
+    final package = await _materialize(source);
+    packages[fixture] = package;
 
-      final markdown = formatter.formatMarkdown();
-      buffer.writeln(markdown.isEmpty ? 'Nothing to report.' : markdown.trim());
-
-      if (report.apiSurface.isNotEmpty) {
-        buffer
-          ..writeln()
-          ..writeln(
-            '<details><summary>${report.apiSurface.length} exported and '
-            'unreferenced inside the package, so not dead</summary>',
-          )
-          ..writeln();
-        for (final finding in report.apiSurface) {
-          buffer.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, `${finding.filePath}`');
-        }
-        buffer
-          ..writeln()
-          ..writeln('</details>');
-      }
-      buffer.writeln();
-    } finally {
-      if (package.parent.existsSync()) package.parent.deleteSync(recursive: true);
+    final apiDoc = p.join(package.parent.path, '$fixture.json');
+    final generated = await _runGuard(['generate', '-r', package.path, '--out', apiDoc]);
+    if (File(apiDoc).existsSync()) {
+      apiDocs[fixture] = apiDoc;
+    } else {
+      stderr.writeln('generate failed for $fixture: $generated');
     }
   }
 
-  stdout.write(buffer);
+  out
+    ..writeln('### API changes between versions')
+    ..writeln()
+    ..writeln('`compare`, run on consecutive fixtures. This is what feeds the '
+        'API Changes section of a changelog.')
+    ..writeln();
+
+  for (var i = 0; i + 1 < _fixtures.length; i++) {
+    final from = _fixtures[i];
+    final to = _fixtures[i + 1];
+    if (!apiDocs.containsKey(from) || !apiDocs.containsKey(to)) continue;
+
+    out
+      ..writeln('<details><summary><code>$from</code> → <code>$to</code></summary>')
+      ..writeln();
+
+    final diff = await _runGuard([
+      'compare',
+      '--base-ref',
+      apiDocs[from]!,
+      '--new-ref',
+      apiDocs[to]!,
+    ]);
+    out
+      ..writeln(diff.trim().isEmpty ? 'No API changes.' : diff.trim())
+      ..writeln()
+      ..writeln('</details>')
+      ..writeln();
+  }
+
+  out
+    ..writeln('### Dead code')
+    ..writeln()
+    ..writeln('`dead-code`, run on each fixture.')
+    ..writeln();
+
+  for (final fixture in _fixtures) {
+    final package = packages[fixture];
+    if (package == null) continue;
+
+    final report = await DeadCodeFinder(root: package).run();
+    final markdown = DeadCodeFormatter(report, markdownHeaderLevel: 5).formatMarkdown();
+
+    out
+      ..writeln('<details><summary><code>$fixture</code> — '
+          '${report.dead.length} dead, ${report.apiSurface.length} exported and '
+          'unreferenced</summary>')
+      ..writeln()
+      ..writeln(_notes[fixture] ?? '')
+      ..writeln()
+      ..writeln(markdown.isEmpty ? 'Nothing to report.' : markdown.trim())
+      ..writeln();
+
+    if (report.apiSurface.isNotEmpty) {
+      out.writeln('Exported and unreferenced inside the package, so not dead:');
+      out.writeln();
+      for (final finding in report.apiSurface) {
+        out.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, `${finding.filePath}`');
+      }
+      out.writeln();
+    }
+
+    out
+      ..writeln('</details>')
+      ..writeln();
+  }
+
+  for (final package in packages.values) {
+    if (package.parent.existsSync()) package.parent.deleteSync(recursive: true);
+  }
+
+  stdout.write(out);
 }
 
-/// Copies a fixture somewhere writable and resolves it, so the analyzer can
-/// follow its `package:` imports.
+/// Runs the CLI and returns its output with the startup banner removed.
+Future<String> _runGuard(List<String> args) async {
+  final result = await Process.run('dart', [
+    'run',
+    'bin/mtrust_api_guard.dart',
+    args.first,
+    '--silent',
+    ...args.skip(1),
+  ]);
+
+  final lines = result.stdout.toString().split('\n');
+  final bannerEnd = lines.lastIndexWhere((line) => line.contains('mtrust_api_guard version:'));
+  return lines.skip(bannerEnd + 1).join('\n');
+}
+
+/// Copies a fixture somewhere writable, resolves it and commits it, so both the
+/// analyzer and the git-backed commands can read it.
 Future<Directory> _materialize(Directory fixture) async {
   final temp = await Directory.systemTemp.createTemp('api_guard_fixture_report_');
   final target = Directory(p.join(temp.path, 'api_guard_test'))..createSync(recursive: true);
@@ -100,7 +160,7 @@ Future<Directory> _materialize(Directory fixture) async {
 
   File(p.join(target.path, 'pubspec.yaml')).writeAsStringSync('''
 name: api_guard_test
-description: Fixture package, resolved so the scan can read it.
+description: Fixture package, resolved so the commands can read it.
 version: 1.0.0
 publish_to: none
 
@@ -108,9 +168,18 @@ environment:
   sdk: ">=3.11.0 <4.0.0"
 ''');
 
-  final result = await Process.run('dart', ['pub', 'get'], workingDirectory: target.path);
-  if (result.exitCode != 0) {
-    throw StateError('dart pub get failed in ${target.path}: ${result.stderr}');
+  final pubGet = await Process.run('dart', ['pub', 'get'], workingDirectory: target.path);
+  if (pubGet.exitCode != 0) {
+    throw StateError('dart pub get failed in ${target.path}: ${pubGet.stderr}');
+  }
+
+  // `generate` reads the tree through git.
+  for (final command in [
+    ['init', '-q', '.'],
+    ['add', '-A'],
+    ['-c', 'user.email=fixtures@example.test', '-c', 'user.name=fixtures', 'commit', '-qm', 'fixture'],
+  ]) {
+    await Process.run('git', command, workingDirectory: target.path);
   }
 
   return target;

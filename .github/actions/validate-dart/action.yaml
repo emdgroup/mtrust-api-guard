@@ -32,3 +32,8 @@ runs:
         # An earlier step failing means there is no report to publish, which is
         # not itself a failure worth reporting.
         fail-on-empty: false
+
+    - name: Show what api_guard produces for the fixtures
+      if: always()
+      shell: bash
+      run: dart run tool/dump_fixture_reports.dart >> "$GITHUB_STEP_SUMMARY"

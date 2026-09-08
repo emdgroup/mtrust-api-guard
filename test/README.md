@@ -79,20 +79,22 @@ the command end to end against `app_v100`, `app_v101` and `app_v110`.
 
 ## Looking at what the tool produces
 
-`generate` and `compare` have their fixture output committed, as
-`test/fixtures/apiV100.json` and `test/fixtures/expected_compare_v100_v101.txt`,
-so a change in what they emit shows up as a diff on those files.
-
-The dead code scan has no such file, its tests assert on the findings instead.
-To read the report itself:
+Every pull request renders the tool's output on our own fixtures into the
+workflow run's **Summary** tab: the `compare` diff between each consecutive
+fixture version, and the `dead-code` report for each one. That is the
+`Show what api_guard produces for the fixtures` step in the `validate-dart`
+action, and it is the same thing you get locally from
 
 ```bash
 dart run tool/dump_fixture_reports.dart
 ```
 
-Nothing in CI runs that. Test results in the pipeline come from the `Flutter
-Tests` check, published by `dorny/test-reporter` from
-`reports/test-results.json`.
+Pass or fail of the tests themselves is a separate `Flutter Tests` check,
+published by `dorny/test-reporter` from `reports/test-results.json`.
+
+Two of those outputs are also committed, as `test/fixtures/apiV100.json` and
+`test/fixtures/expected_compare_v100_v101.txt`, because the tests assert against
+them. A change in what the tool emits shows up as a diff on those files.
 
 ## Benefits of This Structure
 
