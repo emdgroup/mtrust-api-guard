@@ -426,13 +426,13 @@ class GitUtils {
           }
         }
 
-        return getCommits(root: root, fromRef: previousTag);
+        return await getCommits(root: root, fromRef: previousTag);
       } else {
         logger.detail(
           "No tags exist, this is treated as first release. "
           "Changelog will contain all commits.",
         );
-        return getCommits(root: root);
+        return await getCommits(root: root);
       }
     } catch (e) {
       logger.err('Error retrieving commits: $e');
