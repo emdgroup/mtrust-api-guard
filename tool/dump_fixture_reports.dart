@@ -2,12 +2,14 @@
 //
 // CI appends this to the job summary, so every pull request shows the tool's
 // actual output on our own examples: the API diff between consecutive fixture
-// versions, and the dead code report for each one. Run it the same way locally:
+// versions, the dead code each transition introduces, and the full dead code
+// picture per version. Run it the same way locally:
 //
 //   dart run tool/dump_fixture_reports.dart
 
 import 'dart:io';
 
+import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -56,8 +58,10 @@ Future<void> main() async {
   out
     ..writeln('### API changes between versions')
     ..writeln()
-    ..writeln('`compare`, run on consecutive fixtures. This is what feeds the '
-        'API Changes section of a changelog.')
+    ..writeln(
+      '`compare`, run on consecutive fixtures. This is what feeds the '
+      'API Changes section of a changelog.',
+    )
     ..writeln();
 
   for (var i = 0; i + 1 < _fixtures.length; i++) {
@@ -69,13 +73,7 @@ Future<void> main() async {
       ..writeln('<details><summary><code>$from</code> → <code>$to</code></summary>')
       ..writeln();
 
-    final diff = await _runGuard([
-      'compare',
-      '--base-ref',
-      apiDocs[from]!,
-      '--new-ref',
-      apiDocs[to]!,
-    ]);
+    final diff = await _runGuard(['compare', '--base-ref', apiDocs[from]!, '--new-ref', apiDocs[to]!]);
     out
       ..writeln(diff.trim().isEmpty ? 'No API changes.' : diff.trim())
       ..writeln()
@@ -84,22 +82,60 @@ Future<void> main() async {
   }
 
   out
-    ..writeln('### Dead code')
+    ..writeln('### Dead code introduced between versions')
     ..writeln()
-    ..writeln('`dead-code`, run on each fixture.')
+    ..writeln(
+      '`dead-code --base-ref`, the delta a reviewer would see on a pull '
+      'request. Pre-existing findings are counted, not listed.',
+    )
+    ..writeln();
+
+  final reports = <String, DeadCodeReport>{};
+  for (final entry in packages.entries) {
+    reports[entry.key] = await DeadCodeFinder(root: entry.value).run();
+  }
+
+  for (var i = 0; i + 1 < _fixtures.length; i++) {
+    final from = _fixtures[i];
+    final to = _fixtures[i + 1];
+    final base = reports[from];
+    final head = reports[to];
+    if (base == null || head == null) continue;
+
+    final delta = diffDeadCode(base: base, head: head, baseRef: from);
+    final markdown = DeadCodeDeltaFormatter(delta, markdownHeaderLevel: 5).formatMarkdown();
+
+    out
+      ..writeln(
+        '<details><summary><code>$from</code> → <code>$to</code> — '
+        '${delta.introduced.length} added, ${delta.resolved.length} resolved</summary>',
+      )
+      ..writeln()
+      ..writeln(markdown.isEmpty ? 'No change in dead code.' : markdown.trim())
+      ..writeln()
+      ..writeln('</details>')
+      ..writeln();
+  }
+
+  out
+    ..writeln('### Dead code per version')
+    ..writeln()
+    ..writeln('`dead-code`, the full picture for each fixture.')
     ..writeln();
 
   for (final fixture in _fixtures) {
     final package = packages[fixture];
     if (package == null) continue;
 
-    final report = await DeadCodeFinder(root: package).run();
+    final report = reports[fixture] ?? await DeadCodeFinder(root: package).run();
     final markdown = DeadCodeFormatter(report, markdownHeaderLevel: 5).formatMarkdown();
 
     out
-      ..writeln('<details><summary><code>$fixture</code> — '
-          '${report.dead.length} dead, ${report.apiSurface.length} exported and '
-          'unreferenced</summary>')
+      ..writeln(
+        '<details><summary><code>$fixture</code> — '
+        '${report.dead.length} dead, ${report.apiSurface.length} exported and '
+        'unreferenced</summary>',
+      )
       ..writeln()
       ..writeln(_notes[fixture] ?? '')
       ..writeln()
