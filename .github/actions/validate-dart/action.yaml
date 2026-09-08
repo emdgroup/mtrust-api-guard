@@ -29,3 +29,6 @@ runs:
         name: Flutter Tests
         path: reports/test-results.json
         reporter: flutter-json
+        # An earlier step failing means there is no report to publish, which is
+        # not itself a failure worth reporting.
+        fail-on-empty: false
