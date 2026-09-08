@@ -77,6 +77,23 @@ included, so the cases live beside it rather than in it.
 that fixture in process, and `test/commands/dead_code_command_test.dart` runs
 the command end to end against `app_v100`, `app_v101` and `app_v110`.
 
+## Looking at what the tool produces
+
+`generate` and `compare` have their fixture output committed, as
+`test/fixtures/apiV100.json` and `test/fixtures/expected_compare_v100_v101.txt`,
+so a change in what they emit shows up as a diff on those files.
+
+The dead code scan has no such file, its tests assert on the findings instead.
+To read the report itself:
+
+```bash
+dart run tool/dump_fixture_reports.dart
+```
+
+Nothing in CI runs that. Test results in the pipeline come from the `Flutter
+Tests` check, published by `dorny/test-reporter` from
+`reports/test-results.json`.
+
 ## Benefits of This Structure
 
 1. **Modularity**: Each command's tests are isolated and focused
