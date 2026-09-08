@@ -21,6 +21,9 @@ runs:
         dart run tool/cleanup_legacy_scaffolds.dart
         flutter test test/commands test/comparators test/dead_code test/version --coverage
     - name: Report test results
+      # Without this the step is skipped exactly when the tests fail, which is
+      # when the report is worth having.
+      if: always()
       uses: dorny/test-reporter@v2
       with:
         name: Flutter Tests

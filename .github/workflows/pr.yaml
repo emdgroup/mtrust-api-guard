@@ -22,6 +22,10 @@ jobs:
   # Validate the Dart code
   validate_dart:
     runs-on: ubuntu-latest
+    # dorny/test-reporter publishes the results as a check run of its own.
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
