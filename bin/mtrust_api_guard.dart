@@ -3,6 +3,7 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:mtrust_api_guard/badges/badge_generator_command.dart';
 import 'package:mtrust_api_guard/cache/cache_command.dart';
 import 'package:mtrust_api_guard/changelog_generator/changelog_generator_command.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_command.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator_command.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator_command.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -17,6 +18,7 @@ Future<void> main(List<String> args) async {
     ..addCommand(DocGeneratorCommand())
     ..addCommand(DocComparatorCommand())
     ..addCommand(ChangelogGeneratorCommand())
+    ..addCommand(DeadCodeCommand())
     ..addCommand(VersionCommand())
     ..addCommand(VersionWorkspaceCommand());
 

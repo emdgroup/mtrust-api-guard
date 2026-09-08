@@ -35,6 +35,7 @@ Available commands:
   badge       Generate version badge from current pubspec version
   changelog   Generate a changelog entry based on API changes
   compare     Compare two API documentation files
+  dead-code   Report declarations nothing references and no consumer can reach
   generate    Generate API documentation from Dart files
   version     Calculate and output the next version based on API changes
 
@@ -226,6 +227,10 @@ Usage: mtrust_api_guard compare [arguments]
 -m, --magnitudes    Show only changes with the specified magnitudes
                     [major (default), minor (default), patch (default)]
     --out           Write the comparison results to a file
+    --base-url      Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)
+    --[no-]dead-code
+                    Append a warning section listing declarations nothing references
+                    and no consumer can reach. Never affects the exit code.
 ```
 
 See an example output [here](./test/fixtures/expected_compare_v100_v101.txt)
@@ -328,6 +333,85 @@ mtrust_api_guard version-workspace --tag-format "{package}-v{version}"
 ```
 
 The format must contain `{package}` and end with `{version}`.
+
+## Dead Code
+
+Reports declarations that no code in the package references. Every library under
+`lib/`, `bin/`, `test/`, `tool/` and `example/` is resolved once, and two sets
+come out of the resolved ASTs: what each file declares, and what each file
+refers to. Whatever is declared and never referred to is unreferenced.
+
+Entry points are resolved by the same code the `generate` command enters a
+package with, so the closure a finding is checked against is the closure the
+generated API documentation describes.
+
+```sh
+mtrust_api_guard dead-code
+```
+
+```
+-r, --root        Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-h, --help        Print this usage information.
+-f, --format      Output format
+                  [text (default), markdown, json]
+    --out         Write the report to a file
+    --base-url    Base URL for file links (e.g. https://github.com/org/repo/blob/main)
+```
+
+Unreferenced is not the same as dead. For a published package the whole exported
+API is unreferenced from the package's own point of view, which is why a plain
+dead code detector either buries you in findings or has to stop reporting public
+ones. Findings are split against the export closure of the configured
+`entry_points` instead:
+
+- **dead**: nothing references it and the package does not export it, so no
+  consumer can reach it either.
+- **API surface**: nothing inside references it, but it is exported. A consumer
+  can call it, so it is listed separately and never counted as dead.
+- **doc-only**: the only thing referring to it is a dartdoc `[Link]`. A comment
+  mentioning something is not code using it, but it is not silence either.
+
+Without `entry_points`, the package's main library (`lib/<package_name>.dart`)
+is used. If neither exists the closure is unknown, and public declarations are
+reported as API surface rather than asserted to be dead.
+
+The report never changes the exit code. It is there to tell a reviewer something,
+not to block a merge, and nothing is ever deleted for you.
+
+### What it skips
+
+Each of these is a source of false positives that a reference set cannot settle
+on its own.
+
+| Skipped | Why |
+| --- | --- |
+| `main` | An entry point is never unused. |
+| Files matched by `analyzer.exclude` or `api_guard.exclude` | Excluded from analysis means excluded from the report. Both sections are honoured. |
+| Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are still read, so a declaration used only from generated code is not misreported. |
+| `@pragma('vm:entry-point')` | Reachable from native code or reflection. |
+| `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference. |
+| An override whose chain leaves the package | A framework may be the caller. An override whose chain stays inside the package is reported when nothing in that chain is referenced. |
+| Members of a declaration that is itself dead | Only the outermost one is reported, so the finding names the thing to delete. |
+| Local variables and functions, type parameters | The analyzer's own `unused_element` lint covers these. |
+
+Operators are reported like anything else, because `a + b` resolves back to the
+`operator +` declaration through the element model.
+
+### In a pull request
+
+Append the report to the API change comment that `compare` already produces:
+
+```yaml
+- name: Compare API changes
+  run: |
+    mtrust_api_guard compare \
+      --base-ref main --new-ref ${{ github.sha }} \
+      --dead-code --base-url https://github.com/${{ github.repository }}/blob/${{ github.sha }}
+```
+
+`--base-url` turns the file names into links. The section is omitted when there
+is nothing to report, and a failed scan is logged and skipped rather than
+failing the comparison.
 
 ## Usage in CI
 
