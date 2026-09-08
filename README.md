@@ -233,6 +233,11 @@ Usage: mtrust_api_guard compare [arguments]
                     and no consumer can reach. Never affects the exit code.
 ```
 
+With `--dead-code`, `compare` reports what the change introduced rather than
+everything currently dead, reusing the `--base-ref` it already has. When that
+ref is a generated api json file rather than a git ref there is no tree to scan,
+so it falls back to the full report.
+
 See an example output [here](./test/fixtures/expected_compare_v100_v101.txt)
 
 ## Changelog
@@ -356,7 +361,39 @@ mtrust_api_guard dead-code
                   [text (default), markdown, json]
     --out         Write the report to a file
     --base-url    Base URL for file links (e.g. https://github.com/org/repo/blob/main)
+-b, --base-ref    Report only what changed since this git ref, rather than
+                  everything currently dead. Costs a second analysis pass.
 ```
+
+### Only what a change introduced
+
+Everything currently dead is rarely what a reviewer needs. They can act on a
+declaration this branch orphaned, and can do nothing about debt that predates
+it. `--base-ref` scans that ref as well and splits the findings in three:
+
+```sh
+mtrust_api_guard dead-code --base-ref main
+```
+
+```
+Dead code introduced since main:
+  lib/src/report.dart:41  field Report.unusedField
+
+No longer dead:
+  lib/src/legacy.dart  function oldHelper
+
+1 added, 2 resolved, 9 already there.
+```
+
+A finding is matched across revisions by its file, qualified name and kind,
+never by line number, so a declaration that moved down because someone added an
+import is still the same finding rather than a new one.
+
+The base ref is materialized as a git worktree with its dependencies resolved,
+the same way `generate --ref` does it, so the second scan sees the same thing
+the first one does. Run `pub get` before scanning: an unresolved package cannot
+follow its own `package:` imports, and anything reached only through one then
+looks dead.
 
 Unreferenced is not the same as dead. For a published package the whole exported
 API is unreferenced from the package's own point of view, which is why a plain
@@ -409,9 +446,10 @@ Append the report to the API change comment that `compare` already produces:
       --dead-code --base-url https://github.com/${{ github.repository }}/blob/${{ github.sha }}
 ```
 
-`--base-url` turns the file names into links. The section is omitted when there
-is nothing to report, and a failed scan is logged and skipped rather than
-failing the comparison.
+`--base-url` turns the file names into links. The section is omitted when the
+change neither added nor resolved any dead code, so a clean pull request carries
+no line about it. A failed scan is logged and skipped rather than failing the
+comparison.
 
 ## Usage in CI
 

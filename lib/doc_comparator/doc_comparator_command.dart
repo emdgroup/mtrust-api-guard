@@ -8,6 +8,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/config/config.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
@@ -67,8 +68,10 @@ class DocComparatorCommand extends Command
 
   @override
   FutureOr? run() async {
+    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(Directory.current.path);
+
     final changes = await compare(
-      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      baseRef: resolvedBaseRef,
       newRef: newRef,
       dartRoot: root,
       gitRoot: Directory.current,
@@ -81,7 +84,7 @@ class DocComparatorCommand extends Command
 
     final formatter = ApiChangeFormatter(changes, magnitudes: magnitudes);
 
-    final deadCodeSection = deadCode ? await _deadCodeSection() : '';
+    final deadCodeSection = deadCode ? await _deadCodeSection(resolvedBaseRef) : '';
 
     if (!formatter.hasRelevantChanges && deadCodeSection.isEmpty) {
       logger.info('No relevant changes detected');
@@ -105,19 +108,47 @@ class DocComparatorCommand extends Command
     }
   }
 
-  /// Runs the dead code scan and renders it as a markdown section. Reporting
-  /// only: a finding never changes the exit code, so a false positive costs a
-  /// reader a moment rather than blocking a merge.
-  Future<String> _deadCodeSection() async {
+  /// Renders the dead code section for the comparison.
+  ///
+  /// Given a base revision this reports what the change added, not everything
+  /// currently dead: a reviewer can act on a declaration this branch orphaned,
+  /// and can do nothing about debt that predates it. Without one it falls back
+  /// to the full snapshot.
+  ///
+  /// Reporting only, either way. A finding never changes the exit code, so a
+  /// false positive costs a reader a moment rather than blocking a merge.
+  Future<String> _deadCodeSection(String? resolvedBaseRef) async {
+    final urlBuilder = baseUrl == null ? null : (String path) => '$baseUrl/$path';
+
     try {
-      final report = await DeadCodeFinder(root: root).run();
-      return DeadCodeFormatter(
-        report,
-        fileUrlBuilder: baseUrl == null ? null : (path) => '$baseUrl/$path',
-      ).formatMarkdown();
+      // `compare` also accepts a path to a previously generated api json as a
+      // ref. That is enough to diff an API against, but there is no tree behind
+      // it to scan, so those fall back to reporting everything.
+      if (resolvedBaseRef == null || !await _isGitRef(resolvedBaseRef)) {
+        if (resolvedBaseRef != null) {
+          logger.detail('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
+        }
+        final report = await DeadCodeFinder(root: root).run();
+        return DeadCodeFormatter(report, fileUrlBuilder: urlBuilder).formatMarkdown();
+      }
+
+      final delta = await compareDeadCode(baseRef: resolvedBaseRef, dartRoot: root, gitRoot: Directory.current);
+      return DeadCodeDeltaFormatter(delta, fileUrlBuilder: urlBuilder).formatMarkdown();
     } catch (e) {
       logger.warn('Dead code scan failed, continuing without it: $e');
       return '';
+    }
+  }
+
+  /// Whether [ref] names something git can resolve, as opposed to a generated
+  /// api json file.
+  Future<bool> _isGitRef(String ref) async {
+    if (File(ref).existsSync()) return false;
+    try {
+      await GitUtils.resolveRef(ref, Directory.current.path);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }
