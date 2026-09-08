@@ -110,3 +110,32 @@ class TestFixtures {
       pluginBaseDir = Directory('.test_scaffolds/plugin_base'),
       expectedChangelogFile = File('test/fixtures/expected_changelog.md');
 }
+
+/// Copies a fixture package into a temporary directory, gives it a pubspec and
+/// resolves it, so the analyzer can follow its `package:` imports.
+///
+/// [packageName] has to match the `package:` imports the fixture makes of
+/// itself, which for the `app_v*` fixtures is the scaffold's `api_guard_test`.
+Future<Directory> materializeFixturePackage(Directory fixture, String packageName) async {
+  final temp = await Directory.systemTemp.createTemp('api_guard_fixture_');
+  final target = Directory(p.join(temp.path, packageName))..createSync(recursive: true);
+
+  await copyDir(fixture, target);
+
+  File(p.join(target.path, 'pubspec.yaml')).writeAsStringSync('''
+name: $packageName
+description: Fixture package for dead code detection tests.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+''');
+
+  final result = await Process.run('dart', ['pub', 'get'], workingDirectory: target.path);
+  if (result.exitCode != 0) {
+    throw StateError('dart pub get failed in ${target.path}: ${result.stderr}');
+  }
+
+  return target;
+}

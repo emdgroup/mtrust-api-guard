@@ -12,10 +12,14 @@ test/
 │   ├── test_bootstrap.dart    # Auto compile binary + Flutter scaffolds
 │   ├── test_helpers.dart      # Helper functions and constants
 │   └── test_setup.dart        # Test setup and teardown utilities
-└── commands/                   # Command-specific test files
-    ├── generate_command_test.dart
-    ├── compare_command_test.dart
-    └── version_command_test.dart
+├── commands/                   # Command-specific test files
+│   ├── generate_command_test.dart
+│   ├── compare_command_test.dart
+│   ├── dead_code_command_test.dart
+│   └── version_command_test.dart
+└── dead_code/                  # Dead code rule and formatter tests
+    ├── dead_code_finder_test.dart
+    └── dead_code_formatter_test.dart
 ```
 
 ## Running Tests
@@ -36,6 +40,7 @@ To run specific integration test files:
 ```bash
 flutter test test/commands/generate_command_test.dart
 flutter test test/commands/compare_command_test.dart
+flutter test test/commands/dead_code_command_test.dart
 flutter test test/commands/version_command_test.dart
 ```
 
@@ -54,6 +59,23 @@ Test fixtures are managed through the `TestFixtures` class, which provides acces
 - Expected output files
 
 If scaffold drift occurs after a Flutter SDK upgrade locally, delete `.test_scaffolds/` and re-run tests.
+
+### Dead code fixtures
+
+`test/fixtures/app_v100` carries the dead code cases as well, in
+`lib/src/dead_code_cases.dart` plus a `.g.dart`, a `bin/` and a `test/`
+directory. None of it is reachable from `lib/src/api.dart`, the entry point
+that fixture configures, so none of it reaches the generated API documentation
+and the diff goldens (`apiV100.json`, `expected_compare_v100_v101.txt`,
+`expected_changelog.md`) do not see it.
+
+That constraint is the thing to respect when editing: anything added to
+`lib/src/api.dart` **does** land in those goldens, private declarations
+included, so the cases live beside it rather than in it.
+
+`test/dead_code/dead_code_finder_test.dart` asserts one rule per test against
+that fixture in process, and `test/commands/dead_code_command_test.dart` runs
+the command end to end against `app_v100`, `app_v101` and `app_v110`.
 
 ## Benefits of This Structure
 

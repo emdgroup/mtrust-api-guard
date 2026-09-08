@@ -135,5 +135,57 @@ void main() {
       final outputContent = await outputFileAll.readAsString();
       expect(outputContent.trim(), isNotEmpty, reason: 'Output should contain content when including all magnitudes');
     });
+
+    test('--dead-code appends a warning section without changing the exit code', () async {
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      final apiFilesDir = Directory(p.join(testSetup.tempDir.parent.path, 'api_files'));
+      await apiFilesDir.create(recursive: true);
+      final v100ApiFile = p.join(apiFilesDir.path, 'api_v100.json');
+      await testSetup.runApiGuard('generate', ['--out', v100ApiFile]);
+
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('feat: API changes for v${TestConstants.patchVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.patchVersion}'], workingDir: testSetup.tempDir.path);
+
+      final v101ApiFile = p.join(apiFilesDir.path, 'api_v101.json');
+      await testSetup.runApiGuard('generate', ['--out', v101ApiFile]);
+
+      final withoutDeadCode = p.join(testSetup.tempDir.path, 'compare_plain.txt');
+      await testSetup.runApiGuard('compare', [
+        '--base-ref',
+        v100ApiFile,
+        '--new-ref',
+        v101ApiFile,
+        '--out',
+        withoutDeadCode,
+      ]);
+
+      final withDeadCode = p.join(testSetup.tempDir.path, 'compare_dead_code.txt');
+      await testSetup.runApiGuard('compare', [
+        '--base-ref',
+        v100ApiFile,
+        '--new-ref',
+        v101ApiFile,
+        '--out',
+        withDeadCode,
+        '--dead-code',
+      ]);
+
+      final plainOutput = await File(withoutDeadCode).readAsString();
+      final deadCodeOutput = await File(withDeadCode).readAsString();
+
+      expect(plainOutput, isNot(contains('Dead code')), reason: 'the flag is opt-in');
+      expect(deadCodeOutput, contains('Dead code'));
+      expect(
+        deadCodeOutput,
+        startsWith(plainOutput.trimRight().split('\n').first),
+        reason: 'the API change report comes first and is left alone',
+      );
+    });
   }, timeout: const Timeout(Duration(minutes: 3)));
 }
