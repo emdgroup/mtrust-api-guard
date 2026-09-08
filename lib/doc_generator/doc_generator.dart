@@ -9,6 +9,7 @@ import 'package:mtrust_api_guard/bootstrap.dart';
 import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
+import 'package:mtrust_api_guard/doc_generator/entry_points.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -210,30 +211,14 @@ Future<PackageApi> generateDocs({
     final pubspecAnalyzer = PubspecAnalyzer(analysisDartRoot.path);
     final packageMetadata = await pubspecAnalyzer.analyze();
 
-    final filesToAnalyze = <String>{};
-    bool useRecursiveAnalysis = false;
-
-    if (config.entryPoints.isNotEmpty) {
-      useRecursiveAnalysis = true;
-      for (final point in config.entryPoints) {
-        filesToAnalyze.add(normalize(absolute(join(analysisDartRoot.path, point))));
-      }
-    } else {
-      // Check if we should default to the main library file
-      // We do this only if the include configuration is the default one
-      final isDefaultInclude = config.include.length == 1 && config.include.contains('lib/**.dart');
-
-      final mainLibrary = normalize(
-        absolute(join(analysisDartRoot.path, 'lib', '${packageMetadata.packageName}.dart')),
-      );
-
-      if (isDefaultInclude && File(mainLibrary).existsSync()) {
-        useRecursiveAnalysis = true;
-        filesToAnalyze.add(mainLibrary);
-      } else {
-        filesToAnalyze.addAll(globbedFiles);
-      }
-    }
+    final entryPoints = resolveEntryPoints(
+      root: analysisDartRoot.path,
+      config: config,
+      packageName: packageMetadata.packageName,
+      globbedFiles: globbedFiles,
+    );
+    final filesToAnalyze = entryPoints.files;
+    final useRecursiveAnalysis = entryPoints.followsExports;
 
     if (filesToAnalyze.isEmpty) {
       logger.err('No Dart files found to analyze. Exiting');
