@@ -57,6 +57,18 @@ class DeadCodeFinder {
       return const DeadCodeReport(dead: [], apiSurface: [], docOnly: [], filesScanned: 0, declarationsChecked: 0);
     }
 
+    // An unresolved package still analyzes, it just cannot follow its own
+    // `package:` imports, so every declaration reached only through one looks
+    // unreferenced. Saying so is better than reporting a tree of false
+    // findings and leaving the reader to work out why.
+    if (!File(join(_normalizedRoot, '.dart_tool', 'package_config.json')).existsSync()) {
+      logger.warn(
+        'No .dart_tool/package_config.json in ${root.path}. Run pub get first, '
+        'otherwise anything referenced only through a package: import is '
+        'reported as dead.',
+      );
+    }
+
     final collection = AnalysisContextCollection(
       includedPaths: [_normalizedRoot],
       excludedPaths: _exclusions.toList(),
