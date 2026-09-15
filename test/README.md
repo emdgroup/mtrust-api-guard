@@ -85,7 +85,10 @@ the command end to end against `app_v100`, `app_v101` and `app_v110`.
 and `app_v100` can't show: an `example/` with a pubspec of its own, a
 generated part that `analyzer.exclude` hides, and a conditional export whose
 untaken branch nothing references. It isn't one of the versioned `app_v*`
-fixtures, so no golden depends on it.
+fixtures, so no golden depends on it. That makes it the place for cases that
+have to sit in exported code, which in `app_v100` would land in the goldens: an
+exported top-level variable, a private member of an exported class, and an
+exported interface only a private class implements.
 
 ## Looking at what the tool produces
 

@@ -95,7 +95,7 @@ void main() {
 
     test('agrees in number with the singular and the plural', () {
       final one = DeadCodeFormatter(report(dead: [declaration()])).formatMarkdown();
-      expect(one, contains('1 declaration nothing references'));
+      expect(one, contains('1 declaration nothing live refers to'));
       expect(one, contains('no consumer can reach it'));
 
       final two = DeadCodeFormatter(
@@ -106,7 +106,7 @@ void main() {
           ],
         ),
       ).formatMarkdown();
-      expect(two, contains('2 declarations nothing references'));
+      expect(two, contains('2 declarations nothing live refers to'));
       expect(two, contains('no consumer can reach them'));
     });
 

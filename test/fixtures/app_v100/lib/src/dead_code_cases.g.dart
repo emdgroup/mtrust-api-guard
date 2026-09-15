@@ -7,4 +7,6 @@ class GeneratedHelper {
 }
 
 /// Dead, but inside a generated file, so it is never reported.
-class GeneratedDead {}
+class GeneratedDead {
+  Object make() => UsedOnlyByDeadGeneratedCode();
+}

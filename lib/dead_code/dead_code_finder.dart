@@ -19,12 +19,14 @@ import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
-/// Finds declarations that no code in the package references.
+/// Finds declarations that nothing in the package reaches.
 ///
-/// The scan resolves every library under `lib/` and `test/` once and collects
-/// two sets from the resolved ASTs: the declarations each file makes, and the
-/// elements each file refers to. Whatever is declared but never referred to is
-/// unreferenced.
+/// The scan resolves every library under `lib/` and the other directories
+/// holding the package's code once, and builds a graph from the resolved ASTs:
+/// the declarations each file makes, and what the code of each one refers to.
+/// Tests, executables and examples are roots, and so is whatever a consumer
+/// can reach. A declaration a walk from the roots never gets to is dead, even
+/// when other dead code refers to it.
 ///
 /// Being unreferenced inside the package is not the same as being dead. For a
 /// published package the entire exported API is unreferenced from its own
@@ -42,10 +44,14 @@ class DeadCodeFinder {
   /// Declarations found, keyed by element, with their source position.
   final Map<Element, DeclarationSite> _declarations = {};
 
-  /// Elements referenced from code.
-  final Set<Element> _codeReferences = {};
+  /// What the code of each tracked declaration refers to.
+  final Map<Element, Set<Element>> _references = {};
 
-  /// Elements referenced only from dartdoc `[Foo]` links so far.
+  /// What code outside every tracked declaration refers to: tests,
+  /// executables, examples, and anything else that is read but never reported.
+  final Set<Element> _rootReferences = {};
+
+  /// Elements dartdoc `[Foo]` links mention.
   final Set<Element> _docReferences = {};
 
   /// The files behind each conditional import or export, default included.
@@ -60,6 +66,22 @@ class DeadCodeFinder {
   /// instead. Each counts as referenced, or as reachable, when its counterpart
   /// is.
   final Map<Element, Set<Element>> _counterparts = {};
+
+  /// The tracked members of each container.
+  final Map<Element, List<Element>> _membersOf = {};
+
+  /// The tracked declarations that override each member.
+  final Map<Element, List<Element>> _overridesOf = {};
+
+  /// Everything a walk from the roots has got to.
+  final Set<Element> _live = {};
+
+  /// Everything live code refers to. A root, or the container of a live
+  /// member, is live without being used.
+  final Set<Element> _used = {};
+
+  /// Live elements whose own references the walk has yet to follow.
+  final List<Element> _pending = [];
 
   Future<DeadCodeReport> run() async {
     final reportable = _reportableFiles;
@@ -111,25 +133,29 @@ class DeadCodeFinder {
           final path = normalize(unit.path);
           if (!scanned.add(path)) continue;
 
-          // References are collected from every analyzable file, including
-          // generated files and tests. Something used only by a test or only
-          // by a `.g.dart` is used.
+          // Generated code is part of the graph like reportable code is, so
+          // what only dead generated code uses is dead too. Every other file,
+          // tests and executables among them, is a root: whatever it refers
+          // to is used.
+          final generated = isGeneratedFile(path, unit.content);
           final visitor = ReferenceVisitor(
             declarations: _declarations,
-            codeReferences: _codeReferences,
+            references: _references,
+            rootReferences: _rootReferences,
             docReferences: _docReferences,
             conditionalBranches: _conditionalBranches,
             filePath: _relative(path),
             lineInfo: unit.lineInfo,
-            collectDeclarations: reportable.contains(path) && !isGeneratedFile(path, unit.content),
+            trackDeclarations: generated || reportable.contains(path),
+            reportDeclarations: !generated && reportable.contains(path),
             packageRoot: _normalizedRoot,
           );
           unit.unit.accept(visitor);
         }
       }
 
-      _adoptNestedPackageReferences();
       _pairConditionalBranches();
+      _indexMembers();
 
       final exported = await _exportedElements(collection);
       progress.complete();
@@ -233,21 +259,22 @@ class DeadCodeFinder {
     return resolution.files;
   }
 
-  /// Maps the references a nested package makes, such as an `example/` with a
-  /// pubspec of its own, onto the declarations they point at.
+  /// The declaration [element] stands for.
   ///
-  /// The analyzer resolves a nested package in an analysis context of its
-  /// own, which builds its own element for every declaration it imports from
-  /// this package. Those never equal the elements declared here, so they are
-  /// matched by where they are declared instead.
-  void _adoptNestedPackageReferences() {
-    final declaredAt = {for (final element in _declarations.keys) ?_declarationKey(element): element};
-    for (final element in _codeReferences.toList()) {
-      if (_declarations.containsKey(element)) continue;
-      final declared = declaredAt[_declarationKey(element)];
-      if (declared != null) _codeReferences.add(declared);
-    }
-  }
+  /// The analyzer resolves a nested package, such as an `example/` with a
+  /// pubspec of its own, in an analysis context of its own, which builds its
+  /// own element for every declaration it imports from this package. Those
+  /// never equal the elements declared here, so they are matched by where they
+  /// are declared instead.
+  Element _adopt(Element element) => _adopted[element] ??= _declarations.containsKey(element)
+      ? element
+      : _declaredAt[_declarationKey(element)] ?? element;
+
+  final Map<Element, Element> _adopted = {};
+
+  late final Map<String, Element> _declaredAt = {
+    for (final element in _declarations.keys) ?_declarationKey(element): element,
+  };
 
   static String? _declarationKey(Element element) {
     final fragment = element.firstFragment;
@@ -283,45 +310,67 @@ class DeadCodeFinder {
     }
   }
 
+  /// Fills [_membersOf] and [_overridesOf].
+  void _indexMembers() {
+    for (final MapEntry(key: element, value: site) in _declarations.entries) {
+      final container = element.enclosingElement?.baseElement;
+      if (container is InstanceElement) (_membersOf[container] ??= []).add(element);
+      for (final overridden in site.overriddenElements) {
+        (_overridesOf[_adopt(overridden)] ??= []).add(element);
+      }
+    }
+  }
+
   DeadCodeReport _classify({required Set<Element>? exported, required int filesScanned}) {
+    // Walked from the roots first, and what that reaches is what counts as
+    // used.
+    _rootReferences.map(_adopt).forEach(_use);
+    for (final MapEntry(key: element, value: site) in _declarations.entries) {
+      if (_isEntryPoint(element, site) || _isApiSurface(element, exported)) _reach(element);
+    }
+    _propagate();
+    final live = {..._live};
+    final used = {..._used};
+
+    // Then on from what only doc comments mention. That is reported as
+    // doc-only rather than as dead, so what it uses is not asserted dead either.
+    final mentioned = _docReferences.map(_adopt).toSet();
+    mentioned.where(_declarations.containsKey).forEach(_reach);
+    _propagate();
+
+    final findings = <Element, ({DeclarationSite site, _Finding finding})>{};
+    for (final MapEntry(key: element, value: site) in _declarations.entries) {
+      if (!site.reportable || _isKept(element, site, live: live, used: used)) continue;
+      final finding = mentioned.contains(element)
+          ? _Finding.docOnly
+          : [element, ...?_counterparts[element]].any((candidate) => _isApiSurface(candidate, exported))
+          ? _Finding.apiSurface
+          // Reached, but only through something the report lists rather than
+          // uses, such as a declaration only a doc comment mentions.
+          : _live.contains(element)
+          ? null
+          : _Finding.dead;
+      if (finding != null) findings[element] = (site: site, finding: finding);
+    }
+
     final dead = <DeadDeclaration>[];
     final apiSurface = <DeadDeclaration>[];
     final docOnly = <DeadDeclaration>[];
 
-    final unreferenced = <Element, DeclarationSite>{};
+    for (final MapEntry(key: element, value: (:site, :finding)) in findings.entries) {
+      // A member of a declaration that is itself reported adds nothing:
+      // reporting `Foo` and then every member of `Foo` buries the one line that
+      // matters. The exception is a dead member of API surface, which no
+      // consumer reaches although they reach `Foo`.
+      final container = findings[element.enclosingElement?.baseElement]?.finding;
+      if (container != null && !(container == _Finding.apiSurface && finding == _Finding.dead)) continue;
 
-    for (final entry in _declarations.entries) {
-      final element = entry.key;
-      if (_codeReferences.contains(element)) continue;
-      if (_shouldSkip(element, entry.value)) continue;
-      unreferenced[element] = entry.value;
-    }
-
-    for (final entry in unreferenced.entries) {
-      final element = entry.key;
-      final site = entry.value;
-
-      // A member of a declaration that is itself dead adds nothing: reporting
-      // `Foo` and then every member of `Foo` buries the one line that matters.
-      final container = element.enclosingElement;
-      if (container != null && unreferenced.containsKey(container.baseElement)) continue;
-
-      final declaration = site.toDeclaration();
-
-      // Without a known export closure a public declaration cannot be proven
-      // unreachable, so it is reported as API surface rather than asserted to
-      // be dead.
-      final reachable = exported == null
-          ? !declaration.isPrivate
-          : [element, ...?_counterparts[element]].any((candidate) => _isApiSurface(candidate, exported));
-
-      if (_docReferences.contains(element)) {
-        docOnly.add(declaration);
-      } else if (reachable) {
-        apiSurface.add(declaration);
-      } else {
-        dead.add(declaration);
-      }
+      final bucket = switch (finding) {
+        _Finding.dead => dead,
+        _Finding.apiSurface => apiSurface,
+        _Finding.docOnly => docOnly,
+      };
+      bucket.add(site.toDeclaration());
     }
 
     int byPosition(DeadDeclaration a, DeadDeclaration b) {
@@ -334,56 +383,93 @@ class DeadCodeFinder {
       apiSurface: apiSurface..sort(byPosition),
       docOnly: docOnly..sort(byPosition),
       filesScanned: filesScanned,
-      declarationsChecked: _declarations.length,
+      declarationsChecked: _declarations.values.where((site) => site.reportable).length,
     );
   }
 
-  /// Whether a consumer can reach [element]: it is exported itself, or it is a
-  /// member of something exported.
-  bool _isApiSurface(Element element, Set<Element> exported) {
-    if (exported.contains(element.baseElement)) return true;
-    final container = element.enclosingElement;
-    return container != null && exported.contains(container.baseElement);
+  void _reach(Element element) {
+    if (_live.add(element)) _pending.add(element);
   }
 
-  bool _shouldSkip(Element element, DeclarationSite site) {
-    if (site.hasVmEntryPoint) return true;
+  void _use(Element element) {
+    _used.add(element);
+    _reach(element);
+  }
+
+  /// Follows what is live until nothing new is reached.
+  void _propagate() {
+    while (_pending.isNotEmpty) {
+      final element = _pending.removeLast();
+      _references[element]?.map(_adopt).forEach(_use);
+      _counterparts[element]?.forEach(_reach);
+
+      // A member does not run without its container.
+      final container = element.enclosingElement?.baseElement;
+      if (container is InstanceElement) _reach(container);
+
+      // A container that exists brings the members called on it implicitly,
+      // and a live member brings the overrides whose container exists.
+      for (final member in _membersOf[element] ?? const <Element>[]) {
+        if (_isCalledImplicitly(_declarations[member]!, _live)) _reach(member);
+      }
+      for (final override in _overridesOf[element] ?? const <Element>[]) {
+        if (_live.contains(override.enclosingElement?.baseElement)) _reach(override);
+      }
+    }
+  }
+
+  /// Whether [element] counts as used although no live code refers to it.
+  bool _isKept(Element element, DeclarationSite site, {required Set<Element> live, required Set<Element> used}) {
+    if (used.contains(element) || _isEntryPoint(element, site)) return true;
+
+    final container = element.enclosingElement?.baseElement;
+    if (container is InstanceElement && live.contains(container) && _isCalledImplicitly(site, live)) return true;
 
     // An extension is applied implicitly: `value.helper()` resolves to the
-    // member, and the extension's own name never appears at the call site. So
-    // a used extension looks unreferenced unless its members are consulted.
-    if (element is ExtensionElement && _hasReferencedMember(element)) return true;
-    if (implicitlyInvokedNames.contains(site.name)) return true;
+    // member, and the extension's own name never appears at the call site.
+    if (element is ExtensionElement && (_membersOf[element]?.any(used.contains) ?? false)) return true;
 
-    // The entry point of a program or a test is never unused.
-    if (site.kind == DeadCodeKind.functionKind && site.name == 'main') return true;
-
-    // A member that implements or overrides something inherited is reached
-    // through the supertype, which a per-element reference set does not see.
-    // It counts as live when anything the override chain is reachable through
-    // is referenced, or when the chain leaves this package, where a framework
-    // may be the caller.
-    if (site.overriddenOutsidePackage) return true;
-    if (site.overriddenElements.any(_codeReferences.contains)) return true;
-
-    if (_counterparts[element]?.any(_codeReferences.contains) ?? false) return true;
-
-    return false;
+    return _counterparts[element]?.any(used.contains) ?? false;
   }
 
-  /// Whether anything inside [element] is referenced.
-  bool _hasReferencedMember(ExtensionElement element) {
-    bool referenced(Element member) => _codeReferences.contains(member.baseElement);
-    return element.methods.any(referenced) ||
-        element.getters.any(referenced) ||
-        element.setters.any(referenced) ||
-        element.fields.any(referenced);
+  /// Whether something outside the source calls [element], which nothing in
+  /// the package has to refer to then.
+  static bool _isEntryPoint(Element element, DeclarationSite site) {
+    if (site.hasVmEntryPoint) return true;
+    // The entry point of a program or a test is never unused.
+    if (site.kind == DeadCodeKind.functionKind && site.name == 'main') return true;
+    // A member waits for its container to exist, see [_isCalledImplicitly]. A
+    // top-level declaration has none to wait for.
+    return element.enclosingElement is! InstanceElement && implicitlyInvokedNames.contains(site.name);
+  }
+
+  /// Whether [site]'s declaration, a member, is called without a reference in
+  /// source once its container exists: by the language or by `jsonEncode`, or
+  /// through a member it overrides. A caller reaches it through that member
+  /// when the member is live, and a framework may when it is declared outside
+  /// this package.
+  bool _isCalledImplicitly(DeclarationSite site, Set<Element> live) =>
+      implicitlyInvokedNames.contains(site.name) ||
+      site.overriddenOutsidePackage ||
+      site.overriddenElements.any((overridden) => live.contains(_adopt(overridden)));
+
+  /// Whether a consumer can reach [element]: it is exported itself, or it is a
+  /// public member of something exported. Without a known export closure a
+  /// public declaration cannot be proven unreachable, so every one might be.
+  bool _isApiSurface(Element element, Set<Element>? exported) {
+    final container = element.enclosingElement;
+    final isMember = container is InstanceElement;
+    if (exported == null) return element.isPublic && (!isMember || container.isPublic);
+    if (exported.contains(element.baseElement)) return true;
+    return isMember && element.isPublic && exported.contains(container.baseElement);
   }
 
   String _relative(String file) => relative(file, from: _normalizedRoot).replaceAll(r'\', '/');
 
   static String _normalize(FileSystemEntity entity) => normalize(absolute(entity.path));
 }
+
+enum _Finding { dead, apiSurface, docOnly }
 
 /// Why the package at [packageRoot] cannot be fully resolved, or `null` when
 /// it can.

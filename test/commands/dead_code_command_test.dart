@@ -98,18 +98,27 @@ class OrphanedHelper {
       expect(namesIn(report, 'dead'), isNot(contains('User')));
     });
 
-    test('finds nothing dead when every declaration is exported', () async {
+    test('finds only unread private members when every declaration is exported', () async {
       await useFixture(testSetup.fixtures.appV110Dir);
 
       final report = await runDeadCode();
 
-      expect(report['dead'], isEmpty);
+      // Exporting a class does not let a consumer reach its private members,
+      // and nothing in the package reads these two.
+      expect(
+        namesIn(report, 'dead'),
+        unorderedEquals(['User._internalId', 'MagnitudeOverrideTest._willNotBeReportedInChangelog']),
+      );
       expect(report['apiSurface'], isNotEmpty);
       expect((report['summary'] as Map)['declarationsChecked'], greaterThan(0));
     });
 
     test('writes no markdown section when there is nothing to warn about', () async {
-      await useFixture(testSetup.fixtures.appV110Dir);
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'api.dart'))
+        ..createSync(recursive: true)
+        ..writeAsStringSync('class Exported {}\n');
 
       final outPath = p.join(testSetup.tempDir.path, 'dead_code.md');
       await testSetup.runApiGuard('dead-code', ['-f', 'markdown', '--out', outPath]);
@@ -153,7 +162,7 @@ class OrphanedHelper {
       await useFixture(testSetup.fixtures.appV110Dir);
 
       final before = await runDeadCode(name: 'dead_code_before.json');
-      expect(before['dead'], isEmpty, reason: 'app_v110 exports everything it declares');
+      expect(namesIn(before, 'dead'), isNot(contains('OrphanedHelper')));
 
       plantOrphan();
 

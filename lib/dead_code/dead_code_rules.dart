@@ -1,5 +1,5 @@
-/// The names and shapes a dead code scan has to leave alone, because a
-/// reference set cannot settle them on its own.
+/// The names and shapes a dead code scan has to leave alone, because no
+/// reference in source settles them.
 library;
 
 /// Filename suffixes emitted by the common Dart code generators. Files with

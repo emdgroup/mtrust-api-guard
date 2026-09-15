@@ -83,8 +83,8 @@ class DeadCodeReport {
     required this.declarationsChecked,
   });
 
-  /// Declarations nothing references and that no consumer can reach, because
-  /// they are not part of the package's export closure.
+  /// Declarations nothing live refers to and that no consumer can reach,
+  /// because they are not part of the package's export closure.
   final List<DeadDeclaration> dead;
 
   /// Declarations nothing inside the package references, but that the package
@@ -242,7 +242,7 @@ class DeadCodeFormatter extends DeadCodeMarkdown {
       buffer
         ..writeln(
           '${report.dead.length} ${DeadCodeMarkdown.plural(report.dead.length, 'declaration', 'declarations')} '
-          'nothing references, and outside the export closure so no consumer can reach '
+          'nothing live refers to, and outside the export closure so no consumer can reach '
           '${DeadCodeMarkdown.plural(report.dead.length, 'it', 'them')}.',
         )
         ..writeln();

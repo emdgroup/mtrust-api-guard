@@ -38,7 +38,7 @@ class DocComparatorCommand extends Command
     argParser.addFlag(
       'dead-code',
       help:
-          'Append a warning section listing declarations nothing references '
+          'Append a warning section listing declarations nothing live refers to '
           'and no consumer can reach. Never affects the exit code.',
       defaultsTo: false,
     );

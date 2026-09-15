@@ -11,7 +11,7 @@ import 'package:path/path.dart';
 
 class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
   @override
-  String get description => 'Report declarations nothing references and no consumer can reach';
+  String get description => 'Report declarations nothing live refers to and no consumer can reach';
 
   @override
   String get name => 'dead-code';

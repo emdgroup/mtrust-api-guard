@@ -35,7 +35,7 @@ Available commands:
   badge       Generate version badge from current pubspec version
   changelog   Generate a changelog entry based on API changes
   compare     Compare two API documentation files
-  dead-code   Report declarations nothing references and no consumer can reach
+  dead-code   Report declarations nothing live refers to and no consumer can reach
   generate    Generate API documentation from Dart files
   version     Calculate and output the next version based on API changes
 
@@ -229,7 +229,7 @@ Usage: mtrust_api_guard compare [arguments]
     --out           Write the comparison results to a file
     --base-url      Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)
     --[no-]dead-code
-                    Append a warning section listing declarations nothing references
+                    Append a warning section listing declarations nothing live refers to
                     and no consumer can reach. Never affects the exit code.
 ```
 
@@ -341,12 +341,15 @@ The format must contain `{package}` and end with `{version}`.
 
 ## Dead Code
 
-Reports declarations that no code in the package references. Every library under
+Reports declarations that nothing in the package reaches. Every library under
 `lib/`, `bin/`, `test/`, `tool/`, `example/`, `benchmark/` and `integration_test/`
-is resolved once, and two sets come out of the resolved ASTs: what each file
-declares, and what each file refers to. Whatever is declared and never referred
-to is unreferenced. An `example/` with a pubspec of its own is resolved as the
-separate package it is, and what it uses counts all the same.
+is resolved once, and the resolved ASTs give a graph: what each file declares,
+and what the code of each declaration refers to. Tests, executables, examples
+and whatever a consumer can reach are the roots. A declaration a walk from them
+never gets to is dead, even when other dead code refers to it, so two classes
+that only refer to each other are both reported. An `example/` with a pubspec of
+its own is resolved as the separate package it is, and what it uses counts all
+the same.
 
 Entry points are resolved by the same code the `generate` command enters a
 package with, so the closure a finding is checked against is the closure the
@@ -407,12 +410,14 @@ dead code detector either buries you in findings or has to stop reporting public
 ones. Findings are split against the export closure of the configured
 `entry_points` instead:
 
-- **dead**: nothing references it and the package does not export it, so no
-  consumer can reach it either.
-- **API surface**: nothing inside references it, but it is exported. A consumer
-  can call it, so it is listed separately and never counted as dead.
+- **dead**: nothing live refers to it and the package does not export it, so no
+  consumer can reach it either. Exporting a class does not export its private
+  members, so an unused one is dead even when the class is API surface.
+- **API surface**: nothing inside uses it, but it is exported. A consumer can
+  call it, so it is listed separately and never counted as dead.
 - **doc-only**: the only thing referring to it is a dartdoc `[Link]`. A comment
-  mentioning something is not code using it, but it is not silence either.
+  mentioning something is not code using it, but it is not silence either. What
+  it uses is not reported as dead, because it is not reported as dead itself.
 
 Without `entry_points`, the package's main library (`lib/<package_name>.dart`)
 is used. If neither exists the closure is unknown, and public declarations are
@@ -423,19 +428,19 @@ not to block a merge, and nothing is ever deleted for you.
 
 ### What it skips
 
-Each of these is a source of false positives that a reference set cannot settle
-on its own.
+Each of these is a source of false positives that references in source cannot
+settle on their own.
 
 | Skipped | Why |
 | --- | --- |
 | `main` | An entry point is never unused. |
 | Files matched by `analyzer.exclude` or `api_guard.exclude` | Excluded from analysis means excluded from the report. Both sections are honoured. A part is still read along with its library, so a generated part excluded to quiet lints still counts as a reference. |
 | The untaken branches of a conditional import or export | The analyzer resolves one branch, but another platform compiles the others. A declaration there counts as referenced, or exported, when its namesake in another branch is. |
-| Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are still read, so a declaration used only from generated code is not misreported. |
+| Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are part of the graph all the same: what live generated code uses is live, and a class only its own `.g.dart` refers to is dead. |
 | `@pragma('vm:entry-point')` | Reachable from native code or reflection. |
-| `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference. |
-| An override whose chain leaves the package | A framework may be the caller. An override whose chain stays inside the package is reported when nothing in that chain is referenced. |
-| Members of a declaration that is itself dead | Only the outermost one is reported, so the finding names the thing to delete. |
+| `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference, once their class is live. |
+| An override whose chain leaves the package | A framework may be the caller once the class is live. An override whose chain stays inside the package is live when its class is and a member it overrides is. |
+| Members of a declaration that is itself reported | Only the outermost one is reported, so the finding names the thing to delete. A dead private member of a class that is API surface is the exception. |
 | Local variables and functions, type parameters | The analyzer's own `unused_element` lint covers these. |
 
 Operators are reported like anything else, because `a + b` resolves back to the

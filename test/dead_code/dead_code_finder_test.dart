@@ -71,8 +71,24 @@ void main() {
       expect(allReported(), isNot(contains('UsedOnlyByBin')));
     });
 
-    test('keeps a declaration referenced only from a generated file alive', () {
+    test('keeps a declaration that live generated code uses alive', () {
       expect(allReported(), isNot(contains('UsedByGenerated')));
+    });
+
+    test('reports what only dead generated code uses as dead', () {
+      expect(deadNames(), contains('UsedOnlyByDeadGeneratedCode'));
+    });
+
+    test('reports what only dead code uses as dead', () {
+      expect(deadNames(), containsAll(['DeadCaller', 'ChainedHelper']));
+    });
+
+    test('does not let two declarations keep each other alive', () {
+      expect(deadNames(), containsAll(['MutualA', 'MutualB']));
+    });
+
+    test('keeps what an instance field initializer calls alive while its class is', () {
+      expect(allReported(), isNot(contains('_register')));
     });
 
     test('keeps every enum constant alive when values is read', () {
@@ -168,6 +184,13 @@ void main() {
         'DeadExtension',
         'Holder.unreadField',
         'DocumentationCarrier',
+        'Registers._registration',
+        // Used by nothing but other dead code.
+        'UsedOnlyByDeadGeneratedCode',
+        'DeadCaller',
+        'ChainedHelper',
+        'MutualA',
+        'MutualB',
       });
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
@@ -206,12 +229,25 @@ void main() {
       expect(allReported(), isNot(contains('platformName')));
     });
 
+    test('reports a model only its own generated code refers to as dead', () {
+      expect(report.dead.map((d) => d.qualifiedName), contains('Draft'));
+    });
+
+    test('keeps an override of an exported member alive though nothing here calls it', () {
+      expect(allReported(), isNot(contains('_PoliteGreeter.greet')));
+    });
+
     test('reports an exported top-level variable as API surface', () {
       expect(report.apiSurface.map((d) => d.qualifiedName), contains('greeting'));
     });
 
+    test('reports a dead private member of a class that is API surface', () {
+      expect(report.apiSurface.map((d) => d.qualifiedName), contains('Api'));
+      expect(report.dead.map((d) => d.qualifiedName), contains('Api._neverCalled'));
+    });
+
     test('finds exactly the dead declarations the fixture plants', () {
-      expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls'});
+      expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls', 'Api._neverCalled', 'Draft'});
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 

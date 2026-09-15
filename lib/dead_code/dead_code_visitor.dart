@@ -18,6 +18,7 @@ class DeclarationSite {
     required this.hasVmEntryPoint,
     required this.overriddenOutsidePackage,
     required this.overriddenElements,
+    required this.reportable,
   });
 
   final String name;
@@ -30,6 +31,10 @@ class DeclarationSite {
   final bool overriddenOutsidePackage;
   final List<Element> overriddenElements;
 
+  /// Whether the declaration may be reported. Generated code is walked like
+  /// the rest, but deleting it would only make the generator write it again.
+  final bool reportable;
+
   String get qualifiedName => container == null ? name : '$container.$name';
 
   DeadDeclaration toDeclaration() =>
@@ -37,7 +42,7 @@ class DeclarationSite {
 }
 
 /// Walks one resolved compilation unit, recording the declarations it makes
-/// and the elements it refers to.
+/// and what the code of each one refers to.
 ///
 /// Declaration names are tokens rather than identifiers in the analyzer AST,
 /// so a declaration never counts as a reference to itself. References made
@@ -46,17 +51,25 @@ class DeclarationSite {
 class ReferenceVisitor extends RecursiveAstVisitor<void> {
   ReferenceVisitor({
     required this.declarations,
-    required this.codeReferences,
+    required this.references,
+    required this.rootReferences,
     required this.docReferences,
     required this.conditionalBranches,
     required this.filePath,
     required this.lineInfo,
-    required this.collectDeclarations,
+    required this.trackDeclarations,
+    required this.reportDeclarations,
     required this.packageRoot,
   });
 
   final Map<Element, DeclarationSite> declarations;
-  final Set<Element> codeReferences;
+
+  /// What the code of each tracked declaration refers to.
+  final Map<Element, Set<Element>> references;
+
+  /// What code outside every tracked declaration refers to.
+  final Set<Element> rootReferences;
+
   final Set<Element> docReferences;
 
   /// The files behind each conditional import or export, default included.
@@ -64,7 +77,15 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
 
   final String filePath;
   final LineInfo lineInfo;
-  final bool collectDeclarations;
+
+  /// Whether this file's declarations are part of the reference graph, so
+  /// that what one refers to is only used while it is live. Where they are
+  /// not, as in tests and executables, everything the file refers to is used.
+  final bool trackDeclarations;
+
+  /// Whether this file's declarations may be reported.
+  final bool reportDeclarations;
+
   final String packageRoot;
 
   /// Declarations enclosing the node being visited, innermost last.
@@ -160,6 +181,14 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     super.visitPatternField(node);
   }
 
+  // A `show` or `hide` only filters a namespace. Naming a declaration there is
+  // not a use of it.
+  @override
+  void visitShowCombinator(ShowCombinator node) {}
+
+  @override
+  void visitHideCombinator(HideCombinator node) {}
+
   @override
   void visitExportDirective(ExportDirective node) {
     _recordBranches(node, node.libraryExport?.exportedLibrary);
@@ -214,8 +243,9 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     final name = node.name;
     if (name == null) {
       // An unnamed extension cannot be referenced by name, so it is never
-      // reportable, but its members still are.
-      super.visitExtensionDeclaration(node);
+      // reportable, but its members still are. What its `on` clause names
+      // stays attributed to it, and it is live while a member is.
+      _within(node.declaredFragment?.element.baseElement, () => super.visitExtensionDeclaration(node));
       return;
     }
     _declare(node.declaredFragment?.element, name, DeadCodeKind.extensionKind, node.metadata, () {
@@ -318,23 +348,35 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
       return;
     }
     final metadata = owner is AnnotatedNode ? owner.metadata : const <Annotation>[];
-    _declare(node.declaredFragment?.element, node.name, kind, metadata, () {
-      super.visitVariableDeclaration(node);
-    });
+    // An instance field's initializer runs whenever its class is constructed,
+    // whether the field is ever read or not, so what it refers to belongs to
+    // the class. A static, top-level or late one runs on the first read.
+    final initializedWithInstance =
+        owner is FieldDeclaration && !owner.isStatic && !(list is VariableDeclarationList && list.isLate);
+    _declare(
+      node.declaredFragment?.element,
+      node.name,
+      kind,
+      metadata,
+      () => super.visitVariableDeclaration(node),
+      ownsBody: !initializedWithInstance,
+    );
   }
 
-  /// Records a declaration and visits its children with it pushed onto the
-  /// enclosing stack.
+  /// Records a declaration and visits its children. Unless it does not
+  /// [ownsBody], it is pushed onto the enclosing stack meanwhile, so what its
+  /// children refer to is attributed to it.
   void _declare(
     Element? element,
     Token nameToken,
     DeadCodeKind kind,
     List<Annotation> metadata,
-    void Function() visitChildren,
-  ) {
+    void Function() visitChildren, {
+    bool ownsBody = true,
+  }) {
     final canonical = element?.baseElement;
 
-    if (canonical != null && collectDeclarations && !declarations.containsKey(canonical)) {
+    if (canonical != null && trackDeclarations && !declarations.containsKey(canonical)) {
       final location = lineInfo.getLocation(nameToken.offset);
       final container = canonical.enclosingElement;
       final overridden = _overriddenMembers(canonical, nameToken.lexeme);
@@ -348,12 +390,22 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
         hasVmEntryPoint: _hasVmEntryPoint(metadata),
         overriddenOutsidePackage: overridden.any(_isOutsidePackage),
         overriddenElements: overridden,
+        reportable: reportDeclarations,
       );
     }
 
-    if (canonical != null) _enclosing.add(canonical);
+    if (ownsBody) {
+      _within(canonical, visitChildren);
+    } else {
+      visitChildren();
+    }
+  }
+
+  /// Visits with [element] pushed onto the enclosing stack.
+  void _within(Element? element, void Function() visitChildren) {
+    if (element != null) _enclosing.add(element);
     visitChildren();
-    if (canonical != null) _enclosing.removeLast();
+    if (element != null) _enclosing.removeLast();
   }
 
   /// Records a reference to [element].
@@ -378,6 +430,8 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     }
   }
 
+  /// Records a reference to [element], from the innermost declaration around
+  /// it when that is tracked, and as a root otherwise.
   void _recordOne(Element element) {
     // A reference from inside the thing it points at is not use by anyone
     // else. Without this a recursive function keeps itself alive.
@@ -385,11 +439,10 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
 
     if (_inDocComment) {
       docReferences.add(element);
+    } else if (trackDeclarations && _enclosing.isNotEmpty) {
+      (references[_enclosing.last] ??= {}).add(element);
     } else {
-      codeReferences.add(element);
-      // A doc-only finding is one with no code reference at all, so a later
-      // code reference wins.
-      docReferences.remove(element);
+      rootReferences.add(element);
     }
   }
 

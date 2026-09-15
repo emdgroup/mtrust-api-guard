@@ -94,10 +94,40 @@ class DocumentationCarrier {
   const DocumentationCarrier();
 }
 
-/// Referenced only from a generated file, which still counts as a reference.
+/// Referenced only from generated code that `bin/` uses.
 class UsedByGenerated {
   void help() {}
 }
+
+/// Referenced only from generated code that nothing uses.
+class UsedOnlyByDeadGeneratedCode {}
+
+/// Calls `ChainedHelper`, and nothing calls it.
+class DeadCaller {
+  void run() => ChainedHelper().help();
+}
+
+/// Used only by `DeadCaller`, which is dead itself.
+class ChainedHelper {
+  void help() {}
+}
+
+/// Refers to `MutualB`, which refers back. Nothing else refers to either.
+class MutualA {
+  MutualB? partner;
+}
+
+class MutualB {
+  MutualA? partner;
+}
+
+/// Constructed from `bin/`. `_registration` is never read, but its
+/// initializer runs on every construction.
+class Registers {
+  final int _registration = _register();
+}
+
+int _register() => 0;
 
 /// Only ever listed through `values`, which reads every constant.
 enum Listed { first, second }

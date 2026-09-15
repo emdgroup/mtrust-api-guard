@@ -8,6 +8,7 @@ void main() {
   Base().hook();
   Subclass().hook();
   GeneratedHelper().help();
+  Registers();
   Ticker().tick();
 
   if (const Point(1) case Point(:final doubled)) {

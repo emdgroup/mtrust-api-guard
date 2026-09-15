@@ -132,7 +132,7 @@ class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
         ..writeln(
           '${delta.introduced.length} '
           '${DeadCodeMarkdown.plural(delta.introduced.length, 'declaration', 'declarations')} '
-          'nothing references, added since `${delta.baseRef ?? 'base'}`, and '
+          'nothing live refers to, added since `${delta.baseRef ?? 'base'}`, and '
           'outside the export closure so no consumer can reach '
           '${DeadCodeMarkdown.plural(delta.introduced.length, 'it', 'them')}.',
         )

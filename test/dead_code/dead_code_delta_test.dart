@@ -173,7 +173,7 @@ void main() {
           head: report(dead: [declaration(name: 'A')]),
         ),
       ).formatMarkdown();
-      expect(one, contains('1 declaration nothing references'));
+      expect(one, contains('1 declaration nothing live refers to'));
       expect(one, contains('no consumer can reach it'));
 
       final two = DeadCodeDeltaFormatter(
@@ -187,7 +187,7 @@ void main() {
           ),
         ),
       ).formatMarkdown();
-      expect(two, contains('2 declarations nothing references'));
+      expect(two, contains('2 declarations nothing live refers to'));
       expect(two, contains('no consumer can reach them'));
     });
 
