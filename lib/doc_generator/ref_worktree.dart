@@ -43,15 +43,16 @@ bool isFlutterProject(String packagePath) {
 
 /// Resolves the dependencies of the package at [packagePath].
 void resolveDependencies(String packagePath) {
-  final needsFlutter = isFlutterProject(packagePath);
-  final flutterAvailable = isFlutterAvailable();
-
-  if (needsFlutter && !flutterAvailable) {
+  final flutterProject = isFlutterProject(packagePath);
+  // Only a Flutter package needs to know whether Flutter is there, and finding
+  // out costs a subprocess.
+  final useFlutter = flutterProject && isFlutterAvailable();
+  if (flutterProject && !useFlutter) {
     logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
   }
 
-  final command = needsFlutter && flutterAvailable ? 'flutter' : 'dart';
-  logger.detail('Running $command pub get in $packagePath');
+  final command = useFlutter ? 'flutter' : 'dart';
+  logger.info('Detected ${flutterProject ? 'Flutter' : 'Dart'} project, running $command pub get in $packagePath');
 
   final result = Process.runSync(command, ['pub', 'get'], workingDirectory: packagePath);
   if (result.exitCode != 0) {

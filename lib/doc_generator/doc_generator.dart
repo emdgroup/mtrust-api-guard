@@ -12,64 +12,11 @@ import 'package:mtrust_api_guard/doc_generator/doc_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/entry_points.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
+import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 import 'package:path/path.dart';
-import 'package:yaml/yaml.dart';
-
-/// Checks if Flutter command is available
-bool _isFlutterAvailable() {
-  try {
-    final result = Process.runSync('flutter', ['--version'], runInShell: true);
-    return result.exitCode == 0;
-  } catch (e) {
-    return false;
-  }
-}
-
-/// Checks if a project is a Flutter project by examining pubspec.yaml
-bool _isFlutterProject(String packagePath) {
-  final pubspecFile = File(join(packagePath, 'pubspec.yaml'));
-  if (!pubspecFile.existsSync()) {
-    return false;
-  }
-
-  try {
-    final pubspecContent = pubspecFile.readAsStringSync();
-    final pubspecYaml = loadYaml(pubspecContent);
-
-    // Check for Flutter SDK dependency in dependencies
-    if (pubspecYaml['dependencies'] is Map) {
-      final deps = pubspecYaml['dependencies'] as Map;
-      if (deps.containsKey('flutter')) {
-        return true;
-      }
-    }
-
-    // Check for Flutter SDK dependency in dev_dependencies
-    if (pubspecYaml['dev_dependencies'] is Map) {
-      final devDeps = pubspecYaml['dev_dependencies'] as Map;
-      if (devDeps.containsKey('flutter')) {
-        return true;
-      }
-    }
-
-    // Check for Flutter environment constraint
-    if (pubspecYaml['environment'] is Map) {
-      final env = pubspecYaml['environment'] as Map;
-      if (env.containsKey('flutter')) {
-        return true;
-      }
-    }
-
-    return false;
-  } catch (e) {
-    // If we can't parse the pubspec, default to dart pub get
-    logger.detail('Failed to parse pubspec.yaml to detect Flutter project: $e');
-    return false;
-  }
-}
 
 Future<PackageApi> generateDocs({
   required String gitRef,
@@ -125,31 +72,7 @@ Future<PackageApi> generateDocs({
       worktreeCreated = true;
       logger.info('Successfully created worktree at $worktreePath');
 
-      // Determine if this is a Flutter project and use the appropriate pub get command
-      final packagePath = join(worktreePath, dartRelativePath);
-      final isFlutterProject = _isFlutterProject(packagePath);
-      final isFlutterAvailable = _isFlutterAvailable();
-
-      // Only use flutter if the project is a Flutter project AND Flutter is available
-      final useFlutter = isFlutterProject && isFlutterAvailable;
-      final command = useFlutter ? 'flutter' : 'dart';
-      final args = ['pub', 'get'];
-
-      if (isFlutterProject && !isFlutterAvailable) {
-        logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
-      }
-
-      logger.info(
-        'Detected ${isFlutterProject ? "Flutter" : "Dart"} project, running $command ${args.join(' ')} in $packagePath',
-      );
-      final result = Process.runSync(command, args, workingDirectory: packagePath);
-      if (result.exitCode != 0) {
-        logger.err('Failed to run $command ${args.join(' ')}: ${result.stderr} in $packagePath');
-        if (result.stdout.toString().isNotEmpty) {
-          logger.err('stdout: ${result.stdout}');
-        }
-        throw Exception('Failed to run $command ${args.join(' ')} in $packagePath (exit code: ${result.exitCode})');
-      }
+      resolveDependencies(join(worktreePath, dartRelativePath));
     } catch (e) {
       logger.err('Failed to create worktree: $e');
       rethrow;
