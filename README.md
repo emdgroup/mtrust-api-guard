@@ -359,7 +359,9 @@ mtrust_api_guard dead-code
 -h, --help        Print this usage information.
 -f, --format      Output format
                   [text (default), markdown, json]
-    --out         Write the report to a file
+    --out         Write the report to a file. Repeat it to write several formats
+                  from one scan, in which case the format comes from each file
+                  extension (.json, .md) and falls back to --format.
     --base-url    Base URL for file links (e.g. https://github.com/org/repo/blob/main)
 -b, --base-ref    Report only what changed since this git ref, rather than
                   everything currently dead. Costs a second analysis pass.

@@ -136,6 +136,19 @@ class OrphanedHelper {
       expect(markdown, contains('https://example.test/blob/main/lib/src/internal.dart'));
     });
 
+    test('writes every --out from a single scan', () async {
+      await useFixture(testSetup.fixtures.appV100Dir);
+
+      final jsonPath = p.join(testSetup.tempDir.path, 'report.json');
+      final markdownPath = p.join(testSetup.tempDir.path, 'report.md');
+      await testSetup.runApiGuard('dead-code', ['--out', jsonPath, '--out', markdownPath]);
+
+      // Each file gets the format its extension names, not `--format`.
+      final report = jsonDecode(File(jsonPath).readAsStringSync()) as Map<String, dynamic>;
+      expect(namesIn(report, 'dead'), contains('Internal'));
+      expect(File(markdownPath).readAsStringSync(), contains('⚠️ Dead code'));
+    });
+
     test('picks up dead code a change introduces', () async {
       await useFixture(testSetup.fixtures.appV110Dir);
 
