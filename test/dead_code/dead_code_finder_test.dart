@@ -155,4 +155,25 @@ void main() {
       });
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
+
+  group('DeadCodeFinder on package layouts', () {
+    late Directory packageDir;
+    late DeadCodeReport report;
+
+    setUpAll(() async {
+      packageDir = await materializeFixturePackage(TestFixtures().deadCodeLayoutDir, 'dead_code_layout');
+      report = await DeadCodeFinder(root: packageDir).run();
+    });
+
+    tearDownAll(() async {
+      if (packageDir.existsSync()) await packageDir.delete(recursive: true);
+    });
+
+    Iterable<String> allReported() =>
+        [...report.dead, ...report.apiSurface, ...report.docOnly].map((d) => d.qualifiedName);
+
+    test('keeps a field read only by a part that analyzer.exclude hides alive', () {
+      expect(allReported(), isNot(contains('Model.value')));
+    });
+  }, timeout: const Timeout(Duration(minutes: 5)));
 }

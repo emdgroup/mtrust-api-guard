@@ -74,45 +74,57 @@ class DeadCodeFinder {
     );
 
     final progress = logger.progress('Scanning ${analyzable.length} files for dead code');
-    var scanned = 0;
+    final scanned = <String>{};
 
     try {
       for (final file in analyzable) {
-        final ResolvedUnitResult unit;
+        if (scanned.contains(file)) continue;
+
+        // Resolved a library at a time, so a part is read along with its
+        // library even where `analyzer.exclude` hides it. That is where
+        // `json_serializable` and `freezed` put the code that reads the
+        // fields they are generated for.
+        final ResolvedLibraryResult library;
         try {
-          final context = collection.contextFor(file);
-          final result = await context.currentSession.getResolvedUnit(file);
-          if (result is! ResolvedUnitResult) {
+          final session = collection.contextFor(file).currentSession;
+          final unit = await session.getResolvedUnit(file);
+          final result = unit is ResolvedUnitResult
+              ? await session.getResolvedLibraryByElement(unit.libraryElement)
+              : unit;
+          if (result is! ResolvedLibraryResult) {
             logger.detail('Skipping unresolved unit: $file');
             continue;
           }
-          unit = result;
+          library = result;
         } catch (e) {
           logger.detail('Skipping $file: $e');
           continue;
         }
 
-        scanned++;
+        for (final unit in library.units) {
+          final path = normalize(unit.path);
+          if (!scanned.add(path)) continue;
 
-        // References are collected from every analyzable file, including
-        // generated files and tests. Something used only by a test or only by
-        // a `.g.dart` is used.
-        final visitor = ReferenceVisitor(
-          declarations: _declarations,
-          codeReferences: _codeReferences,
-          docReferences: _docReferences,
-          filePath: _relative(file),
-          lineInfo: unit.lineInfo,
-          collectDeclarations: reportable.contains(file) && !isGeneratedFile(file, unit.content),
-          packageRoot: _normalizedRoot,
-        );
-        unit.unit.accept(visitor);
+          // References are collected from every analyzable file, including
+          // generated files and tests. Something used only by a test or only
+          // by a `.g.dart` is used.
+          final visitor = ReferenceVisitor(
+            declarations: _declarations,
+            codeReferences: _codeReferences,
+            docReferences: _docReferences,
+            filePath: _relative(path),
+            lineInfo: unit.lineInfo,
+            collectDeclarations: reportable.contains(path) && !isGeneratedFile(path, unit.content),
+            packageRoot: _normalizedRoot,
+          );
+          unit.unit.accept(visitor);
+        }
       }
 
       final exported = await _exportedElements(collection);
       progress.complete();
 
-      return _classify(exported: exported, filesScanned: scanned);
+      return _classify(exported: exported, filesScanned: scanned.length);
     } finally {
       await collection.dispose();
     }

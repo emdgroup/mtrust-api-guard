@@ -86,6 +86,7 @@ class TestFixtures {
   final Directory appV101Dir;
   final Directory appV110Dir;
   final Directory appV200Dir;
+  final Directory deadCodeLayoutDir;
   final Directory packageBaseDir;
   final Directory pluginBaseDir;
   final File expectedChangelogFile;
@@ -96,6 +97,7 @@ class TestFixtures {
       appV101Dir = Directory('test/fixtures/app_v101'),
       appV110Dir = Directory('test/fixtures/app_v110'),
       appV200Dir = Directory('test/fixtures/app_v200'),
+      deadCodeLayoutDir = Directory('test/fixtures/dead_code_layout'),
       packageBaseDir = Directory('.test_scaffolds/package_base'),
       pluginBaseDir = Directory('.test_scaffolds/plugin_base'),
       expectedChangelogFile = File('test/fixtures/expected_changelog.md');
