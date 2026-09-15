@@ -206,6 +206,10 @@ void main() {
       expect(allReported(), isNot(contains('platformName')));
     });
 
+    test('reports an exported top-level variable as API surface', () {
+      expect(report.apiSurface.map((d) => d.qualifiedName), contains('greeting'));
+    });
+
     test('finds exactly the dead declarations the fixture plants', () {
       expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls'});
     });

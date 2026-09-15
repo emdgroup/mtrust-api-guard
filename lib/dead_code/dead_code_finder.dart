@@ -188,6 +188,9 @@ class DeadCodeFinder {
         if (result is! ResolvedLibraryResult) continue;
         for (final element in result.element.exportNamespace.definedNames2.values) {
           exported.add(element.baseElement);
+          // A top-level variable is exported as its getter and setter, and
+          // declared as the variable behind them.
+          if (element is PropertyAccessorElement) exported.add(element.variable.baseElement);
         }
       } catch (e) {
         logger.detail('Could not resolve entry point $entryPoint: $e');
