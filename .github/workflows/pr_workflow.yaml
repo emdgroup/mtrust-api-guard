@@ -61,15 +61,13 @@ jobs:
           # not necessarily there to compare against.
           git fetch --no-tags origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" || true
 
+          # One scan, both renderings. With --base-ref each run costs a
+          # worktree, a pub get and two analyzer passes, so asking twice
+          # would pay for all of it twice.
           mtrust_api_guard dead-code \
             --base-ref "origin/${{ github.base_ref }}" \
-            --format json \
-            --out dead_code.json
-
-          mtrust_api_guard dead-code \
-            --base-ref "origin/${{ github.base_ref }}" \
-            --format markdown \
             --base-url "https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}" \
+            --out dead_code.json \
             --out dead_code.md
 
       - name: Generate version summary and comment on PR
@@ -113,12 +111,14 @@ jobs:
                 .addRaw('\n\n')
                 .addRaw(versionData.changelog || 'No changelog available.');
 
-              if (introduced > 0) {
-                try {
-                  jobSummary.addRaw(fs.readFileSync('dead_code.md', 'utf8'));
-                } catch (e) {
-                  console.log('No dead code markdown to append:', e.message);
-                }
+              let deadCodeMarkdown = '';
+              try {
+                deadCodeMarkdown = fs.readFileSync('dead_code.md', 'utf8');
+              } catch (e) {
+                console.log('No dead code markdown to append:', e.message);
+              }
+              if (deadCodeMarkdown.trim()) {
+                jobSummary.addRaw(deadCodeMarkdown);
               }
               
               await jobSummary.write();
