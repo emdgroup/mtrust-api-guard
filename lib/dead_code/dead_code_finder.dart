@@ -14,8 +14,8 @@ import 'package:mtrust_api_guard/dead_code/dead_code_visitor.dart';
 import 'package:mtrust_api_guard/doc_generator/detect_exclusions.dart';
 import 'package:mtrust_api_guard/doc_generator/entry_points.dart';
 import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
-import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/logger.dart';
+import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
 
@@ -177,7 +177,7 @@ class DeadCodeFinder {
   /// Returns `null` when no entry point can be determined, which means the
   /// closure is unknown and no finding can be suppressed as API surface.
   Future<Set<Element>?> _exportedElements(AnalysisContextCollection collection) async {
-    final entryPoints = await _entryPoints();
+    final entryPoints = _entryPoints();
     if (entryPoints == null) return null;
 
     final exported = <Element>{};
@@ -206,12 +206,15 @@ class DeadCodeFinder {
   /// Returns `null` when the resolution does not follow exports, which is the
   /// case for a package with neither `entry_points` nor a main library. There
   /// is no closure then, and nothing can be proven unreachable.
-  Future<Set<String>?> _entryPoints() async {
-    final metadata = await PubspecAnalyzer(_normalizedRoot).analyze();
+  Set<String>? _entryPoints() {
+    // The name is all this needs from the pubspec. `PubspecAnalyzer` would
+    // also walk `ios/` for platform constraints, and Xcode leaves binary
+    // plists there that it cannot read.
+    final packageName = PubspecUtils.getPackageName(File(join(_normalizedRoot, 'pubspec.yaml')).readAsStringSync());
     final resolution = resolveEntryPoints(
       root: _normalizedRoot,
       config: _target.$1,
-      packageName: metadata.packageName,
+      packageName: packageName,
       globbedFiles: _reportableFiles,
     );
 
