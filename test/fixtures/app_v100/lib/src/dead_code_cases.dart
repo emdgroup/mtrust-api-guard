@@ -99,6 +99,17 @@ class UsedByGenerated {
   void help() {}
 }
 
+/// `doubled` is read only by destructuring in `bin/`.
+class Point {
+  const Point(this.x);
+
+  final int x;
+
+  int get doubled => _twice(x);
+}
+
+int _twice(int value) => value * 2;
+
 /// Constructed from `bin/`. `_ticks` is only ever read by the increment that
 /// compares it.
 class Ticker {

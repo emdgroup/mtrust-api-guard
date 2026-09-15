@@ -10,6 +10,11 @@ void main() {
   GeneratedHelper().help();
   Ticker().tick();
 
+  if (const Point(1) case Point(:final doubled)) {
+    // ignore: avoid_print
+    print('$doubled');
+  }
+
   // ignore: avoid_print
   print('${UsedInternally().label} ${'x'.shouted} ${Holder(7).readField} '
       '${sum.x} ${Serializable().hashCode}');

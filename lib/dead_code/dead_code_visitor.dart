@@ -152,6 +152,14 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     super.visitSuperConstructorInvocation(node);
   }
 
+  /// `case Point(:final x)` reads `x` through a name that is a token, not an
+  /// identifier.
+  @override
+  void visitPatternField(PatternField node) {
+    _record(node.element);
+    super.visitPatternField(node);
+  }
+
   @override
   void visitExportDirective(ExportDirective node) {
     _recordBranches(node, node.libraryExport?.exportedLibrary);

@@ -79,6 +79,11 @@ void main() {
       expect(allReported(), isNot(contains('Ticker._ticks')));
     });
 
+    test('counts a getter read through a pattern as read', () {
+      expect(allReported(), isNot(contains('Point.doubled')));
+      expect(allReported(), isNot(contains('_twice')));
+    });
+
     test('never reports declarations inside a generated file', () {
       expect(allReported(), isNot(contains('GeneratedDead')));
       expect(allReported(), isNot(contains('GeneratedHelper')));
