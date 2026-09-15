@@ -46,6 +46,19 @@ class DeadCodeFinder {
   /// Elements referenced only from dartdoc `[Foo]` links so far.
   final Set<Element> _docReferences = {};
 
+  /// The files behind each conditional import or export, default included.
+  final List<Set<String>> _conditionalBranches = [];
+
+  /// Declarations that stand in for each other across the branches of a
+  /// conditional import or export, like the `io` and the `web` version of one
+  /// function.
+  ///
+  /// The analyzer resolves such a directive to one branch, so declarations in
+  /// the others are never referenced, although another platform compiles them
+  /// instead. Each counts as referenced, or as reachable, when its counterpart
+  /// is.
+  final Map<Element, Set<Element>> _counterparts = {};
+
   Future<DeadCodeReport> run() async {
     final reportable = _reportableFiles;
     final analyzable = _analyzableFiles;
@@ -112,6 +125,7 @@ class DeadCodeFinder {
             declarations: _declarations,
             codeReferences: _codeReferences,
             docReferences: _docReferences,
+            conditionalBranches: _conditionalBranches,
             filePath: _relative(path),
             lineInfo: unit.lineInfo,
             collectDeclarations: reportable.contains(path) && !isGeneratedFile(path, unit.content),
@@ -122,6 +136,7 @@ class DeadCodeFinder {
       }
 
       _adoptNestedPackageReferences();
+      _pairConditionalBranches();
 
       final exported = await _exportedElements(collection);
       progress.complete();
@@ -240,6 +255,32 @@ class DeadCodeFinder {
     return '$source:$offset';
   }
 
+  /// Fills [_counterparts]: within each conditional directive, declarations
+  /// with the same qualified name in different branches stand in for each
+  /// other.
+  void _pairConditionalBranches() {
+    if (_conditionalBranches.isEmpty) return;
+
+    final byFile = <String, List<Element>>{};
+    for (final MapEntry(key: element, value: site) in _declarations.entries) {
+      (byFile[site.filePath] ??= []).add(element);
+    }
+
+    for (final branches in _conditionalBranches) {
+      final byName = <String, Set<Element>>{};
+      for (final file in branches) {
+        for (final element in byFile[_relative(file)] ?? const <Element>[]) {
+          (byName[_declarations[element]!.qualifiedName] ??= {}).add(element);
+        }
+      }
+      for (final group in byName.values) {
+        for (final element in group) {
+          (_counterparts[element] ??= {}).addAll(group.where((other) => other != element));
+        }
+      }
+    }
+  }
+
   DeadCodeReport _classify({required Set<Element>? exported, required int filesScanned}) {
     final dead = <DeadDeclaration>[];
     final apiSurface = <DeadDeclaration>[];
@@ -268,7 +309,9 @@ class DeadCodeFinder {
       // Without a known export closure a public declaration cannot be proven
       // unreachable, so it is reported as API surface rather than asserted to
       // be dead.
-      final reachable = exported == null ? !declaration.isPrivate : _isApiSurface(element, exported);
+      final reachable = exported == null
+          ? !declaration.isPrivate
+          : [element, ...?_counterparts[element]].any((candidate) => _isApiSurface(candidate, exported));
 
       if (_docReferences.contains(element)) {
         docOnly.add(declaration);
@@ -320,6 +363,8 @@ class DeadCodeFinder {
     // may be the caller.
     if (site.overriddenOutsidePackage) return true;
     if (site.overriddenElements.any(_codeReferences.contains)) return true;
+
+    if (_counterparts[element]?.any(_codeReferences.contains) ?? false) return true;
 
     return false;
   }

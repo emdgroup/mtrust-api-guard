@@ -428,6 +428,7 @@ on its own.
 | --- | --- |
 | `main` | An entry point is never unused. |
 | Files matched by `analyzer.exclude` or `api_guard.exclude` | Excluded from analysis means excluded from the report. Both sections are honoured. A part is still read along with its library, so a generated part excluded to quiet lints still counts as a reference. |
+| The untaken branches of a conditional import or export | The analyzer resolves one branch, but another platform compiles the others. A declaration there counts as referenced, or exported, when its namesake in another branch is. |
 | Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are still read, so a declaration used only from generated code is not misreported. |
 | `@pragma('vm:entry-point')` | Reachable from native code or reflection. |
 | `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference. |

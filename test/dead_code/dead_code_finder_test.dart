@@ -186,5 +186,13 @@ void main() {
     test('keeps a field read only by a part that analyzer.exclude hides alive', () {
       expect(allReported(), isNot(contains('Model.value')));
     });
+
+    test('treats the branches of a conditional export as one declaration', () {
+      expect(allReported(), isNot(contains('platformName')));
+    });
+
+    test('finds exactly the dead declarations the fixture plants', () {
+      expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls'});
+    });
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

@@ -1,5 +1,6 @@
 import 'model.dart';
+import 'platform.dart';
 
 class Api {
-  String describe() => Model.fromMap({'value': 1}).toMap().toString();
+  String describe() => '${platformName()} ${Model.fromMap({'value': 1}).toMap()}';
 }

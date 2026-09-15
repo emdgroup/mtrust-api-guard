@@ -30,6 +30,8 @@ class DeclarationSite {
   final bool overriddenOutsidePackage;
   final List<Element> overriddenElements;
 
+  String get qualifiedName => container == null ? name : '$container.$name';
+
   DeadDeclaration toDeclaration() =>
       DeadDeclaration(name: name, kind: kind, filePath: filePath, line: line, column: column, container: container);
 }
@@ -46,6 +48,7 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     required this.declarations,
     required this.codeReferences,
     required this.docReferences,
+    required this.conditionalBranches,
     required this.filePath,
     required this.lineInfo,
     required this.collectDeclarations,
@@ -55,6 +58,10 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   final Map<Element, DeclarationSite> declarations;
   final Set<Element> codeReferences;
   final Set<Element> docReferences;
+
+  /// The files behind each conditional import or export, default included.
+  final List<Set<String>> conditionalBranches;
+
   final String filePath;
   final LineInfo lineInfo;
   final bool collectDeclarations;
@@ -138,6 +145,34 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitSuperConstructorInvocation(SuperConstructorInvocation node) {
     _record(node.element);
     super.visitSuperConstructorInvocation(node);
+  }
+
+  @override
+  void visitExportDirective(ExportDirective node) {
+    _recordBranches(node, node.libraryExport?.exportedLibrary);
+    super.visitExportDirective(node);
+  }
+
+  @override
+  void visitImportDirective(ImportDirective node) {
+    _recordBranches(node, node.libraryImport?.importedLibrary);
+    super.visitImportDirective(node);
+  }
+
+  /// Records the files a conditional directive picks between. The analyzer
+  /// follows only the branch it [selected], so the default is located
+  /// relative to this file.
+  void _recordBranches(NamespaceDirective node, LibraryElement? selected) {
+    if (node.configurations.isEmpty) return;
+    final defaultUri = node.uri.stringValue;
+    final branches = {
+      ?selected?.firstFragment.source.fullName,
+      if (defaultUri != null && Uri.tryParse(defaultUri)?.hasScheme == false)
+        normalize(join(packageRoot, dirname(filePath), defaultUri)),
+      for (final configuration in node.configurations)
+        if (configuration.resolvedUri case DirectiveUriWithSource(:final source)) source.fullName,
+    };
+    if (branches.length > 1) conditionalBranches.add(branches);
   }
 
   @override
