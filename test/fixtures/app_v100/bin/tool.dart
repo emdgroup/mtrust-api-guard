@@ -8,6 +8,7 @@ void main() {
   Base().hook();
   Subclass().hook();
   GeneratedHelper().help();
+  Ticker().tick();
 
   // ignore: avoid_print
   print('${UsedInternally().label} ${'x'.shouted} ${Holder(7).readField} '

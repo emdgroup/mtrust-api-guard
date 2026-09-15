@@ -75,6 +75,10 @@ void main() {
       expect(allReported(), isNot(contains('UsedByGenerated')));
     });
 
+    test('counts the read in an increment as a read', () {
+      expect(allReported(), isNot(contains('Ticker._ticks')));
+    });
+
     test('never reports declarations inside a generated file', () {
       expect(allReported(), isNot(contains('GeneratedDead')));
       expect(allReported(), isNot(contains('GeneratedHelper')));

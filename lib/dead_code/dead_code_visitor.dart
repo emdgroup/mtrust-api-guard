@@ -105,15 +105,19 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     super.visitBinaryExpression(node);
   }
 
+  // `++x`, `x++` and `x += 1` read `x` as well as write it, but the operand
+  // resolves to the setter only. The getter is the `readElement`.
   @override
   void visitPrefixExpression(PrefixExpression node) {
     _record(node.element);
+    _record(node.readElement);
     super.visitPrefixExpression(node);
   }
 
   @override
   void visitPostfixExpression(PostfixExpression node) {
     _record(node.element);
+    _record(node.readElement);
     super.visitPostfixExpression(node);
   }
 
@@ -126,6 +130,7 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitAssignmentExpression(AssignmentExpression node) {
     _record(node.element);
+    _record(node.readElement);
     super.visitAssignmentExpression(node);
   }
 

@@ -98,3 +98,11 @@ class DocumentationCarrier {
 class UsedByGenerated {
   void help() {}
 }
+
+/// Constructed from `bin/`. `_ticks` is only ever read by the increment that
+/// compares it.
+class Ticker {
+  int _ticks = 0;
+
+  bool tick() => ++_ticks > 3;
+}
