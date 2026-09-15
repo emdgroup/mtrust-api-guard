@@ -153,9 +153,16 @@ class DeadCodeFinder {
 
   /// Files that are read for references: everything reportable, plus every
   /// other directory holding this package's code.
+  ///
+  /// Symlinks and hidden directories are left out. They hold tooling state
+  /// rather than code: `.dart_tool/`, and the plugin links Flutter keeps under
+  /// `ios/.symlinks/` that lead into the SDK.
   late final Set<String> _analyzableFiles = {
     ..._reportableFiles,
-    ..._glob(_referenceRoots.map((directory) => '$directory/**.dart')),
+    for (final directory in _referenceRoots)
+      for (final file in Glob('$directory/**.dart').listSync(root: _normalizedRoot, followLinks: false))
+        if (!split(relative(file.path, from: _normalizedRoot)).any((segment) => segment.startsWith('.')))
+          _normalize(file),
   }.difference(_exclusions);
 
   /// `analyzer.exclude` on top of the `api_guard.exclude` that
@@ -163,10 +170,6 @@ class DeadCodeFinder {
   /// directory from analysis (test fixtures, vendored code) does not want it
   /// reported here either.
   late final Set<String> _exclusions = detectExclusionsFromAnalyzer(_normalizedRoot);
-
-  Set<String> _glob(Iterable<String> patterns) => {
-    for (final pattern in patterns) ...Glob(pattern).listSync(root: _normalizedRoot).map(_normalize),
-  };
 
   /// Every element a consumer of this package can reach, computed from the
   /// export closure of the configured entry points.
