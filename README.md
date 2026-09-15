@@ -342,9 +342,11 @@ The format must contain `{package}` and end with `{version}`.
 ## Dead Code
 
 Reports declarations that no code in the package references. Every library under
-`lib/`, `bin/`, `test/`, `tool/` and `example/` is resolved once, and two sets
-come out of the resolved ASTs: what each file declares, and what each file
-refers to. Whatever is declared and never referred to is unreferenced.
+`lib/`, `bin/`, `test/`, `tool/`, `example/`, `benchmark/` and `integration_test/`
+is resolved once, and two sets come out of the resolved ASTs: what each file
+declares, and what each file refers to. Whatever is declared and never referred
+to is unreferenced. An `example/` with a pubspec of its own is resolved as the
+separate package it is, and what it uses counts all the same.
 
 Entry points are resolved by the same code the `generate` command enters a
 package with, so the closure a finding is checked against is the closure the

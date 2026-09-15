@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 import '../helpers/test_helpers.dart';
@@ -162,6 +163,12 @@ void main() {
 
     setUpAll(() async {
       packageDir = await materializeFixturePackage(TestFixtures().deadCodeLayoutDir, 'dead_code_layout');
+      // `example/` has a pubspec of its own, the way a Flutter package's
+      // example app does, so it is resolved on its own too.
+      final result = await Process.run('dart', ['pub', 'get'], workingDirectory: p.join(packageDir.path, 'example'));
+      if (result.exitCode != 0) {
+        throw StateError('dart pub get failed in example/: ${result.stderr}');
+      }
       report = await DeadCodeFinder(root: packageDir).run();
     });
 
@@ -171,6 +178,10 @@ void main() {
 
     Iterable<String> allReported() =>
         [...report.dead, ...report.apiSurface, ...report.docOnly].map((d) => d.qualifiedName);
+
+    test('keeps a declaration used only by a nested example package alive', () {
+      expect(allReported(), isNot(contains('UsedOnlyByExample')));
+    });
 
     test('keeps a field read only by a part that analyzer.exclude hides alive', () {
       expect(allReported(), isNot(contains('Model.value')));

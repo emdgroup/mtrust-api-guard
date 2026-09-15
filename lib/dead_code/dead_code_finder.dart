@@ -121,6 +121,8 @@ class DeadCodeFinder {
         }
       }
 
+      _adoptNestedPackageReferences();
+
       final exported = await _exportedElements(collection);
       progress.complete();
 
@@ -212,6 +214,30 @@ class DeadCodeFinder {
     }
 
     return resolution.files;
+  }
+
+  /// Maps the references a nested package makes, such as an `example/` with a
+  /// pubspec of its own, onto the declarations they point at.
+  ///
+  /// The analyzer resolves a nested package in an analysis context of its
+  /// own, which builds its own element for every declaration it imports from
+  /// this package. Those never equal the elements declared here, so they are
+  /// matched by where they are declared instead.
+  void _adoptNestedPackageReferences() {
+    final declaredAt = {for (final element in _declarations.keys) ?_declarationKey(element): element};
+    for (final element in _codeReferences.toList()) {
+      if (_declarations.containsKey(element)) continue;
+      final declared = declaredAt[_declarationKey(element)];
+      if (declared != null) _codeReferences.add(declared);
+    }
+  }
+
+  static String? _declarationKey(Element element) {
+    final fragment = element.firstFragment;
+    final source = fragment.libraryFragment?.source.fullName;
+    final offset = fragment.nameOffset;
+    if (source == null || offset == null) return null;
+    return '$source:$offset';
   }
 
   DeadCodeReport _classify({required Set<Element>? exported, required int filesScanned}) {

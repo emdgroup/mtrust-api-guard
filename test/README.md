@@ -82,8 +82,9 @@ that fixture in process, and `test/commands/dead_code_command_test.dart` runs
 the command end to end against `app_v100`, `app_v101` and `app_v110`.
 
 `test/fixtures/dead_code_layout` covers what a real package layout gets wrong
-and `app_v100` can't show: a generated part that `analyzer.exclude` hides. It
-isn't one of the versioned `app_v*` fixtures, so no golden depends on it.
+and `app_v100` can't show: an `example/` with a pubspec of its own, and a
+generated part that `analyzer.exclude` hides. It isn't one of the versioned
+`app_v*` fixtures, so no golden depends on it.
 
 ## Looking at what the tool produces
 
