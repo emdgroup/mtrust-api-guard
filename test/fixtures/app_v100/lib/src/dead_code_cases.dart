@@ -99,6 +99,9 @@ class UsedByGenerated {
   void help() {}
 }
 
+/// Only ever listed through `values`, which reads every constant.
+enum Listed { first, second }
+
 /// `doubled` is read only by destructuring in `bin/`.
 class Point {
   const Point(this.x);

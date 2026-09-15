@@ -12,7 +12,7 @@ void main() {
 
   if (const Point(1) case Point(:final doubled)) {
     // ignore: avoid_print
-    print('$doubled');
+    print('$doubled ${Listed.values}');
   }
 
   // ignore: avoid_print

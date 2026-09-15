@@ -75,6 +75,11 @@ void main() {
       expect(allReported(), isNot(contains('UsedByGenerated')));
     });
 
+    test('keeps every enum constant alive when values is read', () {
+      expect(allReported(), isNot(contains('Listed.first')));
+      expect(allReported(), isNot(contains('Listed.second')));
+    });
+
     test('counts the read in an increment as a read', () {
       expect(allReported(), isNot(contains('Ticker._ticks')));
     });

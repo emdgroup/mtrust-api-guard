@@ -369,6 +369,13 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
     if (element is PropertyAccessorElement) {
       _recordOne(element.variable.baseElement);
     }
+    // `values` lists every constant, and an enum is often only ever read
+    // through it or through `byName`.
+    if (element.enclosingElement case EnumElement(:final constants) when element.name == 'values') {
+      for (final constant in constants) {
+        _recordOne(constant.baseElement);
+      }
+    }
   }
 
   void _recordOne(Element element) {
