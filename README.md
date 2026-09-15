@@ -397,7 +397,9 @@ The base ref is materialized as a git worktree with its dependencies resolved,
 the same way `generate --ref` does it, so the second scan sees the same thing
 the first one does. Run `pub get` before scanning: an unresolved package cannot
 follow its own `package:` imports, and anything reached only through one then
-looks dead.
+looks dead. The scan warns when there is no package config, or when the one
+there lists packages that have since gone from the pub cache. A pub workspace
+member is resolved through the workspace root's config.
 
 Unreferenced is not the same as dead. For a published package the whole exported
 API is unreferenced from the package's own point of view, which is why a plain

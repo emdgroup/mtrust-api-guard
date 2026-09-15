@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
@@ -195,4 +196,53 @@ void main() {
       expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls'});
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
+
+  group('unresolvedPackageWarning', () {
+    late Directory temp;
+
+    setUp(() => temp = Directory.systemTemp.createTempSync('api_guard_resolution_'));
+    tearDown(() => temp.deleteSync(recursive: true));
+
+    void writePubspec(String directory, String fields) {
+      Directory(directory).createSync(recursive: true);
+      File(p.join(directory, 'pubspec.yaml')).writeAsStringSync('''
+$fields
+publish_to: none
+environment:
+  sdk: ">=3.11.0 <4.0.0"
+''');
+    }
+
+    Future<void> pubGet(String directory) async {
+      final result = await Process.run('dart', ['pub', 'get'], workingDirectory: directory);
+      if (result.exitCode != 0) throw StateError('dart pub get failed in $directory: ${result.stderr}');
+    }
+
+    test('asks for pub get when the package was never resolved', () {
+      writePubspec(temp.path, 'name: never_resolved');
+
+      expect(unresolvedPackageWarning(temp.path), contains('Run pub get first'));
+    });
+
+    test('accepts a pub workspace member, which is resolved at the workspace root', () async {
+      writePubspec(temp.path, 'name: workspace_root\nworkspace:\n  - member');
+      final member = p.join(temp.path, 'member');
+      writePubspec(member, 'name: member\nresolution: workspace');
+      await pubGet(temp.path);
+
+      expect(File(p.join(member, '.dart_tool', 'package_config.json')).existsSync(), isFalse);
+      expect(unresolvedPackageWarning(member), isNull);
+    });
+
+    test('names the packages the package config points at that are gone', () async {
+      writePubspec(temp.path, 'name: pruned');
+      await pubGet(temp.path);
+      final config = File(p.join(temp.path, '.dart_tool', 'package_config.json'));
+      final json = jsonDecode(config.readAsStringSync()) as Map<String, dynamic>;
+      (json['packages'] as List).add({'name': 'vanished', 'rootUri': '../vanished/', 'packageUri': 'lib/'});
+      config.writeAsStringSync(jsonEncode(json));
+
+      expect(unresolvedPackageWarning(temp.path), contains('vanished'));
+    });
+  });
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
@@ -16,6 +17,7 @@ import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
+import 'package:yaml/yaml.dart';
 
 /// Finds declarations that no code in the package references.
 ///
@@ -68,17 +70,8 @@ class DeadCodeFinder {
       return const DeadCodeReport(dead: [], apiSurface: [], docOnly: [], filesScanned: 0, declarationsChecked: 0);
     }
 
-    // An unresolved package still analyzes, it just cannot follow its own
-    // `package:` imports, so every declaration reached only through one looks
-    // unreferenced. Saying so is better than reporting a tree of false
-    // findings and leaving the reader to work out why.
-    if (!File(join(_normalizedRoot, '.dart_tool', 'package_config.json')).existsSync()) {
-      logger.warn(
-        'No .dart_tool/package_config.json in ${root.path}. Run pub get first, '
-        'otherwise anything referenced only through a package: import is '
-        'reported as dead.',
-      );
-    }
+    final unresolved = unresolvedPackageWarning(_normalizedRoot);
+    if (unresolved != null) logger.warn(unresolved);
 
     final collection = AnalysisContextCollection(
       includedPaths: [_normalizedRoot],
@@ -381,4 +374,67 @@ class DeadCodeFinder {
   String _relative(String file) => relative(file, from: _normalizedRoot).replaceAll(r'\', '/');
 
   static String _normalize(FileSystemEntity entity) => normalize(absolute(entity.path));
+}
+
+/// Why the package at [packageRoot] cannot be fully resolved, or `null` when
+/// it can.
+///
+/// An unresolved package still analyzes, it just cannot follow `package:`
+/// imports, so every declaration reached only through one looks unreferenced,
+/// and an override of a member it cannot see looks like a method nobody calls.
+/// Saying so is better than reporting a tree of false findings and leaving the
+/// reader to work out why.
+String? unresolvedPackageWarning(String packageRoot) {
+  final config = _packageConfigFor(packageRoot);
+  if (config == null) {
+    return 'No .dart_tool/package_config.json for $packageRoot. Run pub get first, '
+        'otherwise anything referenced only through a package: import is '
+        'reported as dead.';
+  }
+
+  final missing = _missingPackages(config);
+  if (missing.isEmpty) return null;
+  final named = missing.length > 5
+      ? '${missing.take(5).join(', ')} and ${missing.length - 5} more'
+      : missing.join(', ');
+  return '${config.path} points at packages that are not on disk ($named). '
+      'Run pub get first, otherwise anything that depends on them is reported '
+      'as dead.';
+}
+
+/// The package config the analyzer resolves [packageRoot] with. A pub
+/// workspace member has none of its own and shares the workspace root's.
+File? _packageConfigFor(String packageRoot) {
+  final inWorkspace = _isWorkspaceMember(packageRoot);
+  var directory = Directory(packageRoot);
+  while (true) {
+    final config = File(join(directory.path, '.dart_tool', 'package_config.json'));
+    if (config.existsSync()) return config;
+    if (!inWorkspace || directory.parent.path == directory.path) return null;
+    directory = directory.parent;
+  }
+}
+
+bool _isWorkspaceMember(String packageRoot) {
+  try {
+    final pubspec = loadYaml(File(join(packageRoot, 'pubspec.yaml')).readAsStringSync());
+    return pubspec is Map && pubspec['resolution'] == 'workspace';
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Packages [config] lists whose directory is gone, which is what a pub cache
+/// cleaned out from under a resolved package looks like.
+List<String> _missingPackages(File config) {
+  try {
+    final packages = (jsonDecode(config.readAsStringSync()) as Map)['packages'] as List;
+    return [
+      for (final package in packages.cast<Map>())
+        if (!Directory.fromUri(config.uri.resolve(package['rootUri'] as String)).existsSync())
+          package['name'] as String,
+    ];
+  } catch (_) {
+    return const [];
+  }
 }
