@@ -4,9 +4,8 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_scan.dart';
 import 'package:mtrust_api_guard/logger.dart';
 
 class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
@@ -38,11 +37,10 @@ class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
 
   String? get baseRef => argResults?['base-ref'] as String?;
 
-  String? Function(String)? get _fileUrlBuilder => baseUrl == null ? null : (path) => '$baseUrl/$path';
-
   @override
   FutureOr? run() async {
-    final output = baseRef == null ? await _snapshot() : await _delta(baseRef!);
+    final scan = await scanDeadCode(dartRoot: root, gitRoot: Directory.current, baseRef: baseRef, baseUrl: baseUrl);
+    final output = _render(scan, format);
 
     if (out != null) {
       final file = File(out!);
@@ -55,27 +53,9 @@ class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
     }
   }
 
-  /// Everything currently dead.
-  Future<String> _snapshot() async {
-    final report = await DeadCodeFinder(root: root).run();
-    final formatter = DeadCodeFormatter(report, fileUrlBuilder: _fileUrlBuilder);
-
-    return switch (format) {
-      'json' => const JsonEncoder.withIndent('  ').convert(report.toJson()),
-      'markdown' => formatter.formatMarkdown(),
-      _ => formatter.format(),
-    };
-  }
-
-  /// Only what changed since [ref].
-  Future<String> _delta(String ref) async {
-    final delta = await compareDeadCode(baseRef: ref, dartRoot: root, gitRoot: Directory.current);
-    final formatter = DeadCodeDeltaFormatter(delta, fileUrlBuilder: _fileUrlBuilder);
-
-    return switch (format) {
-      'json' => const JsonEncoder.withIndent('  ').convert(delta.toJson()),
-      'markdown' => formatter.formatMarkdown(),
-      _ => formatter.format(),
-    };
-  }
+  String _render(DeadCodeMarkdown scan, String as) => switch (as) {
+    'json' => const JsonEncoder.withIndent('  ').convert(scan.toJson()),
+    'markdown' => scan.formatMarkdown(),
+    _ => scan.format(),
+  };
 }

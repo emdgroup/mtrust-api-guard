@@ -27,14 +27,29 @@ void main() {
       return jsonDecode(File(outPath).readAsStringSync()) as Map<String, dynamic>;
     }
 
+    /// Puts a fixture in place on a fresh git repo and Flutter package.
+    Future<void> useFixture(Directory fixture) async {
+      await testSetup.setupGitRepo();
+      await testSetup.setupFlutterPackage();
+      await copyDir(fixture, testSetup.tempDir);
+    }
+
+    /// Adds a file nothing reaches, which is what a pull request that
+    /// introduces dead code looks like.
+    void plantOrphan() {
+      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
+class OrphanedHelper {
+  String get unusedLabel => 'nobody calls this';
+}
+''');
+    }
+
     List<String> namesIn(Map<String, dynamic> report, String bucket) => [
       for (final finding in report[bucket] as List) (finding as Map)['qualifiedName'] as String,
     ];
 
     test('reports a public class outside the entry points as dead', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV100Dir);
 
       final report = await runDeadCode();
 
@@ -50,9 +65,7 @@ void main() {
     });
 
     test('reports an unreferenced private class as dead', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV100Dir);
 
       final report = await runDeadCode();
 
@@ -60,9 +73,7 @@ void main() {
     });
 
     test('stops reporting a declaration once the next version deletes it', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV100Dir);
 
       final before = await runDeadCode(name: 'dead_code_v100.json');
       expect(namesIn(before, 'dead'), containsAll(['_PrivateClass', 'Internal']));
@@ -77,9 +88,7 @@ void main() {
     });
 
     test('follows the entry point through a re-exporting library', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV101Dir);
 
       // v101 points at `lib/main.dart`, which re-exports `lib/src/api.dart`.
       // The closure has to follow that export or the whole API reads as dead.
@@ -90,9 +99,7 @@ void main() {
     });
 
     test('finds nothing dead when every declaration is exported', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV110Dir);
 
       final report = await runDeadCode();
 
@@ -102,9 +109,7 @@ void main() {
     });
 
     test('writes no markdown section when there is nothing to warn about', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV110Dir);
 
       final outPath = p.join(testSetup.tempDir.path, 'dead_code.md');
       await testSetup.runApiGuard('dead-code', ['-f', 'markdown', '--out', outPath]);
@@ -113,9 +118,7 @@ void main() {
     });
 
     test('renders markdown with links when a base url is given', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV100Dir);
 
       final outPath = p.join(testSetup.tempDir.path, 'dead_code.md');
       await testSetup.runApiGuard('dead-code', [
@@ -134,19 +137,12 @@ void main() {
     });
 
     test('picks up dead code a change introduces', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV110Dir);
 
       final before = await runDeadCode(name: 'dead_code_before.json');
       expect(before['dead'], isEmpty, reason: 'app_v110 exports everything it declares');
 
-      // What a pull request does: add a file nothing reaches.
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
+      plantOrphan();
 
       final after = await runDeadCode(name: 'dead_code_after.json');
 
@@ -154,20 +150,14 @@ class OrphanedHelper {
       expect((after['summary'] as Map)['deadCount'], greaterThan((before['summary'] as Map)['deadCount'] as int));
     });
 
-    test('warns about introduced dead code in the compare output', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+    test('reports the delta when compare is given a git base ref', () async {
+      await useFixture(testSetup.fixtures.appV110Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
       // A change that adds an exported class and, alongside it, something
       // nothing reaches. The API diff sees the first, the scan sees the second.
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
+      plantOrphan();
       final apiFile = File(p.join(testSetup.tempDir.path, 'lib', 'src', 'api.dart'));
       apiFile.writeAsStringSync('${apiFile.readAsStringSync()}\n\nclass BrandNewExportedClass {}\n');
       await testSetup.commitChanges('feat: add a class and some dead code');
@@ -191,31 +181,8 @@ class OrphanedHelper {
       expect(output, contains('added since'), reason: 'compare passes its own base ref through, so this is a delta');
     });
 
-    test('picks up dead code a change introduces', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
-
-      final before = await runDeadCode(name: 'dead_code_before.json');
-      expect(before['dead'], isEmpty, reason: 'app_v110 exports everything it declares');
-
-      // What a pull request does: add a file nothing reaches.
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
-
-      final after = await runDeadCode(name: 'dead_code_after.json');
-
-      expect(namesIn(after, 'dead'), contains('OrphanedHelper'));
-      expect((after['summary'] as Map)['deadCount'], greaterThan((before['summary'] as Map)['deadCount'] as int));
-    });
-
-    test('warns about introduced dead code in the compare output', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+    test('falls back to the full report when compare is given generated api files', () async {
+      await useFixture(testSetup.fixtures.appV110Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
@@ -226,11 +193,7 @@ class OrphanedHelper {
 
       // A change that adds an exported class and, alongside it, something
       // nothing reaches. The API diff sees the first, the scan sees the second.
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
+      plantOrphan();
       final apiFile = File(p.join(testSetup.tempDir.path, 'lib', 'src', 'api.dart'));
       apiFile.writeAsStringSync('${apiFile.readAsStringSync()}\n\nclass BrandNewExportedClass {}\n');
       await testSetup.commitChanges('feat: add a class and some dead code');
@@ -257,19 +220,13 @@ class OrphanedHelper {
     });
 
     test('--base-ref reports only what the change added', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV110Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
       // app_v110 exports everything, so the base revision has nothing dead.
       // Then a change orphans one declaration and leaves the rest alone.
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
+      plantOrphan();
       await testSetup.commitChanges('feat: add something nothing reaches');
 
       final report = await runDeadCode(args: ['--base-ref', 'v${TestConstants.initialVersion}']);
@@ -280,9 +237,7 @@ class OrphanedHelper {
     });
 
     test('--base-ref stays quiet about dead code that predates the change', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV101Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
@@ -304,14 +259,8 @@ class OrphanedHelper {
     });
 
     test('--base-ref reports a declaration that stopped being dead', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV110Dir, testSetup.tempDir);
-      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('''
-class OrphanedHelper {
-  String get unusedLabel => 'nobody calls this';
-}
-''');
+      await useFixture(testSetup.fixtures.appV110Dir);
+      plantOrphan();
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
       await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
@@ -325,9 +274,7 @@ class OrphanedHelper {
     });
 
     test('exits zero even with findings, so a report never blocks a pipeline', () async {
-      await testSetup.setupGitRepo();
-      await testSetup.setupFlutterPackage();
-      await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+      await useFixture(testSetup.fixtures.appV100Dir);
 
       // runApiGuard throws on a non-zero exit code, so reaching the assertion
       // is the assertion.

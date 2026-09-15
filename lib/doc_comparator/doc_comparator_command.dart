@@ -8,9 +8,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/config/config.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_scan.dart';
 import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -110,30 +108,25 @@ class DocComparatorCommand extends Command
 
   /// Renders the dead code section for the comparison.
   ///
-  /// Given a base revision this reports what the change added, not everything
-  /// currently dead: a reviewer can act on a declaration this branch orphaned,
-  /// and can do nothing about debt that predates it. Without one it falls back
-  /// to the full snapshot.
-  ///
-  /// Reporting only, either way. A finding never changes the exit code, so a
-  /// false positive costs a reader a moment rather than blocking a merge.
+  /// Reporting only. A finding never changes the exit code, so a false positive
+  /// costs a reader a moment rather than blocking a merge.
   Future<String> _deadCodeSection(String? resolvedBaseRef) async {
-    final urlBuilder = baseUrl == null ? null : (String path) => '$baseUrl/$path';
-
     try {
       // `compare` also accepts a path to a previously generated api json as a
       // ref. That is enough to diff an API against, but there is no tree behind
       // it to scan, so those fall back to reporting everything.
-      if (resolvedBaseRef == null || !await _isGitRef(resolvedBaseRef)) {
-        if (resolvedBaseRef != null) {
-          logger.detail('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
-        }
-        final report = await DeadCodeFinder(root: root).run();
-        return DeadCodeFormatter(report, fileUrlBuilder: urlBuilder).formatMarkdown();
+      final scannableRef = resolvedBaseRef != null && await _isGitRef(resolvedBaseRef) ? resolvedBaseRef : null;
+      if (resolvedBaseRef != null && scannableRef == null) {
+        logger.detail('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
       }
 
-      final delta = await compareDeadCode(baseRef: resolvedBaseRef, dartRoot: root, gitRoot: Directory.current);
-      return DeadCodeDeltaFormatter(delta, fileUrlBuilder: urlBuilder).formatMarkdown();
+      final scan = await scanDeadCode(
+        dartRoot: root,
+        gitRoot: Directory.current,
+        baseRef: scannableRef,
+        baseUrl: baseUrl,
+      );
+      return scan.formatMarkdown();
     } catch (e) {
       logger.warn('Dead code scan failed, continuing without it: $e');
       return '';

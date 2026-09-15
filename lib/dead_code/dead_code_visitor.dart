@@ -16,7 +16,6 @@ class DeclarationSite {
     required this.column,
     required this.container,
     required this.hasVmEntryPoint,
-    required this.overridesInherited,
     required this.overriddenOutsidePackage,
     required this.overriddenElements,
   });
@@ -28,21 +27,11 @@ class DeclarationSite {
   final int column;
   final String? container;
   final bool hasVmEntryPoint;
-  final bool overridesInherited;
   final bool overriddenOutsidePackage;
   final List<Element> overriddenElements;
 
-  bool get isPrivate => name.startsWith('_');
-
-  DeadDeclaration toDeclaration() => DeadDeclaration(
-    name: name,
-    kind: kind,
-    filePath: filePath,
-    line: line,
-    column: column,
-    isPrivate: isPrivate,
-    container: container,
-  );
+  DeadDeclaration toDeclaration() =>
+      DeadDeclaration(name: name, kind: kind, filePath: filePath, line: line, column: column, container: container);
 }
 
 /// Walks one resolved compilation unit, recording the declarations it makes
@@ -309,7 +298,6 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
         column: location.columnNumber,
         container: container is InstanceElement ? container.name : null,
         hasVmEntryPoint: _hasVmEntryPoint(metadata),
-        overridesInherited: overridden.isNotEmpty,
         overriddenOutsidePackage: overridden.any(_isOutsidePackage),
         overriddenElements: overridden,
       );

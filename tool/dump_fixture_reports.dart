@@ -16,6 +16,8 @@ import 'package:mtrust_api_guard/logger.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
+import '../test/helpers/fixture_package.dart';
+
 /// The fixtures, oldest first. Consecutive pairs get diffed.
 const _fixtures = ['app_v100', 'app_v101', 'app_v110', 'app_v200'];
 
@@ -43,7 +45,7 @@ Future<void> main() async {
     final source = Directory(p.join('test', 'fixtures', fixture));
     if (!source.existsSync()) continue;
 
-    final package = await _materialize(source);
+    final package = await materializeFixturePackage(source, 'api_guard_test', initGit: true);
     packages[fixture] = package;
 
     final apiDoc = p.join(package.parent.path, '$fixture.json');
@@ -127,7 +129,7 @@ Future<void> main() async {
     final package = packages[fixture];
     if (package == null) continue;
 
-    final report = reports[fixture] ?? await DeadCodeFinder(root: package).run();
+    final report = reports[fixture]!;
     final markdown = DeadCodeFormatter(report, markdownHeaderLevel: 5).formatMarkdown();
 
     out
@@ -176,47 +178,4 @@ Future<String> _runGuard(List<String> args) async {
   final lines = result.stdout.toString().split('\n');
   final bannerEnd = lines.lastIndexWhere((line) => line.contains('mtrust_api_guard version:'));
   return lines.skip(bannerEnd + 1).join('\n');
-}
-
-/// Copies a fixture somewhere writable, resolves it and commits it, so both the
-/// analyzer and the git-backed commands can read it.
-Future<Directory> _materialize(Directory fixture) async {
-  final temp = await Directory.systemTemp.createTemp('api_guard_fixture_report_');
-  final target = Directory(p.join(temp.path, 'api_guard_test'))..createSync(recursive: true);
-
-  await for (final entity in fixture.list(recursive: true)) {
-    final destination = p.join(target.path, p.relative(entity.path, from: fixture.path));
-    if (entity is File) {
-      await File(destination).create(recursive: true);
-      await entity.copy(destination);
-    } else if (entity is Directory) {
-      await Directory(destination).create(recursive: true);
-    }
-  }
-
-  File(p.join(target.path, 'pubspec.yaml')).writeAsStringSync('''
-name: api_guard_test
-description: Fixture package, resolved so the commands can read it.
-version: 1.0.0
-publish_to: none
-
-environment:
-  sdk: ">=3.11.0 <4.0.0"
-''');
-
-  final pubGet = await Process.run('dart', ['pub', 'get'], workingDirectory: target.path);
-  if (pubGet.exitCode != 0) {
-    throw StateError('dart pub get failed in ${target.path}: ${pubGet.stderr}');
-  }
-
-  // `generate` reads the tree through git.
-  for (final command in [
-    ['init', '-q', '.'],
-    ['add', '-A'],
-    ['-c', 'user.email=fixtures@example.test', '-c', 'user.name=fixtures', 'commit', '-qm', 'fixture'],
-  ]) {
-    await Process.run('git', command, workingDirectory: target.path);
-  }
-
-  return target;
 }

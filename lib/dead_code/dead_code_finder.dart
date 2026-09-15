@@ -30,12 +30,10 @@ import 'package:path/path.dart';
 /// the configured entry points: anything a consumer can reach is reported as
 /// API surface, and only the rest is reported as dead.
 class DeadCodeFinder {
-  DeadCodeFinder({required this.root, ApiGuardConfig? config}) : config = config ?? ApiGuardConfig.load(root);
+  DeadCodeFinder({required this.root});
 
   /// Package root to analyze.
   final Directory root;
-
-  final ApiGuardConfig config;
 
   late final String _normalizedRoot = normalize(absolute(root.path));
 
@@ -105,7 +103,7 @@ class DeadCodeFinder {
           docReferences: _docReferences,
           filePath: _relative(file),
           lineInfo: unit.lineInfo,
-          collectDeclarations: reportable.contains(file) && !isGeneratedFile(file),
+          collectDeclarations: reportable.contains(file) && !isGeneratedFile(file, unit.content),
           packageRoot: _normalizedRoot,
         );
         unit.unit.accept(visitor);
@@ -183,11 +181,11 @@ class DeadCodeFinder {
   /// Returns `null` when the resolution does not follow exports, which is the
   /// case for a package with neither `entry_points` nor a main library. There
   /// is no closure then, and nothing can be proven unreachable.
-  Future<List<String>?> _entryPoints() async {
+  Future<Set<String>?> _entryPoints() async {
     final metadata = await PubspecAnalyzer(_normalizedRoot).analyze();
     final resolution = resolveEntryPoints(
       root: _normalizedRoot,
-      config: config,
+      config: _target.$1,
       packageName: metadata.packageName,
       globbedFiles: _reportableFiles,
     );
@@ -201,7 +199,7 @@ class DeadCodeFinder {
       return null;
     }
 
-    return resolution.files.toList();
+    return resolution.files;
   }
 
   DeadCodeReport _classify({required Set<Element>? exported, required int filesScanned}) {
@@ -218,27 +216,25 @@ class DeadCodeFinder {
       unreferenced[element] = entry.value;
     }
 
-    // A member of a declaration that is itself dead adds nothing: reporting
-    // `Foo` and then every member of `Foo` buries the one line that matters.
-    final deadContainers = unreferenced.keys.toSet();
-
     for (final entry in unreferenced.entries) {
       final element = entry.key;
       final site = entry.value;
 
+      // A member of a declaration that is itself dead adds nothing: reporting
+      // `Foo` and then every member of `Foo` buries the one line that matters.
       final container = element.enclosingElement;
-      if (container != null && deadContainers.contains(container.baseElement)) continue;
+      if (container != null && unreferenced.containsKey(container.baseElement)) continue;
 
       final declaration = site.toDeclaration();
 
+      // Without a known export closure a public declaration cannot be proven
+      // unreachable, so it is reported as API surface rather than asserted to
+      // be dead.
+      final reachable = exported == null ? !declaration.isPrivate : _isApiSurface(element, exported);
+
       if (_docReferences.contains(element)) {
         docOnly.add(declaration);
-      } else if (exported != null && _isApiSurface(element, exported)) {
-        apiSurface.add(declaration);
-      } else if (exported == null && !site.isPrivate) {
-        // Without a known export closure a public declaration cannot be
-        // proven unreachable, so it is reported as API surface rather than
-        // asserted to be dead.
+      } else if (reachable) {
         apiSurface.add(declaration);
       } else {
         dead.add(declaration);
@@ -284,22 +280,19 @@ class DeadCodeFinder {
     // It counts as live when anything the override chain is reachable through
     // is referenced, or when the chain leaves this package, where a framework
     // may be the caller.
-    if (site.overridesInherited) {
-      if (site.overriddenOutsidePackage) return true;
-      if (site.overriddenElements.any(_codeReferences.contains)) return true;
-    }
+    if (site.overriddenOutsidePackage) return true;
+    if (site.overriddenElements.any(_codeReferences.contains)) return true;
 
     return false;
   }
 
   /// Whether anything inside [element] is referenced.
-  bool _hasReferencedMember(InstanceElement element) {
-    return [
-      ...element.methods,
-      ...element.getters,
-      ...element.setters,
-      ...element.fields,
-    ].any((member) => _codeReferences.contains(member.baseElement));
+  bool _hasReferencedMember(ExtensionElement element) {
+    bool referenced(Element member) => _codeReferences.contains(member.baseElement);
+    return element.methods.any(referenced) ||
+        element.getters.any(referenced) ||
+        element.setters.any(referenced) ||
+        element.fields.any(referenced);
   }
 
   String _relative(String file) => relative(file, from: _normalizedRoot).replaceAll(r'\', '/');

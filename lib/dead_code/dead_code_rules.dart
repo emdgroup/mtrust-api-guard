@@ -2,8 +2,6 @@
 /// reference set cannot settle them on its own.
 library;
 
-import 'dart:io';
-
 /// Filename suffixes emitted by the common Dart code generators. Files with
 /// these names are analyzed, so that a declaration used only from generated
 /// code is not misreported, but their own declarations are never reported.
@@ -28,21 +26,15 @@ const generatedBanner = 'GENERATED CODE - DO NOT MODIFY BY HAND';
 /// evidence of anything.
 const implicitlyInvokedNames = {'==', 'hashCode', 'toString', 'noSuchMethod', 'call', 'toJson', 'fromJson'};
 
-/// Whether [file] was written by a code generator rather than by hand.
+/// Whether [file], whose text is [content], was written by a code generator
+/// rather than by hand.
 ///
 /// Generated files are still analyzed, so a declaration used only from
 /// generated code is not misreported, but nothing inside one is ever reported:
 /// deleting it would only make the generator write it again.
-bool isGeneratedFile(String file) {
+bool isGeneratedFile(String file, String content) {
   if (generatedSuffixes.any(file.endsWith)) return true;
-  try {
-    final handle = File(file).openSync();
-    try {
-      return String.fromCharCodes(handle.readSync(2048)).contains(generatedBanner);
-    } finally {
-      handle.closeSync();
-    }
-  } catch (_) {
-    return false;
-  }
+  // A banner counts only where a generator would have written it.
+  final head = content.length > 2048 ? content.substring(0, 2048) : content;
+  return head.contains(generatedBanner);
 }

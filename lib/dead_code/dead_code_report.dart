@@ -31,7 +31,6 @@ class DeadDeclaration {
     required this.filePath,
     required this.line,
     required this.column,
-    required this.isPrivate,
     this.container,
   });
 
@@ -52,8 +51,8 @@ class DeadDeclaration {
   /// One-based column of the declaration's name.
   final int column;
 
-  /// Whether the declaration is library-private (name starts with `_`).
-  final bool isPrivate;
+  /// Whether the declaration is library-private.
+  bool get isPrivate => name.startsWith('_');
 
   /// `Container.name` when the declaration has an enclosing type, `name`
   /// otherwise.
@@ -120,22 +119,87 @@ class DeadCodeReport {
   };
 }
 
-/// Renders a [DeadCodeReport] as plain text or as markdown for a PR comment.
-class DeadCodeFormatter {
-  DeadCodeFormatter(this.report, {this.markdownHeaderLevel = 1, this.fileUrlBuilder});
+/// The parts of a markdown report that the snapshot and the delta render the
+/// same way.
+abstract class DeadCodeMarkdown {
+  const DeadCodeMarkdown({this.markdownHeaderLevel = 1, this.fileUrlBuilder});
 
-  final DeadCodeReport report;
+  /// Depth of the section heading, so a report can be nested under whatever
+  /// the caller already wrote.
   final int markdownHeaderLevel;
+
+  /// Turns a path relative to the package root into a link, when the caller
+  /// knows where the tree is browsable.
   final String? Function(String filePath)? fileUrlBuilder;
 
+  String get heading => '#' * markdownHeaderLevel;
+
+  /// Plain text, for a terminal.
+  String format();
+
+  /// Markdown for a PR comment. Empty when there is nothing to say, so a clean
+  /// pull request carries no line about it.
+  String formatMarkdown();
+
+  /// What was found, for `--format json`.
+  Map<String, dynamic> toJson();
+
+  static String plural(int count, String singular, String plural) => count == 1 ? singular : plural;
+
+  /// Findings by file, files in path order and findings in line order.
+  Map<String, List<DeadDeclaration>> groupByFile(List<DeadDeclaration> declarations) {
+    final grouped = groupBy(declarations, (DeadDeclaration d) => d.filePath);
+    final sortedKeys = grouped.keys.toList()..sort();
+    return {for (final key in sortedKeys) key: grouped[key]!..sort((a, b) => a.line.compareTo(b.line))};
+  }
+
+  /// A bold file heading, linked when [fileUrlBuilder] is given, followed by
+  /// one bullet per finding under it.
+  void writeFindingsByFile(StringBuffer buffer, List<DeadDeclaration> findings) {
+    for (final entry in groupByFile(findings).entries) {
+      final link = fileUrlBuilder?.call(entry.key);
+      buffer
+        ..writeln('**${link != null ? '[${entry.key}]($link)' : '`${entry.key}`'}**')
+        ..writeln();
+      for (final finding in entry.value) {
+        buffer.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, line ${finding.line}');
+      }
+      buffer.writeln();
+    }
+  }
+
+  /// A collapsed block, for the bucket that is context rather than something
+  /// to act on.
+  void writeDetails(StringBuffer buffer, String summary, List<String> lines) {
+    buffer
+      ..writeln('<details><summary>$summary</summary>')
+      ..writeln();
+    lines.forEach(buffer.writeln);
+    buffer
+      ..writeln()
+      ..writeln('</details>')
+      ..writeln();
+  }
+}
+
+/// Renders a [DeadCodeReport] as plain text or as markdown for a PR comment.
+class DeadCodeFormatter extends DeadCodeMarkdown {
+  const DeadCodeFormatter(this.report, {super.markdownHeaderLevel, super.fileUrlBuilder});
+
+  final DeadCodeReport report;
+
+  @override
+  Map<String, dynamic> toJson() => report.toJson();
+
   /// Plain text, one finding per line, grouped by file.
+  @override
   String format() {
     final buffer = StringBuffer();
 
     if (report.dead.isEmpty) {
       buffer.writeln('No dead code found.');
     } else {
-      for (final entry in _groupByFile(report.dead).entries) {
+      for (final entry in groupByFile(report.dead).entries) {
         buffer.writeln(entry.key);
         for (final decl in entry.value) {
           buffer.writeln(
@@ -149,7 +213,7 @@ class DeadCodeFormatter {
 
     if (report.docOnly.isNotEmpty) {
       buffer.writeln('Referenced only from doc comments, not counted as dead:');
-      for (final entry in _groupByFile(report.docOnly).entries) {
+      for (final entry in groupByFile(report.docOnly).entries) {
         buffer.writeln(entry.key);
         for (final decl in entry.value) {
           buffer.writeln('  ${decl.line}:${decl.column}  ${decl.kind.label} ${decl.qualifiedName}');
@@ -165,44 +229,30 @@ class DeadCodeFormatter {
 
   /// Markdown section suitable for appending to a PR comment. Returns an empty
   /// string when there is nothing to warn about.
+  @override
   String formatMarkdown() {
     if (report.isEmpty) return '';
 
-    final header = '#' * markdownHeaderLevel;
-    final buffer = StringBuffer();
-
-    buffer.writeln();
-    buffer.writeln('$header ⚠️ Dead code');
-    buffer.writeln();
+    final buffer = StringBuffer()
+      ..writeln()
+      ..writeln('$heading ⚠️ Dead code')
+      ..writeln();
 
     if (report.dead.isNotEmpty) {
-      buffer.writeln(
-        '${report.dead.length} ${_plural(report.dead.length, 'declaration', 'declarations')} '
-        'nothing references, and outside the export closure so no consumer can reach '
-        '${report.dead.length == 1 ? 'it' : 'them'}.',
-      );
-      buffer.writeln();
-
-      for (final entry in _groupByFile(report.dead).entries) {
-        final link = fileUrlBuilder?.call(entry.key);
-        buffer.writeln('**${link != null ? '[${entry.key}]($link)' : '`${entry.key}`'}**');
-        buffer.writeln();
-        for (final decl in entry.value) {
-          buffer.writeln('- `${decl.qualifiedName}` — ${decl.kind.label}, line ${decl.line}');
-        }
-        buffer.writeln();
-      }
+      buffer
+        ..writeln(
+          '${report.dead.length} ${DeadCodeMarkdown.plural(report.dead.length, 'declaration', 'declarations')} '
+          'nothing references, and outside the export closure so no consumer can reach '
+          '${DeadCodeMarkdown.plural(report.dead.length, 'it', 'them')}.',
+        )
+        ..writeln();
+      writeFindingsByFile(buffer, report.dead);
     }
 
     if (report.docOnly.isNotEmpty) {
-      buffer.writeln('<details><summary>${report.docOnly.length} referenced only from doc comments</summary>');
-      buffer.writeln();
-      for (final decl in report.docOnly) {
-        buffer.writeln('- `${decl.qualifiedName}` — `${decl.filePath}`, line ${decl.line}');
-      }
-      buffer.writeln();
-      buffer.writeln('</details>');
-      buffer.writeln();
+      writeDetails(buffer, '${report.docOnly.length} referenced only from doc comments', [
+        for (final decl in report.docOnly) '- `${decl.qualifiedName}` — `${decl.filePath}`, line ${decl.line}',
+      ]);
     }
 
     buffer.writeln('<sub>${_summaryLine()}</sub>');
@@ -212,9 +262,9 @@ class DeadCodeFormatter {
 
   String _summaryLine() {
     final parts = [
-      'Scanned ${report.filesScanned} ${_plural(report.filesScanned, 'file', 'files')}',
+      'Scanned ${report.filesScanned} ${DeadCodeMarkdown.plural(report.filesScanned, 'file', 'files')}',
       'checked ${report.declarationsChecked} '
-          '${_plural(report.declarationsChecked, 'declaration', 'declarations')}',
+          '${DeadCodeMarkdown.plural(report.declarationsChecked, 'declaration', 'declarations')}',
       '${report.dead.length} dead',
     ];
     if (report.apiSurface.isNotEmpty) {
@@ -224,13 +274,5 @@ class DeadCodeFormatter {
       parts.add('${report.docOnly.length} doc-only');
     }
     return '${parts.join(', ')}.';
-  }
-
-  static String _plural(int count, String singular, String plural) => count == 1 ? singular : plural;
-
-  Map<String, List<DeadDeclaration>> _groupByFile(List<DeadDeclaration> declarations) {
-    final grouped = groupBy(declarations, (DeadDeclaration d) => d.filePath);
-    final sortedKeys = grouped.keys.toList()..sort();
-    return {for (final key in sortedKeys) key: grouped[key]!..sort((a, b) => a.line.compareTo(b.line))};
   }
 }

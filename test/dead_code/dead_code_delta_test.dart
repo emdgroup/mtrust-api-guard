@@ -2,31 +2,14 @@ import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:test/test.dart';
 
-DeadDeclaration _declaration({
-  String name = 'Widget',
-  String? container,
-  DeadCodeKind kind = DeadCodeKind.classKind,
-  String filePath = 'lib/src/widget.dart',
-  int line = 12,
-}) => DeadDeclaration(
-  name: name,
-  container: container,
-  kind: kind,
-  filePath: filePath,
-  line: line,
-  column: 7,
-  isPrivate: name.startsWith('_'),
-);
-
-DeadCodeReport _report(List<DeadDeclaration> dead) =>
-    DeadCodeReport(dead: dead, apiSurface: const [], docOnly: const [], filesScanned: 3, declarationsChecked: 30);
+import 'dead_code_fixtures.dart';
 
 void main() {
   group('diffDeadCode', () {
     test('reports a finding only the new revision has as introduced', () {
       final delta = diffDeadCode(
-        base: _report([]),
-        head: _report([_declaration(name: 'Orphan')]),
+        base: report(dead: []),
+        head: report(dead: [declaration(name: 'Orphan')]),
       );
 
       expect(delta.introduced.map((d) => d.qualifiedName), ['Orphan']);
@@ -36,8 +19,8 @@ void main() {
 
     test('reports a finding only the base has as resolved', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Orphan')]),
-        head: _report([]),
+        base: report(dead: [declaration(name: 'Orphan')]),
+        head: report(dead: []),
       );
 
       expect(delta.resolved.map((d) => d.qualifiedName), ['Orphan']);
@@ -46,8 +29,8 @@ void main() {
 
     test('reports a finding both sides have as pre-existing', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Orphan')]),
-        head: _report([_declaration(name: 'Orphan')]),
+        base: report(dead: [declaration(name: 'Orphan')]),
+        head: report(dead: [declaration(name: 'Orphan')]),
       );
 
       expect(delta.preExisting.map((d) => d.qualifiedName), ['Orphan']);
@@ -59,8 +42,8 @@ void main() {
       // Someone adds an import and every declaration below shifts. Keying on
       // the line number would report the whole file as newly dead.
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Orphan', line: 12)]),
-        head: _report([_declaration(name: 'Orphan', line: 48)]),
+        base: report(dead: [declaration(name: 'Orphan', line: 12)]),
+        head: report(dead: [declaration(name: 'Orphan', line: 48)]),
       );
 
       expect(delta.introduced, isEmpty);
@@ -69,8 +52,12 @@ void main() {
 
     test('tells apart two declarations with the same name in different files', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Orphan', filePath: 'lib/a.dart')]),
-        head: _report([_declaration(name: 'Orphan', filePath: 'lib/b.dart')]),
+        base: report(
+          dead: [declaration(name: 'Orphan', filePath: 'lib/a.dart')],
+        ),
+        head: report(
+          dead: [declaration(name: 'Orphan', filePath: 'lib/b.dart')],
+        ),
       );
 
       expect(delta.introduced.single.filePath, 'lib/b.dart');
@@ -79,8 +66,10 @@ void main() {
 
     test('tells apart a member from a top level declaration of the same name', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'run')]),
-        head: _report([_declaration(name: 'run', container: 'Runner')]),
+        base: report(dead: [declaration(name: 'run')]),
+        head: report(
+          dead: [declaration(name: 'run', container: 'Runner')],
+        ),
       );
 
       expect(delta.introduced.single.qualifiedName, 'Runner.run');
@@ -89,8 +78,12 @@ void main() {
 
     test('treats a change of kind as a different declaration', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Thing', kind: DeadCodeKind.classKind)]),
-        head: _report([_declaration(name: 'Thing', kind: DeadCodeKind.mixinKind)]),
+        base: report(
+          dead: [declaration(name: 'Thing', kind: DeadCodeKind.classKind)],
+        ),
+        head: report(
+          dead: [declaration(name: 'Thing', kind: DeadCodeKind.mixinKind)],
+        ),
       );
 
       expect(delta.introduced, hasLength(1));
@@ -98,7 +91,11 @@ void main() {
     });
 
     test('carries the base ref through for the report to name', () {
-      final delta = diffDeadCode(base: _report([]), head: _report([]), baseRef: 'main');
+      final delta = diffDeadCode(
+        base: report(dead: []),
+        head: report(dead: []),
+        baseRef: 'main',
+      );
       expect(delta.baseRef, 'main');
     });
   });
@@ -106,8 +103,8 @@ void main() {
   group('DeadCodeDeltaFormatter', () {
     test('says nothing at all when the change neither added nor resolved any', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Orphan')]),
-        head: _report([_declaration(name: 'Orphan')]),
+        base: report(dead: [declaration(name: 'Orphan')]),
+        head: report(dead: [declaration(name: 'Orphan')]),
       );
 
       // A clean pull request should carry no line about dead code, or people
@@ -118,8 +115,8 @@ void main() {
 
     test('names the base ref it compared against', () {
       final delta = diffDeadCode(
-        base: _report([]),
-        head: _report([_declaration(name: 'Orphan')]),
+        base: report(dead: []),
+        head: report(dead: [declaration(name: 'Orphan')]),
         baseRef: 'main',
       );
 
@@ -129,8 +126,13 @@ void main() {
 
     test('counts pre-existing findings without listing them', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Old')]),
-        head: _report([_declaration(name: 'Old'), _declaration(name: 'New', line: 30)]),
+        base: report(dead: [declaration(name: 'Old')]),
+        head: report(
+          dead: [
+            declaration(name: 'Old'),
+            declaration(name: 'New', line: 30),
+          ],
+        ),
       );
 
       final markdown = DeadCodeDeltaFormatter(delta).formatMarkdown();
@@ -141,8 +143,8 @@ void main() {
 
     test('folds resolved findings into a details block', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Gone')]),
-        head: _report([]),
+        base: report(dead: [declaration(name: 'Gone')]),
+        head: report(dead: []),
       );
 
       final markdown = DeadCodeDeltaFormatter(delta).formatMarkdown();
@@ -151,7 +153,10 @@ void main() {
     });
 
     test('links files when a url builder is given', () {
-      final delta = diffDeadCode(base: _report([]), head: _report([_declaration()]));
+      final delta = diffDeadCode(
+        base: report(dead: []),
+        head: report(dead: [declaration()]),
+      );
 
       final markdown = DeadCodeDeltaFormatter(
         delta,
@@ -164,8 +169,8 @@ void main() {
     test('agrees in number with the singular and the plural', () {
       final one = DeadCodeDeltaFormatter(
         diffDeadCode(
-          base: _report([]),
-          head: _report([_declaration(name: 'A')]),
+          base: report(dead: []),
+          head: report(dead: [declaration(name: 'A')]),
         ),
       ).formatMarkdown();
       expect(one, contains('1 declaration nothing references'));
@@ -173,8 +178,13 @@ void main() {
 
       final two = DeadCodeDeltaFormatter(
         diffDeadCode(
-          base: _report([]),
-          head: _report([_declaration(name: 'A'), _declaration(name: 'B', line: 30)]),
+          base: report(dead: []),
+          head: report(
+            dead: [
+              declaration(name: 'A'),
+              declaration(name: 'B', line: 30),
+            ],
+          ),
         ),
       ).formatMarkdown();
       expect(two, contains('2 declarations nothing references'));
@@ -183,8 +193,18 @@ void main() {
 
     test('serialises the three buckets', () {
       final delta = diffDeadCode(
-        base: _report([_declaration(name: 'Old'), _declaration(name: 'Gone', line: 40)]),
-        head: _report([_declaration(name: 'Old'), _declaration(name: 'New', line: 30)]),
+        base: report(
+          dead: [
+            declaration(name: 'Old'),
+            declaration(name: 'Gone', line: 40),
+          ],
+        ),
+        head: report(
+          dead: [
+            declaration(name: 'Old'),
+            declaration(name: 'New', line: 30),
+          ],
+        ),
         baseRef: 'main',
       );
 

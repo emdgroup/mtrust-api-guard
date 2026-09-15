@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:collection/collection.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
@@ -84,13 +83,15 @@ DeadCodeDelta diffDeadCode({required DeadCodeReport base, required DeadCodeRepor
 }
 
 /// Renders a [DeadCodeDelta] as plain text or as markdown for a PR comment.
-class DeadCodeDeltaFormatter {
-  DeadCodeDeltaFormatter(this.delta, {this.markdownHeaderLevel = 1, this.fileUrlBuilder});
+class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
+  const DeadCodeDeltaFormatter(this.delta, {super.markdownHeaderLevel, super.fileUrlBuilder});
 
   final DeadCodeDelta delta;
-  final int markdownHeaderLevel;
-  final String? Function(String filePath)? fileUrlBuilder;
 
+  @override
+  Map<String, dynamic> toJson() => delta.toJson();
+
+  @override
   String format() {
     final buffer = StringBuffer();
 
@@ -118,48 +119,31 @@ class DeadCodeDeltaFormatter {
 
   /// Markdown for a PR comment. Empty when this change neither added nor
   /// removed dead code, so a clean pull request carries no line about it.
+  @override
   String formatMarkdown() {
     if (delta.isEmpty) return '';
 
-    final header = '#' * markdownHeaderLevel;
     final buffer = StringBuffer()..writeln();
 
     if (delta.introduced.isNotEmpty) {
       buffer
-        ..writeln('$header ⚠️ Dead code added')
+        ..writeln('$heading ⚠️ Dead code added')
         ..writeln()
         ..writeln(
           '${delta.introduced.length} '
-          '${delta.introduced.length == 1 ? 'declaration' : 'declarations'} '
+          '${DeadCodeMarkdown.plural(delta.introduced.length, 'declaration', 'declarations')} '
           'nothing references, added since `${delta.baseRef ?? 'base'}`, and '
           'outside the export closure so no consumer can reach '
-          '${delta.introduced.length == 1 ? 'it' : 'them'}.',
+          '${DeadCodeMarkdown.plural(delta.introduced.length, 'it', 'them')}.',
         )
         ..writeln();
-
-      for (final entry in groupBy(delta.introduced, (DeadDeclaration d) => d.filePath).entries) {
-        final link = fileUrlBuilder?.call(entry.key);
-        buffer
-          ..writeln('**${link != null ? '[${entry.key}]($link)' : '`${entry.key}`'}**')
-          ..writeln();
-        for (final finding in entry.value) {
-          buffer.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, line ${finding.line}');
-        }
-        buffer.writeln();
-      }
+      writeFindingsByFile(buffer, delta.introduced);
     }
 
     if (delta.resolved.isNotEmpty) {
-      buffer
-        ..writeln('<details><summary>✅ ${delta.resolved.length} no longer dead</summary>')
-        ..writeln();
-      for (final finding in delta.resolved) {
-        buffer.writeln('- `${finding.qualifiedName}` — `${finding.filePath}`');
-      }
-      buffer
-        ..writeln()
-        ..writeln('</details>')
-        ..writeln();
+      writeDetails(buffer, '✅ ${delta.resolved.length} no longer dead', [
+        for (final finding in delta.resolved) '- `${finding.qualifiedName}` — `${finding.filePath}`',
+      ]);
     }
 
     buffer.writeln('<sub>${_summaryLine()}</sub>');

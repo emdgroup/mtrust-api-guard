@@ -9,6 +9,7 @@ test/
 ├── README.md                    # This file
 ├── test_config.dart            # Global test configuration
 ├── helpers/                    # Common test utilities
+│   ├── fixture_package.dart   # Copy a fixture somewhere writable and resolve it
 │   ├── test_bootstrap.dart    # Auto compile binary + Flutter scaffolds
 │   ├── test_helpers.dart      # Helper functions and constants
 │   └── test_setup.dart        # Test setup and teardown utilities
@@ -17,9 +18,12 @@ test/
 │   ├── compare_command_test.dart
 │   ├── dead_code_command_test.dart
 │   └── version_command_test.dart
-└── dead_code/                  # Dead code rule and formatter tests
+└── dead_code/                  # Dead code rule, delta and formatter tests
+    ├── dead_code_fixtures.dart
+    ├── dead_code_delta_test.dart
     ├── dead_code_finder_test.dart
-    └── dead_code_formatter_test.dart
+    ├── dead_code_formatter_test.dart
+    └── ref_worktree_test.dart
 ```
 
 ## Running Tests
