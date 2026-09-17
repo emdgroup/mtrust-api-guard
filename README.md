@@ -35,6 +35,7 @@ Available commands:
   badge       Generate version badge from current pubspec version
   changelog   Generate a changelog entry based on API changes
   compare     Compare two API documentation files
+  dead-code   Report declarations nothing live refers to and no consumer can reach
   generate    Generate API documentation from Dart files
   version     Calculate and output the next version based on API changes
 
@@ -226,7 +227,16 @@ Usage: mtrust_api_guard compare [arguments]
 -m, --magnitudes    Show only changes with the specified magnitudes
                     [major (default), minor (default), patch (default)]
     --out           Write the comparison results to a file
+    --base-url      Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)
+    --[no-]dead-code
+                    Append a warning section listing declarations nothing live refers to
+                    and no consumer can reach. Never affects the exit code.
 ```
+
+With `--dead-code`, `compare` reports what the change introduced rather than
+everything currently dead, reusing the `--base-ref` it already has. When that
+ref is a generated api json file rather than a git ref there is no tree to scan,
+so it falls back to the full report.
 
 See an example output [here](./test/fixtures/expected_compare_v100_v101.txt)
 
@@ -328,6 +338,130 @@ mtrust_api_guard version-workspace --tag-format "{package}-v{version}"
 ```
 
 The format must contain `{package}` and end with `{version}`.
+
+## Dead Code
+
+Reports declarations that nothing in the package reaches. Every library under
+`lib/`, `bin/`, `test/`, `tool/`, `example/`, `benchmark/` and `integration_test/`
+is resolved once, and the resolved ASTs give a graph: what each file declares,
+and what the code of each declaration refers to. Tests, executables, examples
+and whatever a consumer can reach are the roots. A declaration a walk from them
+never gets to is dead, even when other dead code refers to it, so two classes
+that only refer to each other are both reported. An `example/` with a pubspec of
+its own is resolved as the separate package it is, and what it uses counts all
+the same.
+
+Entry points are resolved by the same code the `generate` command enters a
+package with, so the closure a finding is checked against is the closure the
+generated API documentation describes.
+
+```sh
+mtrust_api_guard dead-code
+```
+
+```
+-r, --root        Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-h, --help        Print this usage information.
+-f, --format      Output format
+                  [text (default), markdown, json]
+    --out         Write the report to a file. Repeat it to write several formats
+                  from one scan, in which case the format comes from each file
+                  extension (.json, .md) and falls back to --format.
+    --base-url    Base URL for file links (e.g. https://github.com/org/repo/blob/main)
+-b, --base-ref    Report only what changed since this git ref, rather than
+                  everything currently dead. Costs a second analysis pass.
+```
+
+### Only what a change introduced
+
+Everything currently dead is rarely what a reviewer needs. They can act on a
+declaration this branch orphaned, and can do nothing about debt that predates
+it. `--base-ref` scans that ref as well and splits the findings in three:
+
+```sh
+mtrust_api_guard dead-code --base-ref main
+```
+
+```
+Dead code introduced since main:
+  lib/src/report.dart:41  field Report.unusedField
+
+No longer dead:
+  lib/src/legacy.dart  function oldHelper
+
+1 added, 2 resolved, 9 already there.
+```
+
+A finding is matched across revisions by its file, qualified name and kind,
+never by line number, so a declaration that moved down because someone added an
+import is still the same finding rather than a new one.
+
+The base ref is materialized as a git worktree with its dependencies resolved,
+the same way `generate --ref` does it, so the second scan sees the same thing
+the first one does. Run `pub get` before scanning: an unresolved package cannot
+follow its own `package:` imports, and anything reached only through one then
+looks dead. The scan warns when there is no package config, or when the one
+there lists packages that have since gone from the pub cache. A pub workspace
+member is resolved through the workspace root's config.
+
+Unreferenced is not the same as dead. For a published package the whole exported
+API is unreferenced from the package's own point of view, which is why a plain
+dead code detector either buries you in findings or has to stop reporting public
+ones. Findings are split against the export closure of the configured
+`entry_points` instead:
+
+- **dead**: nothing live refers to it and the package does not export it, so no
+  consumer can reach it either. Exporting a class does not export its private
+  members, so an unused one is dead even when the class is API surface.
+- **API surface**: nothing inside uses it, but it is exported. A consumer can
+  call it, so it is listed separately and never counted as dead.
+- **doc-only**: the only thing referring to it is a dartdoc `[Link]`. A comment
+  mentioning something is not code using it, but it is not silence either. What
+  it uses is not reported as dead, because it is not reported as dead itself.
+
+Without `entry_points`, the package's main library (`lib/<package_name>.dart`)
+is used. If neither exists the closure is unknown, and public declarations are
+reported as API surface rather than asserted to be dead.
+
+The report never changes the exit code. It is there to tell a reviewer something,
+not to block a merge, and nothing is ever deleted for you.
+
+### What it skips
+
+Each of these is a source of false positives that references in source cannot
+settle on their own.
+
+| Skipped | Why |
+| --- | --- |
+| `main` | An entry point is never unused. |
+| Files matched by `analyzer.exclude` or `api_guard.exclude` | Excluded from analysis means excluded from the report. Both sections are honoured. A part is still read along with its library, so a generated part excluded to quiet lints still counts as a reference. |
+| The untaken branches of a conditional import or export | The analyzer resolves one branch, but another platform compiles the others. A declaration there counts as referenced, or exported, when its namesake in another branch is. |
+| Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are part of the graph all the same: what live generated code uses is live, and a class only its own `.g.dart` refers to is dead. |
+| `@pragma('vm:entry-point')` | Reachable from native code or reflection. |
+| `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference, once their class is live. |
+| An override whose chain leaves the package | A framework may be the caller once the class is live. An override whose chain stays inside the package is live when its class is and a member it overrides is. |
+| Members of a declaration that is itself reported | Only the outermost one is reported, so the finding names the thing to delete. A dead private member of a class that is API surface is the exception. |
+| Local variables and functions, type parameters | The analyzer's own `unused_element` lint covers these. |
+
+Operators are reported like anything else, because `a + b` resolves back to the
+`operator +` declaration through the element model.
+
+### In a pull request
+
+Append the report to the API change comment that `compare` already produces:
+
+```yaml
+- name: Compare API changes
+  run: |
+    mtrust_api_guard compare \
+      --base-ref main --new-ref ${{ github.sha }} \
+      --dead-code --base-url https://github.com/${{ github.repository }}/blob/${{ github.sha }}
+```
+
+`--base-url` turns the file names into links. The section is omitted when the
+change neither added nor resolved any dead code, so a clean pull request carries
+no line about it. A failed scan is logged and skipped rather than failing the
+comparison.
 
 ## Usage in CI
 

@@ -8,6 +8,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/config/config.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_scan.dart';
 import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
@@ -34,6 +35,17 @@ class DocComparatorCommand extends Command
     );
     argParser.addOption('out', help: 'Write the comparison results to a file');
     argParser.addOption('base-url', help: 'Base URL for file links (e.g. https://github.com/org/repo/blob/v1.0.0)');
+    argParser.addFlag(
+      'dead-code',
+      help:
+          'Append a warning section listing declarations nothing live refers to '
+          'and no consumer can reach. Never affects the exit code.',
+      defaultsTo: false,
+    );
+  }
+
+  bool get deadCode {
+    return argResults?['dead-code'] as bool;
   }
 
   String? get out {
@@ -54,8 +66,10 @@ class DocComparatorCommand extends Command
 
   @override
   FutureOr? run() async {
+    final resolvedBaseRef = baseRef ?? await GitUtils.getPreviousRef(Directory.current.path);
+
     final changes = await compare(
-      baseRef: baseRef ?? await GitUtils.getPreviousRef(Directory.current.path),
+      baseRef: resolvedBaseRef,
       newRef: newRef,
       dartRoot: root,
       gitRoot: Directory.current,
@@ -68,12 +82,17 @@ class DocComparatorCommand extends Command
 
     final formatter = ApiChangeFormatter(changes, magnitudes: magnitudes);
 
-    if (!formatter.hasRelevantChanges) {
+    final deadCodeSection = deadCode ? await _deadCodeSection(resolvedBaseRef) : '';
+
+    if (!formatter.hasRelevantChanges && deadCodeSection.isEmpty) {
       logger.info('No relevant changes detected');
       exit(0);
     }
 
-    final formattedOutput = formatter.format();
+    final formattedOutput = [
+      if (formatter.hasRelevantChanges) formatter.format(),
+      if (deadCodeSection.isNotEmpty) deadCodeSection,
+    ].join();
 
     if (out != null) {
       if (!File(out!).existsSync()) {
@@ -84,6 +103,45 @@ class DocComparatorCommand extends Command
     } else {
       // ignore: avoid_print
       print(formattedOutput);
+    }
+  }
+
+  /// Renders the dead code section for the comparison.
+  ///
+  /// Reporting only. A finding never changes the exit code, so a false positive
+  /// costs a reader a moment rather than blocking a merge.
+  Future<String> _deadCodeSection(String? resolvedBaseRef) async {
+    try {
+      // `compare` also accepts a path to a previously generated api json as a
+      // ref. That is enough to diff an API against, but there is no tree behind
+      // it to scan, so those fall back to reporting everything.
+      final scannableRef = resolvedBaseRef != null && await _isGitRef(resolvedBaseRef) ? resolvedBaseRef : null;
+      if (resolvedBaseRef != null && scannableRef == null) {
+        logger.detail('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
+      }
+
+      final scan = await scanDeadCode(
+        dartRoot: root,
+        gitRoot: Directory.current,
+        baseRef: scannableRef,
+        baseUrl: baseUrl,
+      );
+      return scan.formatMarkdown();
+    } catch (e) {
+      logger.warn('Dead code scan failed, continuing without it: $e');
+      return '';
+    }
+  }
+
+  /// Whether [ref] names something git can resolve, as opposed to a generated
+  /// api json file.
+  Future<bool> _isGitRef(String ref) async {
+    if (File(ref).existsSync()) return false;
+    try {
+      await GitUtils.resolveRef(ref, Directory.current.path);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }

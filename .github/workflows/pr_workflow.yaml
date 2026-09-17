@@ -53,6 +53,23 @@ jobs:
 
           mtrust_api_guard "${args[@]}"
 
+      - name: Scan for dead code introduced by this PR
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: |
+          # checkout fetches narrowly for pull requests, so the base branch is
+          # not necessarily there to compare against.
+          git fetch --no-tags origin "${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}" || true
+
+          # One scan, both renderings. With --base-ref each run costs a
+          # worktree, a pub get and two analyzer passes, so asking twice
+          # would pay for all of it twice.
+          mtrust_api_guard dead-code \
+            --base-ref "origin/${{ github.base_ref }}" \
+            --base-url "https://github.com/${{ github.repository }}/blob/${{ github.event.pull_request.head.sha }}" \
+            --out dead_code.json \
+            --out dead_code.md
+
       - name: Generate version summary and comment on PR
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -62,13 +79,20 @@ jobs:
             try {
               const versionOutput = fs.readFileSync('version_output.json', 'utf8');
               const versionData = JSON.parse(versionOutput);
+
+              // Linked rather than embedded: GitHub strips data: URIs from
+              // images in comments. shields.io reads single dashes and
+              // underscores as separators, so a pre-release doubles them.
+              const badgeUrl = `https://img.shields.io/badge/version-${encodeURIComponent(
+                versionData.version.replace(/-/g, '--').replace(/_/g, '__'),
+              )}-blue`;
               
               // Generate job summary
               const summary = `## Version Analysis
               
               **Next Version:** \`${versionData.version}\`
               
-              ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
+              ${versionData.badge ? `**Badge:**\n<img src="${badgeUrl}" alt="Version Badge" />` : ''}
               
               ### Changelog
               
@@ -76,15 +100,33 @@ jobs:
               `;
               
 
+              let deadCode = null;
+              try {
+                deadCode = JSON.parse(fs.readFileSync('dead_code.json', 'utf8'));
+              } catch (e) {
+                console.log('No dead code report to read:', e.message);
+              }
+              const introduced = deadCode ? deadCode.summary.introducedCount : 0;
+
               const jobSummary = core.summary;
               
               jobSummary
                 .addHeading('Version Analysis')
                 .addRaw(`\n\n**Next Version:** \`${versionData.version}\`\n\n`)
-                .addRaw(versionData.badge ? `\n\n**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : '')
+                .addRaw(versionData.badge ? `\n\n**Badge:**\n<img src="${badgeUrl}" alt="Version Badge" />` : '')
                 .addHeading('Changelog', 3)
                 .addRaw('\n\n')
                 .addRaw(versionData.changelog || 'No changelog available.');
+
+              let deadCodeMarkdown = '';
+              try {
+                deadCodeMarkdown = fs.readFileSync('dead_code.md', 'utf8');
+              } catch (e) {
+                console.log('No dead code markdown to append:', e.message);
+              }
+              if (deadCodeMarkdown.trim()) {
+                jobSummary.addRaw(deadCodeMarkdown);
+              }
               
               await jobSummary.write();
               console.log('Job summary written');
@@ -95,7 +137,8 @@ jobs:
               
               **Changelog:** 📄 [View detailed changelog in job summary](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
               
-              ${versionData.badge ? `**Badge:**\n<img src="data:image/svg+xml;utf8,${encodeURIComponent(versionData.badge)}" alt="Version Badge" />` : ''}
+              ${versionData.badge ? `**Badge:**\n<img src="${badgeUrl}" alt="Version Badge" />` : ''}
+              ${introduced > 0 ? `\n⚠️ **${introduced} new dead ${introduced === 1 ? 'declaration' : 'declarations'}.** 📄 [Details in job summary](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})` : ''}
               `;
               
               await github.rest.issues.createComment({
