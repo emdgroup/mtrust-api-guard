@@ -2,8 +2,9 @@
 //
 // CI appends this to the job summary, so every pull request shows the tool's
 // actual output on our own examples: the API diff between consecutive fixture
-// versions, the dead code each transition introduces, and the full dead code
-// picture per version. Run it the same way locally:
+// versions, the dead code each transition introduces, the full dead code
+// picture per version, and the dead code on the package layout fixture. Run it
+// the same way locally:
 //
 //   dart run tool/dump_fixture_reports.dart
 
@@ -21,6 +22,10 @@ import '../test/helpers/fixture_package.dart';
 /// The fixtures, oldest first. Consecutive pairs get diffed.
 const _fixtures = ['app_v100', 'app_v101', 'app_v110', 'app_v200'];
 
+/// Not a version of the others, so it gets a report of its own rather than a
+/// place in the diffs.
+const _layoutFixture = 'dead_code_layout';
+
 /// What each fixture is set up to demonstrate.
 const _notes = <String, String>{
   'app_v100':
@@ -29,6 +34,14 @@ const _notes = <String, String>{
   'app_v101': 'Entry point moves to `lib/main.dart`, which re-exports `lib/src/api.dart`.',
   'app_v110': 'Everything is exported.',
   'app_v200': 'Carries the magnitude_overrides examples.',
+  _layoutFixture:
+      'Entry point `lib/layout.dart`. What a real package layout brings: an '
+      '`example/` with a pubspec of its own, generated parts that '
+      '`analyzer.exclude` hides, a conditional export, and exported code with '
+      'private members and a private implementation. The dead findings are '
+      'planted: a private helper in one branch of the conditional export, a '
+      'private method of `Api`, and `Draft`, which only its own generated part '
+      'refers to.',
 };
 
 Future<void> main() async {
@@ -126,43 +139,55 @@ Future<void> main() async {
     ..writeln();
 
   for (final fixture in _fixtures) {
-    final package = packages[fixture];
-    if (package == null) continue;
-
-    final report = reports[fixture]!;
-    final markdown = DeadCodeFormatter(report, markdownHeaderLevel: 5).formatMarkdown();
-
-    out
-      ..writeln(
-        '<details><summary><code>$fixture</code> — '
-        '${report.dead.length} dead, ${report.apiSurface.length} exported and '
-        'unreferenced</summary>',
-      )
-      ..writeln()
-      ..writeln(_notes[fixture] ?? '')
-      ..writeln()
-      ..writeln(markdown.isEmpty ? 'Nothing to report.' : markdown.trim())
-      ..writeln();
-
-    if (report.apiSurface.isNotEmpty) {
-      out.writeln('Exported and unreferenced inside the package, so not dead:');
-      out.writeln();
-      for (final finding in report.apiSurface) {
-        out.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, `${finding.filePath}`');
-      }
-      out.writeln();
-    }
-
-    out
-      ..writeln('</details>')
-      ..writeln();
+    final report = reports[fixture];
+    if (report != null) _writeReport(out, fixture, report);
   }
+
+  out
+    ..writeln('### Dead code on a package layout')
+    ..writeln()
+    ..writeln('`dead-code` on `test/fixtures/$_layoutFixture`.')
+    ..writeln();
+
+  final layout = await materializeFixturePackage(Directory(p.join('test', 'fixtures', _layoutFixture)), _layoutFixture);
+  packages[_layoutFixture] = layout;
+  _writeReport(out, _layoutFixture, await DeadCodeFinder(root: layout).run());
 
   for (final package in packages.values) {
     if (package.parent.existsSync()) package.parent.deleteSync(recursive: true);
   }
 
   stdout.write(out);
+}
+
+/// One fixture's full dead code report, collapsed under a count.
+void _writeReport(StringBuffer out, String fixture, DeadCodeReport report) {
+  final markdown = DeadCodeFormatter(report, markdownHeaderLevel: 5).formatMarkdown();
+
+  out
+    ..writeln(
+      '<details><summary><code>$fixture</code> — '
+      '${report.dead.length} dead, ${report.apiSurface.length} exported and '
+      'unreferenced</summary>',
+    )
+    ..writeln()
+    ..writeln(_notes[fixture] ?? '')
+    ..writeln()
+    ..writeln(markdown.isEmpty ? 'Nothing to report.' : markdown.trim())
+    ..writeln();
+
+  if (report.apiSurface.isNotEmpty) {
+    out.writeln('Exported and unreferenced inside the package, so not dead:');
+    out.writeln();
+    for (final finding in report.apiSurface) {
+      out.writeln('- `${finding.qualifiedName}` — ${finding.kind.label}, `${finding.filePath}`');
+    }
+    out.writeln();
+  }
+
+  out
+    ..writeln('</details>')
+    ..writeln();
 }
 
 /// Runs the CLI and returns its output with the startup banner removed.

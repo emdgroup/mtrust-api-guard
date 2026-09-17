@@ -200,13 +200,9 @@ void main() {
     late DeadCodeReport report;
 
     setUpAll(() async {
-      packageDir = await materializeFixturePackage(TestFixtures().deadCodeLayoutDir, 'dead_code_layout');
       // `example/` has a pubspec of its own, the way a Flutter package's
       // example app does, so it is resolved on its own too.
-      final result = await Process.run('dart', ['pub', 'get'], workingDirectory: p.join(packageDir.path, 'example'));
-      if (result.exitCode != 0) {
-        throw StateError('dart pub get failed in example/: ${result.stderr}');
-      }
+      packageDir = await materializeFixturePackage(TestFixtures().deadCodeLayoutDir, 'dead_code_layout');
       report = await DeadCodeFinder(root: packageDir).run();
     });
 

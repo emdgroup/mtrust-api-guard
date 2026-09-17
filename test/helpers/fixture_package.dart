@@ -19,6 +19,9 @@ Future<void> copyDir(Directory src, Directory dst) async {
 /// Copies a fixture package into a temporary directory, gives it a pubspec and
 /// resolves it, so the analyzer can follow its `package:` imports.
 ///
+/// A nested package that brings its own pubspec, such as an `example/`, is
+/// resolved too.
+///
 /// [packageName] has to match the `package:` imports the fixture makes of
 /// itself, which for the `app_v*` fixtures is the scaffold's `api_guard_test`.
 ///
@@ -40,9 +43,17 @@ environment:
   sdk: ">=3.11.0 <4.0.0"
 ''');
 
-  final result = await Process.run('dart', ['pub', 'get'], workingDirectory: target.path);
-  if (result.exitCode != 0) {
-    throw StateError('dart pub get failed in ${target.path}: ${result.stderr}');
+  // The root first, since a nested package depends on it by path.
+  final nested = [
+    for (final entity in target.listSync(recursive: true))
+      if (entity is File && p.basename(entity.path) == 'pubspec.yaml' && entity.parent.path != target.path)
+        entity.parent.path,
+  ];
+  for (final directory in [target.path, ...nested]) {
+    final result = await Process.run('dart', ['pub', 'get'], workingDirectory: directory);
+    if (result.exitCode != 0) {
+      throw StateError('dart pub get failed in $directory: ${result.stderr}');
+    }
   }
 
   if (initGit) {

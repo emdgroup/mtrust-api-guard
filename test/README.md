@@ -94,7 +94,8 @@ exported interface only a private class implements.
 
 Every pull request renders the tool's output on our own fixtures into the
 workflow run's **Summary** tab: the `compare` diff between each consecutive
-fixture version, and the `dead-code` report for each one. That is the
+fixture version, the `dead-code` report for each one, and the `dead-code` report
+for `dead_code_layout`. That is the
 `Show what api_guard produces for the fixtures` step in the `validate-dart`
 action, and it is the same thing you get locally from
 
