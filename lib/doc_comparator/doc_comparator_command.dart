@@ -82,7 +82,7 @@ class DocComparatorCommand extends Command
 
     final formatter = ApiChangeFormatter(changes, magnitudes: magnitudes);
 
-    final deadCodeSection = deadCode ? await _deadCodeSection(resolvedBaseRef) : '';
+    final deadCodeSection = deadCode ? await _deadCodeSection(resolvedBaseRef, newRef) : '';
 
     if (!formatter.hasRelevantChanges && deadCodeSection.isEmpty) {
       logger.info('No relevant changes detected');
@@ -110,20 +110,27 @@ class DocComparatorCommand extends Command
   ///
   /// Reporting only. A finding never changes the exit code, so a false positive
   /// costs a reader a moment rather than blocking a merge.
-  Future<String> _deadCodeSection(String? resolvedBaseRef) async {
+  Future<String> _deadCodeSection(String? resolvedBaseRef, String newRef) async {
     try {
       // `compare` also accepts a path to a previously generated api json as a
       // ref. That is enough to diff an API against, but there is no tree behind
-      // it to scan, so those fall back to reporting everything.
-      final scannableRef = resolvedBaseRef != null && await _isGitRef(resolvedBaseRef) ? resolvedBaseRef : null;
-      if (resolvedBaseRef != null && scannableRef == null) {
-        logger.detail('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
+      // it to scan, so those fall back to what can be scanned: everything
+      // currently dead, in the working tree.
+      final scannableBase = resolvedBaseRef != null && await _isGitRef(resolvedBaseRef) ? resolvedBaseRef : null;
+      if (resolvedBaseRef != null && scannableBase == null) {
+        logger.warn('$resolvedBaseRef is not a git ref, reporting all dead code instead of the delta');
+      }
+
+      final scannableNew = await _isGitRef(newRef) ? newRef : null;
+      if (scannableNew == null) {
+        logger.warn('$newRef is not a git ref, scanning the working tree for dead code instead');
       }
 
       final scan = await scanDeadCode(
         dartRoot: root,
         gitRoot: Directory.current,
-        baseRef: scannableRef,
+        baseRef: scannableBase,
+        newRef: scannableNew,
         baseUrl: baseUrl,
       );
       return scan.formatMarkdown();

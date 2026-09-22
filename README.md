@@ -234,9 +234,10 @@ Usage: mtrust_api_guard compare [arguments]
 ```
 
 With `--dead-code`, `compare` reports what the change introduced rather than
-everything currently dead, reusing the `--base-ref` it already has. When that
-ref is a generated api json file rather than a git ref there is no tree to scan,
-so it falls back to the full report.
+everything currently dead, between the same two refs the API half compares.
+A ref that is a generated api json file rather than a git ref has no tree behind
+it to scan: the report then falls back to everything dead in the working tree,
+and says so.
 
 See an example output [here](./test/fixtures/expected_compare_v100_v101.txt)
 
@@ -404,7 +405,9 @@ a move reads as a deletion, because a finding names a declaration in a file.
 
 The base ref is materialized as a git worktree with its dependencies resolved,
 the same way `generate --ref` does it, so the second scan sees the same thing
-the first one does. Run `pub get` before scanning: an unresolved package cannot
+the first one does. `dead-code` scans the working tree as the other side of the
+comparison; `compare --dead-code` scans its `--new-ref`, and only falls back to
+the working tree when that ref is already the checkout. Run `pub get` before scanning: an unresolved package cannot
 follow its own `package:` imports, and anything reached only through one then
 looks dead. The scan warns when there is no package config, or when the one
 there lists packages that have since gone from the pub cache. A pub workspace

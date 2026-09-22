@@ -203,6 +203,39 @@ class OrphanedHelper {
       expect(output, contains('added since'), reason: 'compare passes its own base ref through, so this is a delta');
     });
 
+    test('compare scans the new ref rather than the working tree', () async {
+      await useFixture(testSetup.fixtures.appV110Dir);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      final apiFile = File(p.join(testSetup.tempDir.path, 'lib', 'src', 'api.dart'));
+      apiFile.writeAsStringSync('${apiFile.readAsStringSync()}\n\nclass BrandNewExportedClass {}\n');
+      await testSetup.commitChanges('feat: add a class');
+      await runProcess('git', ['tag', 'v${TestConstants.minorVersion}'], workingDir: testSetup.tempDir.path);
+
+      // Dead code that only exists after the ref being compared. Both halves of
+      // the comparison are asked about the same two tags, so neither should see
+      // it.
+      plantOrphan();
+      await testSetup.commitChanges('chore: add something nothing reaches');
+
+      final outPath = p.join(testSetup.tempDir.path, 'compare_at_ref.txt');
+      await testSetup.runApiGuard('compare', [
+        '--base-ref',
+        'v${TestConstants.initialVersion}',
+        '--new-ref',
+        'v${TestConstants.minorVersion}',
+        '--out',
+        outPath,
+        '--dead-code',
+      ]);
+
+      final output = await File(outPath).readAsString();
+
+      expect(output, contains('BrandNewExportedClass'), reason: 'the API half still compares the two refs');
+      expect(output, isNot(contains('OrphanedHelper')), reason: 'the orphan is younger than the ref compared');
+    });
+
     test('falls back to the full report when compare is given generated api files', () async {
       await useFixture(testSetup.fixtures.appV110Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');

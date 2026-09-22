@@ -62,27 +62,38 @@ class DeadCodeDelta {
   };
 }
 
-/// Scans [baseRef] and the working tree, and reports how dead code changed
-/// between them.
+/// Scans [baseRef] and [newRef], and reports how dead code changed between
+/// them. Without a [newRef] the head side is the working tree.
 ///
 /// Both sides are scanned with the same rules, so a finding that appears on
 /// only one side really did appear or disappear, rather than being classified
 /// differently.
 Future<DeadCodeDelta> compareDeadCode({
   required String baseRef,
+  String? newRef,
   required Directory dartRoot,
   required Directory gitRoot,
 }) async {
-  final head = await DeadCodeFinder(root: dartRoot).run();
+  final head = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot);
+  final base = await scanRevision(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot);
 
-  final base = await withRefWorktree(
-    ref: baseRef,
+  return diffDeadCode(base: base, head: head, baseRef: baseRef);
+}
+
+/// Scans [ref] in a worktree of its own, or the working tree when [ref] is
+/// null or already checked out.
+Future<DeadCodeReport> scanRevision({
+  required String? ref,
+  required Directory dartRoot,
+  required Directory gitRoot,
+}) async {
+  if (ref == null) return DeadCodeFinder(root: dartRoot).run();
+  return withRefWorktree(
+    ref: ref,
     dartRoot: dartRoot,
     gitRoot: gitRoot,
     body: (packageRoot) => DeadCodeFinder(root: packageRoot).run(),
   );
-
-  return diffDeadCode(base: base, head: head, baseRef: baseRef);
 }
 
 /// Splits [head]'s findings against [base]'s.
