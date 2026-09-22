@@ -112,6 +112,41 @@ void main() {
       expect(delta.deleted, hasLength(1));
     });
 
+    test('does not call a member alive again when its whole class went dead', () {
+      // Only the outermost finding is reported, so a member drops off the list
+      // the moment its class joins it. It got deader, not less dead.
+      final member = declaration(name: 'bar', container: 'Foo');
+      final delta = diffDeadCode(
+        base: report(dead: [member]),
+        head: report(
+          dead: [declaration(name: 'Foo', line: 5)],
+          declarations: [
+            declaration(name: 'Foo', line: 5),
+            member,
+          ],
+        ),
+      );
+
+      expect(delta.introduced.map((d) => d.qualifiedName), ['Foo']);
+      expect(delta.revived, isEmpty);
+      expect(delta.deleted, isEmpty);
+    });
+
+    test('does not call a member newly dead when its class came alive', () {
+      // The mirror image: the class stops being dead and its dead member is
+      // listed on its own for the first time, having been dead all along.
+      final member = declaration(name: 'bar', container: 'Foo');
+      final container = declaration(name: 'Foo', line: 5);
+      final delta = diffDeadCode(
+        base: report(dead: [container], declarations: [container, member]),
+        head: report(dead: [member], declarations: [container, member]),
+      );
+
+      expect(delta.introduced, isEmpty);
+      expect(delta.preExisting.map((d) => d.qualifiedName), ['Foo.bar']);
+      expect(delta.revived.map((d) => d.qualifiedName), ['Foo']);
+    });
+
     test('carries the base ref through for the report to name', () {
       final delta = diffDeadCode(
         base: report(dead: []),

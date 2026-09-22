@@ -89,18 +89,38 @@ Future<DeadCodeDelta> compareDeadCode({
 DeadCodeDelta diffDeadCode({required DeadCodeReport base, required DeadCodeReport head, String? baseRef}) {
   final before = base.dead.map(_identify).toSet();
   final after = head.dead.map(_identify).toSet();
+  final deadContainersBefore = _deadContainers(base);
+  final deadContainersAfter = _deadContainers(head);
   final stillDeclared = _declaredIn(head);
 
-  final resolved = base.dead.where((d) => !after.contains(_identify(d))).toList();
+  bool wasDead(DeadDeclaration d) => before.contains(_identify(d)) || deadContainersBefore.contains(_container(d));
+  bool isDead(DeadDeclaration d) => after.contains(_identify(d)) || deadContainersAfter.contains(_container(d));
+
+  final resolved = base.dead.where((d) => !isDead(d)).toList();
 
   return DeadCodeDelta(
-    introduced: head.dead.where((d) => !before.contains(_identify(d))).toList(),
+    introduced: head.dead.where((d) => !wasDead(d)).toList(),
     deleted: resolved.where((d) => !stillDeclared.contains(_identify(d))).toList(),
     revived: resolved.where((d) => stillDeclared.contains(_identify(d))).toList(),
-    preExisting: head.dead.where((d) => before.contains(_identify(d))).toList(),
+    preExisting: head.dead.where(wasDead).toList(),
     baseRef: baseRef,
   );
 }
+
+/// The declarations [report] lists that other findings can be folded into.
+///
+/// A dead member of a dead class is not listed on its own, so comparing the
+/// listed findings alone reads the fold as a change: the member would count as
+/// no longer dead when its class went dead, and as newly dead when its class
+/// came alive.
+Set<String> _deadContainers(DeadCodeReport report) => {
+  for (final declaration in report.dead)
+    if (declaration.container == null) '${declaration.filePath}:${declaration.name}',
+};
+
+/// The key its container has in [_deadContainers], for a member.
+String? _container(DeadDeclaration declaration) =>
+    declaration.container == null ? null : '${declaration.filePath}:${declaration.container}';
 
 /// What [report] saw declared. The buckets are folded in as well, so a report
 /// that carries no [DeadCodeReport.declarations] still tells a deletion from a
