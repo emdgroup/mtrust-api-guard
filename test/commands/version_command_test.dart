@@ -78,6 +78,53 @@ void main() {
       expect(tags, contains('v${TestConstants.patchVersion}'));
     });
 
+    /// A change the API diff cannot see: a file outside the entry points, which
+    /// is what a new command or anything else behind the exports looks like.
+    Future<void> commitHiddenFeature() async {
+      File(p.join(testSetup.tempDir.path, 'lib', 'src', 'hidden.dart')).writeAsStringSync('class Hidden {}\n');
+      await testSetup.commitChanges('feat: add something the exported API does not show');
+    }
+
+    test('bumps a patch for a feat the API diff cannot see', () async {
+      await setupInitialVersion();
+      await commitHiddenFeature();
+
+      await testSetup.runApiGuard('version', []);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+    });
+
+    test('--conventional-commits reads that same feat as a minor', () async {
+      await setupInitialVersion();
+      await commitHiddenFeature();
+
+      await testSetup.runApiGuard('version', ['--conventional-commits']);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
+    });
+
+    test('conventional_commits in analysis_options.yaml does the same', () async {
+      await setupInitialVersion();
+      final options = File(p.join(testSetup.tempDir.path, 'analysis_options.yaml'));
+      options.writeAsStringSync('${options.readAsStringSync()}\n  conventional_commits: true\n');
+      await commitHiddenFeature();
+
+      await testSetup.runApiGuard('version', []);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.minorVersion);
+    });
+
+    test('--no-conventional-commits overrules the config', () async {
+      await setupInitialVersion();
+      final options = File(p.join(testSetup.tempDir.path, 'analysis_options.yaml'));
+      options.writeAsStringSync('${options.readAsStringSync()}\n  conventional_commits: true\n');
+      await commitHiddenFeature();
+
+      await testSetup.runApiGuard('version', ['--no-conventional-commits']);
+
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+    });
+
     test('detects minor-level API changes', () async {
       printOnFailure("================================================");
       await setupInitialVersion();

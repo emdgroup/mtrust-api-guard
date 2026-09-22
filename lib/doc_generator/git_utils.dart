@@ -379,7 +379,12 @@ class GitUtils {
 
   /// Gets the commits between two refs
   /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
-  static Future<List<Commit>> getCommits({required String root, String? fromRef, String? toRef}) async {
+  static Future<List<Commit>> getCommits({
+    required String root,
+    String? fromRef,
+    String? toRef,
+    List<String> paths = const [],
+  }) async {
     try {
       final gitArgs = ['--no-pager', 'log', '--no-decorate'];
       if (fromRef != null) {
@@ -387,6 +392,9 @@ class GitUtils {
       } else if (toRef != null) {
         gitArgs.add(toRef);
       }
+      // Only the commits that touched [paths], which is what a package in a
+      // workspace is versioned from.
+      if (paths.isNotEmpty) gitArgs.addAll(['--', ...paths]);
 
       final commitResult = await Process.run('git', gitArgs, workingDirectory: root);
 

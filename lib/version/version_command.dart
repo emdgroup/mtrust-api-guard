@@ -51,7 +51,15 @@ class VersionCommand extends Command
         defaultsTo: 'v',
         valueHelp: 'prefix',
       )
-      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file');
+      ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file')
+      ..addFlag(
+        'conventional-commits',
+        help:
+            'Let the conventional commit types since the base ref raise the bump '
+            'when the API diff asks for less: feat to minor, a breaking change to '
+            'major. Defaults to the api_guard conventional_commits setting.',
+        defaultsTo: null,
+      );
   }
 
   bool get tag {
@@ -90,6 +98,10 @@ class VersionCommand extends Command
     return argResults?['dart-file'] as String?;
   }
 
+  bool? get conventionalCommits {
+    return argResults?['conventional-commits'] as bool?;
+  }
+
   @override
   FutureOr? run() async {
     // Load config and determine doc file path
@@ -106,6 +118,7 @@ class VersionCommand extends Command
       isPreRelease: preRelease,
       preReleasePrefix: preReleasePrefix,
       tagPrefix: tagPrefix,
+      conventionalCommits: conventionalCommits,
       dartFile: dartFile,
     );
 

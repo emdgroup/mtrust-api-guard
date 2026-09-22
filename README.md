@@ -55,6 +55,9 @@ api_guard:
   entry_points:
     - lib/main.dart
     - lib/another_entry_point.dart
+
+  # Let conventional commit types raise a version bump the API diff cannot see
+  conventional_commits: false
 ```
 
 > ⚠️ **Note**: If `entry_points` are configured, the `include` option is ignored. The analyzer will start at the entry points and recursively visit all exported elements. If no entry points are specified, the analyzer will include all files matching the `include` patterns. If neither `entry_points` nor `include` are specified, it defaults to `lib/**.dart`.
@@ -306,7 +309,34 @@ mtrust_api_guard version
 -p, --[no-]pre-release           Add pre-release suffix (-dev.N)
     --tag-prefix=<prefix>        Prefix for version tags
                                  (defaults to "v")
+    --[no-]conventional-commits  Let the conventional commit types since the base ref
+                                 raise the bump when the API diff asks for less.
 ```
+
+### Bumping from conventional commits
+
+The bump comes from the diff of the exported API, so a release that the exports
+do not show comes out as a patch. A new command, a fix behind the entry points
+or a rewrite of something internal all look the same from outside: nothing
+changed.
+
+`--conventional-commits` reads the commits between the base ref and HEAD as a
+floor under that: `feat` asks for a minor, `fix` and `perf` for a patch, and a
+`!` or a `BREAKING CHANGE:` footer for a major. Whichever of the two is higher
+wins, so it can raise a bump and never lower one. Types the tool does not know
+say nothing.
+
+It is off by default, because switching it on changes the next version number of
+every repo that releases with it. Turn it on per repo in `analysis_options.yaml`:
+
+```yaml
+api_guard:
+  conventional_commits: true
+```
+
+The flag wins over the config, so `--no-conventional-commits` turns it off again
+for a single release. In a workspace only the commits that touched a package
+count towards that package's bump.
 
 ### Custom Tag Prefixes
 

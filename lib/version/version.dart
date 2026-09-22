@@ -10,6 +10,7 @@ import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/calculate_next_version.dart';
+import 'package:mtrust_api_guard/version/commit_magnitude.dart';
 import 'package:mtrust_api_guard/version/workspace_utils.dart';
 import 'package:path/path.dart';
 import 'package:pub_semver/pub_semver.dart';
@@ -41,6 +42,7 @@ Future<VersionResult> version({
   required bool generateChangelog,
   required bool cache,
   required String tagPrefix,
+  bool? conventionalCommits,
   String? dartFile,
   String? packageName,
   WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
@@ -96,9 +98,21 @@ Future<VersionResult> version({
   logger.info('Base version: $baseVersion');
   logger.info('Changes: $changes');
 
-  final highestMagnitudeChange = getHighestMagnitude(changes);
+  var highestMagnitudeChange = getHighestMagnitude(changes);
 
   logger.info('Highest magnitude change: $highestMagnitudeChange');
+
+  if (conventionalCommits ?? config.conventionalCommits) {
+    final packagePath = relative(dartRoot.path, from: gitRoot.path);
+    final commits = await GitUtils.getCommits(
+      root: gitRoot.path,
+      fromRef: effectiveBaseRef,
+      paths: packagePath == '.' ? const [] : [packagePath],
+    );
+    final fromCommits = magnitudeFromCommits(commits);
+    logger.info('Highest magnitude in ${commits.length} conventional commits: $fromCommits');
+    highestMagnitudeChange = highestMagnitudeChange.atLeast(fromCommits);
+  }
 
   final nextVersion = await calculateNextVersion(
     baseVersion,
