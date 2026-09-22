@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:path/path.dart' as p;
 
@@ -124,18 +125,42 @@ class TestBootstrap {
 
     await Directory(p.dirname(binaryPath)).create(recursive: true);
 
+    // `_withFileLock` cannot serialize this. Test suites run as isolates of one
+    // process, and a POSIX advisory lock is held per process, so every isolate
+    // that asks for the lock gets it and they all compile at once.
+    //
+    // So rather than rely on being alone, compile somewhere nobody else will
+    // write and move the result into place. Concurrent compiles then cost time
+    // and nothing else: each rename is atomic, so a suite reading the binary
+    // sees one complete build or another, never a half-written file.
+    //
+    // The staging file keeps the binary's name because on macOS the compiler
+    // signs what it just wrote, and that step is particular about the path.
+    final token = '${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 32)}';
+    final stagingDir = Directory(p.join(p.dirname(binaryPath), '.incoming-$token'));
+    await stagingDir.create(recursive: true);
+    final stagingPath = p.join(stagingDir.path, p.basename(binaryPath));
+
     final result = await Process.run(
       'dart',
-      ['compile', 'exe', p.join(_rootDir, 'bin', 'mtrust_api_guard.dart'), '-o', binaryPath],
+      ['compile', 'exe', p.join(_rootDir, 'bin', 'mtrust_api_guard.dart'), '-o', stagingPath],
       workingDirectory: _rootDir,
     );
 
-    if (result.exitCode != 0) {
-      throw StateError(
-        'Failed to compile API Guard test binary (exit ${result.exitCode})\n'
-        'stdout: ${result.stdout}\n'
-        'stderr: ${result.stderr}',
-      );
+    try {
+      if (result.exitCode != 0) {
+        throw StateError(
+          'Failed to compile API Guard test binary (exit ${result.exitCode})\n'
+          'stdout: ${result.stdout}\n'
+          'stderr: ${result.stderr}',
+        );
+      }
+
+      File(stagingPath).renameSync(binaryPath);
+    } finally {
+      if (stagingDir.existsSync()) {
+        stagingDir.deleteSync(recursive: true);
+      }
     }
   }
 

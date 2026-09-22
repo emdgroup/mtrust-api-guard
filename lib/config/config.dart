@@ -23,12 +23,17 @@ class ApiGuardConfig {
   /// Overrides for the magnitude of changes.
   final List<MagnitudeOverride> magnitudeOverrides;
 
+  /// Whether the conventional commit types since the base ref may raise the
+  /// version bump above what the API diff asks for.
+  final bool conventionalCommits;
+
   ApiGuardConfig({
     required this.include,
     required this.exclude,
     this.entryPoints = const [],
     required this.generateBadge,
     this.magnitudeOverrides = const [],
+    this.conventionalCommits = false,
   });
 
   factory ApiGuardConfig.defaultConfig() {
@@ -38,6 +43,7 @@ class ApiGuardConfig {
       entryPoints: [],
       generateBadge: true,
       magnitudeOverrides: [],
+      conventionalCommits: false,
     );
   }
 
@@ -47,6 +53,7 @@ class ApiGuardConfig {
     Set<String>? exclude,
     List<String>? entryPoints,
     List<MagnitudeOverride>? magnitudeOverrides,
+    bool? conventionalCommits,
   }) {
     return ApiGuardConfig(
       include: include ?? this.include,
@@ -54,6 +61,7 @@ class ApiGuardConfig {
       entryPoints: entryPoints ?? this.entryPoints,
       generateBadge: generateBadge ?? this.generateBadge,
       magnitudeOverrides: magnitudeOverrides ?? this.magnitudeOverrides,
+      conventionalCommits: conventionalCommits ?? this.conventionalCommits,
     );
   }
 
@@ -89,6 +97,7 @@ class ApiGuardConfig {
       entryPoints: (apiGuard["entry_points"] as YamlList?)?.map((e) => e.toString()).toList(),
       generateBadge: apiGuard['generateBadge'],
       magnitudeOverrides: magnitudeOverrides,
+      conventionalCommits: apiGuard['conventional_commits'] as bool?,
     );
   }
 

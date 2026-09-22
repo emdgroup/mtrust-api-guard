@@ -33,6 +33,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
   required bool generateChangelog,
   required bool cache,
   String? dartFile,
+  bool? conventionalCommits,
   WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
 }) async {
   final packages = getWorkspacePackages(workspace);
@@ -98,6 +99,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
         cache: cache,
         tagPrefix: tagPrefix,
         dartFile: dartFile != null ? path.join(package.directory.path, dartFile) : null,
+        conventionalCommits: conventionalCommits,
         packageName: package.name,
         tagFormat: tagFormat,
       );
