@@ -254,7 +254,8 @@ class OrphanedHelper {
       final report = await runDeadCode(args: ['--base-ref', 'v${TestConstants.initialVersion}']);
 
       expect(namesIn(report, 'introduced'), contains('OrphanedHelper'));
-      expect(report['resolved'], isEmpty);
+      expect(report['deleted'], isEmpty);
+      expect(report['revived'], isEmpty);
       expect(report['baseRef'], 'v${TestConstants.initialVersion}');
     });
 
@@ -280,7 +281,7 @@ class OrphanedHelper {
       );
     });
 
-    test('--base-ref reports a declaration that stopped being dead', () async {
+    test('--base-ref reports a deleted declaration as deleted', () async {
       await useFixture(testSetup.fixtures.appV110Dir);
       plantOrphan();
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
@@ -291,7 +292,30 @@ class OrphanedHelper {
 
       final report = await runDeadCode(args: ['--base-ref', 'v${TestConstants.initialVersion}']);
 
-      expect(namesIn(report, 'resolved'), contains('OrphanedHelper'));
+      expect(namesIn(report, 'deleted'), contains('OrphanedHelper'));
+      expect(report['revived'], isEmpty);
+      expect(report['introduced'], isEmpty);
+    });
+
+    test('--base-ref separates a declaration that is used now from a deleted one', () async {
+      await useFixture(testSetup.fixtures.appV110Dir);
+      plantOrphan();
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
+
+      // The entry point calls the orphan instead of anyone deleting it, so the
+      // declaration is still there and a reviewer should not read "deleted".
+      final apiFile = File(p.join(testSetup.tempDir.path, 'lib', 'src', 'api.dart'));
+      apiFile.writeAsStringSync(
+        "import 'orphan.dart';\n\n${apiFile.readAsStringSync()}\n\n"
+        'String orphanLabel() => OrphanedHelper().unusedLabel;\n',
+      );
+      await testSetup.commitChanges('feat: use the orphan');
+
+      final report = await runDeadCode(args: ['--base-ref', 'v${TestConstants.initialVersion}']);
+
+      expect(namesIn(report, 'revived'), contains('OrphanedHelper'));
+      expect(report['deleted'], isEmpty);
       expect(report['introduced'], isEmpty);
     });
 

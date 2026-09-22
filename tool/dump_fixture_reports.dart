@@ -117,14 +117,14 @@ Future<void> main() async {
     final head = reports[to];
     if (base == null || head == null) continue;
 
-    final delta = diffDeadCode(base: base, head: head, baseRef: from);
-    final markdown = DeadCodeDeltaFormatter(delta, markdownHeaderLevel: 5).formatMarkdown();
+    final formatter = DeadCodeDeltaFormatter(
+      diffDeadCode(base: base, head: head, baseRef: from),
+      markdownHeaderLevel: 5,
+    );
+    final markdown = formatter.formatMarkdown();
 
     out
-      ..writeln(
-        '<details><summary><code>$from</code> → <code>$to</code> — '
-        '${delta.introduced.length} added, ${delta.resolved.length} resolved</summary>',
-      )
+      ..writeln('<details><summary><code>$from</code> → <code>$to</code> — ${formatter.summaryLine}</summary>')
       ..writeln()
       ..writeln(markdown.isEmpty ? 'No change in dead code.' : markdown.trim())
       ..writeln()

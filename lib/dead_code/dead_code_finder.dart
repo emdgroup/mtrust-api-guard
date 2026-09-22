@@ -378,12 +378,18 @@ class DeadCodeFinder {
       return byFile != 0 ? byFile : a.line.compareTo(b.line);
     }
 
+    final checked = [
+      for (final site in _declarations.values)
+        if (site.reportable) site.toDeclaration(),
+    ];
+
     return DeadCodeReport(
       dead: dead..sort(byPosition),
       apiSurface: apiSurface..sort(byPosition),
       docOnly: docOnly..sort(byPosition),
+      declarations: checked..sort(byPosition),
       filesScanned: filesScanned,
-      declarationsChecked: _declarations.values.where((site) => site.reportable).length,
+      declarationsChecked: checked.length,
     );
   }
 

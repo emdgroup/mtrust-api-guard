@@ -16,15 +16,25 @@ _Identity _identify(DeadDeclaration declaration) =>
 
 /// Dead code as it changed between two revisions.
 class DeadCodeDelta {
-  const DeadCodeDelta({required this.introduced, required this.resolved, required this.preExisting, this.baseRef});
+  const DeadCodeDelta({
+    required this.introduced,
+    required this.deleted,
+    required this.revived,
+    required this.preExisting,
+    this.baseRef,
+  });
 
   /// Findings this change added. The ones a reviewer can still do something
   /// about cheaply.
   final List<DeadDeclaration> introduced;
 
-  /// Findings that were dead before and are not any more, either deleted or
-  /// used by something now.
-  final List<DeadDeclaration> resolved;
+  /// Findings whose declaration is gone from the new revision. A rename or a
+  /// move reads as a deletion, because a finding names a declaration in a file.
+  final List<DeadDeclaration> deleted;
+
+  /// Findings whose declaration is still there and is not dead any more,
+  /// because live code reaches it now, or because the package exports it now.
+  final List<DeadDeclaration> revived;
 
   /// Findings that were already there. Debt, not this change's doing.
   final List<DeadDeclaration> preExisting;
@@ -32,17 +42,22 @@ class DeadCodeDelta {
   /// The revision compared against, for the report to name.
   final String? baseRef;
 
-  bool get isEmpty => introduced.isEmpty && resolved.isEmpty;
+  /// Everything that left the report, however it left.
+  List<DeadDeclaration> get resolved => [...deleted, ...revived];
+
+  bool get isEmpty => introduced.isEmpty && deleted.isEmpty && revived.isEmpty;
 
   Map<String, dynamic> toJson() => {
     'baseRef': baseRef,
     'summary': {
       'introducedCount': introduced.length,
-      'resolvedCount': resolved.length,
+      'deletedCount': deleted.length,
+      'revivedCount': revived.length,
       'preExistingCount': preExisting.length,
     },
     'introduced': introduced.map((e) => e.toJson()).toList(),
-    'resolved': resolved.map((e) => e.toJson()).toList(),
+    'deleted': deleted.map((e) => e.toJson()).toList(),
+    'revived': revived.map((e) => e.toJson()).toList(),
     'preExisting': preExisting.map((e) => e.toJson()).toList(),
   };
 }
@@ -74,13 +89,26 @@ Future<DeadCodeDelta> compareDeadCode({
 DeadCodeDelta diffDeadCode({required DeadCodeReport base, required DeadCodeReport head, String? baseRef}) {
   final before = base.dead.map(_identify).toSet();
   final after = head.dead.map(_identify).toSet();
+  final stillDeclared = _declaredIn(head);
 
-  final introduced = head.dead.where((d) => !before.contains(_identify(d))).toList();
-  final preExisting = head.dead.where((d) => before.contains(_identify(d))).toList();
   final resolved = base.dead.where((d) => !after.contains(_identify(d))).toList();
 
-  return DeadCodeDelta(introduced: introduced, resolved: resolved, preExisting: preExisting, baseRef: baseRef);
+  return DeadCodeDelta(
+    introduced: head.dead.where((d) => !before.contains(_identify(d))).toList(),
+    deleted: resolved.where((d) => !stillDeclared.contains(_identify(d))).toList(),
+    revived: resolved.where((d) => stillDeclared.contains(_identify(d))).toList(),
+    preExisting: head.dead.where((d) => before.contains(_identify(d))).toList(),
+    baseRef: baseRef,
+  );
 }
+
+/// What [report] saw declared. The buckets are folded in as well, so a report
+/// that carries no [DeadCodeReport.declarations] still tells a deletion from a
+/// declaration that became API surface.
+Set<_Identity> _declaredIn(DeadCodeReport report) => {
+  for (final declaration in [...report.declarations, ...report.dead, ...report.apiSurface, ...report.docOnly])
+    _identify(declaration),
+};
 
 /// Renders a [DeadCodeDelta] as plain text or as markdown for a PR comment.
 class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
@@ -105,15 +133,19 @@ class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
       buffer.writeln();
     }
 
-    if (delta.resolved.isNotEmpty) {
-      buffer.writeln('No longer dead:');
-      for (final finding in delta.resolved) {
+    void writeSection(String title, List<DeadDeclaration> findings) {
+      if (findings.isEmpty) return;
+      buffer.writeln(title);
+      for (final finding in findings) {
         buffer.writeln('  ${finding.filePath}  ${finding.kind.label} ${finding.qualifiedName}');
       }
       buffer.writeln();
     }
 
-    buffer.writeln(_summaryLine());
+    writeSection('Deleted:', delta.deleted);
+    writeSection('No longer dead:', delta.revived);
+
+    buffer.writeln(summaryLine);
     return buffer.toString();
   }
 
@@ -140,20 +172,31 @@ class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
       writeFindingsByFile(buffer, delta.introduced);
     }
 
-    if (delta.resolved.isNotEmpty) {
-      writeDetails(buffer, '✅ ${delta.resolved.length} no longer dead', [
-        for (final finding in delta.resolved) '- `${finding.qualifiedName}` — `${finding.filePath}`',
+    if (delta.deleted.isNotEmpty) {
+      writeDetails(buffer, '✅ ${delta.deleted.length} dead ${_declarations(delta.deleted)} deleted', [
+        for (final finding in delta.deleted) '- `${finding.qualifiedName}` — `${finding.filePath}`',
       ]);
     }
 
-    buffer.writeln('<sub>${_summaryLine()}</sub>');
+    if (delta.revived.isNotEmpty) {
+      writeDetails(buffer, '✅ ${delta.revived.length} ${_declarations(delta.revived)} no longer dead', [
+        for (final finding in delta.revived) '- `${finding.qualifiedName}` — `${finding.filePath}`',
+      ]);
+    }
+
+    buffer.writeln('<sub>$summaryLine</sub>');
     return buffer.toString();
   }
 
-  String _summaryLine() {
+  /// The counts, for a caller that wants the delta in one line.
+  String get summaryLine {
     final parts = ['${delta.introduced.length} added'];
-    if (delta.resolved.isNotEmpty) parts.add('${delta.resolved.length} resolved');
+    if (delta.deleted.isNotEmpty) parts.add('${delta.deleted.length} deleted');
+    if (delta.revived.isNotEmpty) parts.add('${delta.revived.length} no longer dead');
     parts.add('${delta.preExisting.length} already there');
     return '${parts.join(', ')}.';
   }
+
+  static String _declarations(List<DeadDeclaration> findings) =>
+      DeadCodeMarkdown.plural(findings.length, 'declaration', 'declarations');
 }

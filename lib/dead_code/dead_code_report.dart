@@ -81,6 +81,7 @@ class DeadCodeReport {
     required this.docOnly,
     required this.filesScanned,
     required this.declarationsChecked,
+    this.declarations = const [],
   });
 
   /// Declarations nothing live refers to and that no consumer can reach,
@@ -102,6 +103,13 @@ class DeadCodeReport {
 
   /// Number of declarations that were checked for references.
   final int declarationsChecked;
+
+  /// Every declaration the scan checked, whichever bucket it landed in.
+  ///
+  /// A delta reads it to tell a finding whose declaration was deleted from one
+  /// that is still there and is not dead any more. Left out of [toJson], where
+  /// it would repeat most of the package for no reader.
+  final List<DeadDeclaration> declarations;
 
   bool get isEmpty => dead.isEmpty && docOnly.isEmpty;
 

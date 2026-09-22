@@ -17,14 +17,36 @@ void main() {
       expect(delta.preExisting, isEmpty);
     });
 
-    test('reports a finding only the base has as resolved', () {
+    test('reports a finding whose declaration is gone as deleted', () {
       final delta = diffDeadCode(
         base: report(dead: [declaration(name: 'Orphan')]),
         head: report(dead: []),
       );
 
-      expect(delta.resolved.map((d) => d.qualifiedName), ['Orphan']);
+      expect(delta.deleted.map((d) => d.qualifiedName), ['Orphan']);
+      expect(delta.revived, isEmpty);
       expect(delta.introduced, isEmpty);
+    });
+
+    test('reports a finding whose declaration is still there as revived', () {
+      // Somebody wired the orphan up rather than deleting it.
+      final delta = diffDeadCode(
+        base: report(dead: [declaration(name: 'Orphan')]),
+        head: report(declarations: [declaration(name: 'Orphan')]),
+      );
+
+      expect(delta.revived.map((d) => d.qualifiedName), ['Orphan']);
+      expect(delta.deleted, isEmpty);
+    });
+
+    test('counts a finding the package started exporting as revived', () {
+      final delta = diffDeadCode(
+        base: report(dead: [declaration(name: 'Orphan')]),
+        head: report(apiSurface: [declaration(name: 'Orphan')]),
+      );
+
+      expect(delta.revived.map((d) => d.qualifiedName), ['Orphan']);
+      expect(delta.deleted, isEmpty);
     });
 
     test('reports a finding both sides have as pre-existing', () {
@@ -61,7 +83,7 @@ void main() {
       );
 
       expect(delta.introduced.single.filePath, 'lib/b.dart');
-      expect(delta.resolved.single.filePath, 'lib/a.dart');
+      expect(delta.deleted.single.filePath, 'lib/a.dart');
     });
 
     test('tells apart a member from a top level declaration of the same name', () {
@@ -73,7 +95,7 @@ void main() {
       );
 
       expect(delta.introduced.single.qualifiedName, 'Runner.run');
-      expect(delta.resolved.single.qualifiedName, 'run');
+      expect(delta.deleted.single.qualifiedName, 'run');
     });
 
     test('treats a change of kind as a different declaration', () {
@@ -87,7 +109,7 @@ void main() {
       );
 
       expect(delta.introduced, hasLength(1));
-      expect(delta.resolved, hasLength(1));
+      expect(delta.deleted, hasLength(1));
     });
 
     test('carries the base ref through for the report to name', () {
@@ -141,15 +163,35 @@ void main() {
       expect(markdown, contains('1 already there'));
     });
 
-    test('folds resolved findings into a details block', () {
+    test('folds deleted findings into a details block', () {
       final delta = diffDeadCode(
         base: report(dead: [declaration(name: 'Gone')]),
         head: report(dead: []),
       );
 
       final markdown = DeadCodeDeltaFormatter(delta).formatMarkdown();
-      expect(markdown, contains('✅ 1 no longer dead'));
+      expect(markdown, contains('✅ 1 dead declaration deleted'));
       expect(markdown, contains('`Gone`'));
+    });
+
+    test('keeps a declaration that is only alive again out of the deleted block', () {
+      final delta = diffDeadCode(
+        base: report(
+          dead: [
+            declaration(name: 'Woken'),
+            declaration(name: 'Gone', line: 40),
+          ],
+        ),
+        head: report(declarations: [declaration(name: 'Woken')]),
+      );
+
+      final markdown = DeadCodeDeltaFormatter(delta).formatMarkdown();
+      expect(markdown, contains('✅ 1 dead declaration deleted'));
+      expect(markdown, contains('✅ 1 declaration no longer dead'));
+      expect(markdown, contains('1 deleted, 1 no longer dead'));
+
+      expect(DeadCodeDeltaFormatter(delta).format(), contains('Deleted:\n  lib/src/widget.dart  class Gone'));
+      expect(DeadCodeDeltaFormatter(delta).format(), contains('No longer dead:\n  lib/src/widget.dart  class Woken'));
     });
 
     test('links files when a url builder is given', () {
@@ -191,7 +233,7 @@ void main() {
       expect(two, contains('no consumer can reach them'));
     });
 
-    test('serialises the three buckets', () {
+    test('serialises the buckets', () {
       final delta = diffDeadCode(
         base: report(
           dead: [
@@ -208,7 +250,12 @@ void main() {
         baseRef: 'main',
       );
 
-      expect(delta.toJson()['summary'], {'introducedCount': 1, 'resolvedCount': 1, 'preExistingCount': 1});
+      expect(delta.toJson()['summary'], {
+        'introducedCount': 1,
+        'deletedCount': 1,
+        'revivedCount': 0,
+        'preExistingCount': 1,
+      });
       expect(delta.toJson()['baseRef'], 'main');
     });
   });

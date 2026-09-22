@@ -376,7 +376,7 @@ mtrust_api_guard dead-code
 
 Everything currently dead is rarely what a reviewer needs. They can act on a
 declaration this branch orphaned, and can do nothing about debt that predates
-it. `--base-ref` scans that ref as well and splits the findings in three:
+it. `--base-ref` scans that ref as well and splits the findings in four:
 
 ```sh
 mtrust_api_guard dead-code --base-ref main
@@ -386,15 +386,21 @@ mtrust_api_guard dead-code --base-ref main
 Dead code introduced since main:
   lib/src/report.dart:41  field Report.unusedField
 
-No longer dead:
+Deleted:
   lib/src/legacy.dart  function oldHelper
 
-1 added, 2 resolved, 9 already there.
+No longer dead:
+  lib/src/cache.dart  class CacheEntry
+
+1 added, 1 deleted, 1 no longer dead, 9 already there.
 ```
 
 A finding is matched across revisions by its file, qualified name and kind,
 never by line number, so a declaration that moved down because someone added an
-import is still the same finding rather than a new one.
+import is still the same finding rather than a new one. One that left the report
+is listed as deleted when the declaration is gone from the new revision, and as
+no longer dead when it is still there and live code reaches it now. A rename or
+a move reads as a deletion, because a finding names a declaration in a file.
 
 The base ref is materialized as a git worktree with its dependencies resolved,
 the same way `generate --ref` does it, so the second scan sees the same thing
@@ -459,7 +465,7 @@ Append the report to the API change comment that `compare` already produces:
 ```
 
 `--base-url` turns the file names into links. The section is omitted when the
-change neither added nor resolved any dead code, so a clean pull request carries
+change neither added dead code nor cleared any, so a clean pull request carries
 no line about it. A failed scan is logged and skipped rather than failing the
 comparison.
 
