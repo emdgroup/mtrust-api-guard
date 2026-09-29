@@ -19,10 +19,21 @@ runs:
       shell: bash
       run: |
         dart run tool/cleanup_legacy_scaffolds.dart
-        flutter test test/commands test/comparators test/version --coverage
+        flutter test test/commands test/comparators test/dead_code test/version --coverage
     - name: Report test results
+      # Without this the step is skipped exactly when the tests fail, which is
+      # when the report is worth having.
+      if: always()
       uses: dorny/test-reporter@v2
       with:
         name: Flutter Tests
         path: reports/test-results.json
         reporter: flutter-json
+        # An earlier step failing means there is no report to publish, which is
+        # not itself a failure worth reporting.
+        fail-on-empty: false
+
+    - name: Show what api_guard produces for the fixtures
+      if: always()
+      shell: bash
+      run: dart run tool/dump_fixture_reports.dart >> "$GITHUB_STEP_SUMMARY"

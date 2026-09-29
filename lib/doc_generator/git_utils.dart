@@ -97,6 +97,18 @@ class GitUtils {
     }
   }
 
+  /// Where [directory] sits inside the repository [gitRoot] belongs to, `.` for
+  /// the repository root. A worktree of the repository has it at this same
+  /// path.
+  ///
+  /// Measured from the repository root, not from [gitRoot]: that is the
+  /// directory a command runs in, which can be anywhere below the root. Links
+  /// are resolved first, since git reports the root with them resolved.
+  static String getPathInRepository(String directory, String gitRoot) {
+    final repositoryRoot = Directory(getRepositoryRoot(gitRoot)).resolveSymbolicLinksSync();
+    return p.relative(Directory(directory).resolveSymbolicLinksSync(), from: repositoryRoot);
+  }
+
   /// Checks out a specific git ref
   /// Throws [GitException] if the operation fails
   static Future<void> checkoutRef(String ref, String? root) async {
@@ -379,7 +391,12 @@ class GitUtils {
 
   /// Gets the commits between two refs
   /// If [fromRef] is null, it gets all commits up to [toRef] (or HEAD if [toRef] is null)
-  static Future<List<Commit>> getCommits({required String root, String? fromRef, String? toRef}) async {
+  static Future<List<Commit>> getCommits({
+    required String root,
+    String? fromRef,
+    String? toRef,
+    List<String> paths = const [],
+  }) async {
     try {
       final gitArgs = ['--no-pager', 'log', '--no-decorate'];
       if (fromRef != null) {
@@ -387,6 +404,9 @@ class GitUtils {
       } else if (toRef != null) {
         gitArgs.add(toRef);
       }
+      // Only the commits that touched [paths], which is what a package in a
+      // workspace is versioned from.
+      if (paths.isNotEmpty) gitArgs.addAll(['--', ...paths]);
 
       final commitResult = await Process.run('git', gitArgs, workingDirectory: root);
 
@@ -426,13 +446,13 @@ class GitUtils {
           }
         }
 
-        return getCommits(root: root, fromRef: previousTag);
+        return await getCommits(root: root, fromRef: previousTag);
       } else {
         logger.detail(
           "No tags exist, this is treated as first release. "
           "Changelog will contain all commits.",
         );
-        return getCommits(root: root);
+        return await getCommits(root: root);
       }
     } catch (e) {
       logger.err('Error retrieving commits: $e');

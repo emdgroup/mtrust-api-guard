@@ -49,6 +49,15 @@ class VersionWorkspaceCommand extends Command
         valueHelp: 'prefix',
       )
       ..addOption('dart-file', help: 'Output the version as a Dart constant to the specified file', valueHelp: 'file')
+      ..addFlag(
+        'conventional-commits',
+        help:
+            'Let the conventional commit types since the base ref raise the bump '
+            'when the API diff asks for less: feat to minor, a breaking change to '
+            'major. Only the commits that touched the package count. Defaults to '
+            'the api_guard conventional_commits setting.',
+        defaultsTo: null,
+      )
       ..addOption(
         'tag-format',
         help:
@@ -91,6 +100,10 @@ class VersionWorkspaceCommand extends Command
     return argResults?['dart-file'] as String?;
   }
 
+  bool? get conventionalCommits {
+    return argResults?['conventional-commits'] as bool?;
+  }
+
   WorkspaceTagFormat get tagFormat {
     try {
       return WorkspaceTagFormat.parse(argResults?['tag-format'] as String? ?? WorkspaceTagFormat.defaultFormat);
@@ -127,6 +140,7 @@ class VersionWorkspaceCommand extends Command
       isPreRelease: preRelease,
       preReleasePrefix: preReleasePrefix,
       dartFile: dartFile,
+      conventionalCommits: conventionalCommits,
       tagFormat: tagFormat,
     );
 

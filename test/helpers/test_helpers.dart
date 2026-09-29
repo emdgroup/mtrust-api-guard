@@ -6,19 +6,9 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 import 'package:yaml_edit/yaml_edit.dart';
 
-/// Recursively copy [src] directory to [dst].
-Future<void> copyDir(Directory src, Directory dst) async {
-  await for (var entity in src.list(recursive: true)) {
-    final relPath = p.relative(entity.path, from: src.path);
-    final newPath = p.join(dst.path, relPath);
-    if (entity is File) {
-      await File(newPath).create(recursive: true);
-      await entity.copy(newPath);
-    } else if (entity is Directory) {
-      await Directory(newPath).create(recursive: true);
-    }
-  }
-}
+import 'fixture_package.dart';
+
+export 'fixture_package.dart' show copyDir, materializeFixturePackage;
 
 /// Copies the pre-generated package scaffold into [target].
 Future<void> copyPackageBase(Directory target, {String? packageName}) async {
@@ -96,6 +86,7 @@ class TestFixtures {
   final Directory appV101Dir;
   final Directory appV110Dir;
   final Directory appV200Dir;
+  final Directory deadCodeLayoutDir;
   final Directory packageBaseDir;
   final Directory pluginBaseDir;
   final File expectedChangelogFile;
@@ -106,6 +97,7 @@ class TestFixtures {
       appV101Dir = Directory('test/fixtures/app_v101'),
       appV110Dir = Directory('test/fixtures/app_v110'),
       appV200Dir = Directory('test/fixtures/app_v200'),
+      deadCodeLayoutDir = Directory('test/fixtures/dead_code_layout'),
       packageBaseDir = Directory('.test_scaffolds/package_base'),
       pluginBaseDir = Directory('.test_scaffolds/plugin_base'),
       expectedChangelogFile = File('test/fixtures/expected_changelog.md');

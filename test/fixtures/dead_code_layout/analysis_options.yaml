@@ -1,0 +1,9 @@
+analyzer:
+  # Excluded to keep lints quiet, the way many Flutter repositories do. The
+  # part still reads fields the hand-written half never touches.
+  exclude:
+    - "lib/**.g.dart"
+
+api_guard:
+  entry_points:
+    - lib/layout.dart
