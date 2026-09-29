@@ -84,7 +84,7 @@ class TestBootstrap {
     }
 
     await _ensureFlutterFixtures();
-    await _ensureCompiledBinary();
+    await ensureCompiledBinary();
   }
 
   static Future<void> _removeLegacyScaffoldDirs() async {
@@ -117,7 +117,9 @@ class TestBootstrap {
     }
   }
 
-  static Future<void> _ensureCompiledBinary() async {
+  /// Compiles the API Guard binary, unless the one in place is newer than the
+  /// sources.
+  static Future<void> ensureCompiledBinary() async {
     final binary = File(binaryPath);
     if (binary.existsSync() && !_isBinaryStale()) {
       return;

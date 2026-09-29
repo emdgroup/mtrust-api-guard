@@ -18,6 +18,7 @@ import 'package:mason_logger/mason_logger.dart';
 import 'package:path/path.dart' as p;
 
 import '../test/helpers/fixture_package.dart';
+import '../test/helpers/test_bootstrap.dart';
 
 /// The fixtures, oldest first. Consecutive pairs get diffed.
 const _fixtures = ['app_v100', 'app_v101', 'app_v110', 'app_v200'];
@@ -46,6 +47,10 @@ const _notes = <String, String>{
 
 Future<void> main() async {
   logger.level = Level.error;
+
+  // The binary the tests run, which is already there when they ran first.
+  // Starting the CLI from source takes seconds, each time it is started.
+  await TestBootstrap.ensureCompiledBinary();
 
   final out = StringBuffer()
     ..writeln('## What api_guard produces for the test fixtures')
@@ -192,13 +197,13 @@ void _writeReport(StringBuffer out, String fixture, DeadCodeReport report) {
 
 /// Runs the CLI and returns its output with the startup banner removed.
 Future<String> _runGuard(List<String> args) async {
-  final result = await Process.run('dart', [
-    'run',
-    'bin/mtrust_api_guard.dart',
-    args.first,
-    '--silent',
-    ...args.skip(1),
-  ]);
+  final (executable, prefixArgs) = TestBootstrap.resolveApiGuardInvocation();
+  final result = await Process.run(
+    executable,
+    [...prefixArgs, args.first, '--silent', ...args.skip(1)],
+    // A compiled binary cannot tell where the SDK is from its own path.
+    environment: {'DART_SDK': ?TestBootstrap.dartSdkPath},
+  );
 
   final lines = result.stdout.toString().split('\n');
   final bannerEnd = lines.lastIndexWhere((line) => line.contains('mtrust_api_guard version:'));
