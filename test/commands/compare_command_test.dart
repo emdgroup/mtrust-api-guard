@@ -136,7 +136,7 @@ void main() {
       expect(outputContent.trim(), isNotEmpty, reason: 'Output should contain content when including all magnitudes');
     });
 
-    test('--dead-code appends a warning section without changing the exit code', () async {
+    test('--dead-code appends the full report when the refs are generated api files', () async {
       await testSetup.setupGitRepo();
       await testSetup.setupFlutterPackage();
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
@@ -180,7 +180,12 @@ void main() {
       final deadCodeOutput = await File(withDeadCode).readAsString();
 
       expect(plainOutput, isNot(contains('Dead code')), reason: 'the flag is opt-in');
-      expect(deadCodeOutput, contains('Dead code'));
+      expect(deadCodeOutput, contains('`Internal`'));
+      expect(
+        deadCodeOutput,
+        isNot(contains('Dead code added')),
+        reason: 'a file has no tree behind it to scan, so there is no delta',
+      );
       expect(
         deadCodeOutput,
         startsWith(plainOutput.trimRight().split('\n').first),

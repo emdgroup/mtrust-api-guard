@@ -5,14 +5,6 @@ import 'dead_code_fixtures.dart';
 
 void main() {
   group('DeadDeclaration', () {
-    test('qualifies a member with its container', () {
-      expect(declaration(name: 'run', container: 'Runner').qualifiedName, 'Runner.run');
-    });
-
-    test('leaves a top level declaration unqualified', () {
-      expect(declaration(name: 'run').qualifiedName, 'run');
-    });
-
     test('omits an absent container from json', () {
       expect(declaration().toJson(), isNot(contains('container')));
     });

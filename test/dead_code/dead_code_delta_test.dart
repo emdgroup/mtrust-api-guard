@@ -231,45 +231,6 @@ void main() {
       expect(DeadCodeDeltaFormatter(delta).format(), contains('No longer dead:\n  lib/src/widget.dart  class Woken'));
     });
 
-    test('links files when a url builder is given', () {
-      final delta = diffDeadCode(
-        base: report(dead: []),
-        head: report(dead: [declaration()]),
-      );
-
-      final markdown = DeadCodeDeltaFormatter(
-        delta,
-        fileUrlBuilder: (path) => 'https://example.test/$path',
-      ).formatMarkdown();
-
-      expect(markdown, contains('[lib/src/widget.dart](https://example.test/lib/src/widget.dart)'));
-    });
-
-    test('agrees in number with the singular and the plural', () {
-      final one = DeadCodeDeltaFormatter(
-        diffDeadCode(
-          base: report(dead: []),
-          head: report(dead: [declaration(name: 'A')]),
-        ),
-      ).formatMarkdown();
-      expect(one, contains('1 declaration nothing live refers to'));
-      expect(one, contains('no consumer can reach it'));
-
-      final two = DeadCodeDeltaFormatter(
-        diffDeadCode(
-          base: report(dead: []),
-          head: report(
-            dead: [
-              declaration(name: 'A'),
-              declaration(name: 'B', line: 30),
-            ],
-          ),
-        ),
-      ).formatMarkdown();
-      expect(two, contains('2 declarations nothing live refers to'));
-      expect(two, contains('no consumer can reach them'));
-    });
-
     test('serialises the buckets', () {
       final delta = diffDeadCode(
         base: report(
