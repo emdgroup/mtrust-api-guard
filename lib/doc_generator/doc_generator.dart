@@ -55,7 +55,7 @@ Future<PackageApi> generateDocs({
   Directory? worktreeDir;
   bool worktreeCreated = false;
 
-  final dartRelativePath = relative(dartRoot.path, from: gitRoot.path);
+  final dartRelativePath = GitUtils.getPathInRepository(dartRoot.path);
 
   if (isCurrentHead) {
     logger.info('Analyzing current HEAD ($effectiveRef), using current working directory');
@@ -118,14 +118,7 @@ Future<PackageApi> generateDocs({
   logger.info('worktreePath: $worktreePath');
 
   // Determine the root path to use for analysis
-  // If using a worktree, calculate the dartRoot path relative to the worktree
-  Directory analysisDartRoot = dartRoot;
-  if (worktreePath != null) {
-    final gitRootAbs = Directory(gitRoot.path).absolute.path;
-    final dartRootAbs = Directory(dartRoot.path).absolute.path;
-    final relativePath = relative(dartRootAbs, from: gitRootAbs);
-    analysisDartRoot = Directory(join(worktreePath, relativePath));
-  }
+  final analysisDartRoot = worktreePath == null ? dartRoot : Directory(join(worktreePath, dartRelativePath));
 
   try {
     final (config, globbedFiles) = evaluateTargetFiles(analysisDartRoot.path);

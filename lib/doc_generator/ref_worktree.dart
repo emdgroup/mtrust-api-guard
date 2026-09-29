@@ -86,7 +86,7 @@ Future<T> withRefWorktree<T>({
   }
 
   final worktree = Cache().getWorktreeDir(repoPath, resolved);
-  final relativeDartRoot = relative(dartRoot.path, from: gitRoot.path);
+  final relativeDartRoot = GitUtils.getPathInRepository(dartRoot.path);
 
   logger.detail('Creating worktree for $ref ($resolved) at ${worktree.path}');
   await GitUtils.createWorktree(repoPath, ref, worktree.path);

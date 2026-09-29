@@ -97,6 +97,24 @@ class GitUtils {
     }
   }
 
+  /// Where [directory] sits inside its repository, `.` for the repository
+  /// root. A worktree of the repository has it at this same path.
+  ///
+  /// Asked of git rather than worked out from the directory a command runs in,
+  /// which is not necessarily the repository root.
+  static String getPathInRepository(String directory) {
+    try {
+      final result = Process.runSync('git', ['rev-parse', '--show-prefix'], workingDirectory: directory);
+      if (result.exitCode != 0) {
+        throw GitException('Failed to locate $directory in its repository: ${result.stderr}');
+      }
+      final prefix = result.stdout.toString().trim();
+      return prefix.isEmpty ? '.' : p.normalize(prefix);
+    } on ProcessException catch (e) {
+      throw GitException('Git command not found: ${e.message}');
+    }
+  }
+
   /// Checks out a specific git ref
   /// Throws [GitException] if the operation fails
   static Future<void> checkoutRef(String ref, String? root) async {

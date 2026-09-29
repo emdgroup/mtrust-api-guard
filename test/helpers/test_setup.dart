@@ -75,8 +75,9 @@ class TestSetup {
     await runProcess('git', ['commit', '-m', message], workingDir: tempDir.path);
   }
 
-  /// Run the API Guard command and handle output.
-  Future<void> runApiGuard(String command, List<String> args) async {
+  /// Run the API Guard command and handle output, in [workingDirectory] when
+  /// that is not the root of the test directory.
+  Future<void> runApiGuard(String command, List<String> args, {Directory? workingDirectory}) async {
     final (executable, prefixArgs) = TestBootstrap.resolveApiGuardInvocation();
     final invocationArgs = [...prefixArgs, command, ...args];
 
@@ -95,7 +96,7 @@ class TestSetup {
     final result = await Process.run(
       executable,
       invocationArgs,
-      workingDirectory: tempDir.path,
+      workingDirectory: (workingDirectory ?? tempDir).path,
       environment: environment,
     );
 

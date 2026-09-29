@@ -292,6 +292,25 @@ class OrphanedHelper {
       expect(report['baseRef'], 'v${TestConstants.initialVersion}');
     });
 
+    test('--base-ref finds the package when run from below the repository root', () async {
+      await testSetup.setupGitRepo();
+      final package = Directory(p.join(testSetup.tempDir.path, 'packages', 'nested'));
+      await copyDir(testSetup.fixtures.packageBaseDir, package);
+      await copyDir(testSetup.fixtures.appV110Dir, package);
+      await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
+
+      File(p.join(package.path, 'lib', 'src', 'orphan.dart')).writeAsStringSync('class OrphanedHelper {}\n');
+      await testSetup.commitChanges('feat: add something nothing reaches');
+
+      // The worktree of the base has the package under `packages/nested` too,
+      // not at its root, which is where the command runs from.
+      final outPath = p.join(testSetup.tempDir.path, 'dead_code.json');
+      await testSetup.runApiGuard('dead-code', ['--base-ref', 'HEAD~1', '--out', outPath], workingDirectory: package);
+
+      final report = jsonDecode(File(outPath).readAsStringSync()) as Map<String, dynamic>;
+      expect(namesIn(report, 'introduced'), ['OrphanedHelper']);
+    });
+
     test('--base-ref stays quiet about dead code that predates the change', () async {
       await useFixture(testSetup.fixtures.appV101Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
