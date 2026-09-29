@@ -326,7 +326,7 @@ class DeadCodeFinder {
     // used.
     _rootReferences.map(_adopt).forEach(_use);
     for (final MapEntry(key: element, value: site) in _declarations.entries) {
-      if (_isEntryPoint(element, site) || _isApiSurface(element, exported)) _reach(element);
+      if (_isEntryPoint(site) || _isApiSurface(element, exported)) _reach(element);
     }
     _propagate();
     final live = {..._live};
@@ -446,7 +446,7 @@ class DeadCodeFinder {
 
   /// Whether [element] counts as used although no live code refers to it.
   bool _isKept(Element element, DeclarationSite site, {required Set<Element> live, required Set<Element> used}) {
-    if (used.contains(element) || _isEntryPoint(element, site)) return true;
+    if (used.contains(element) || _isEntryPoint(site)) return true;
 
     final container = element.enclosingElement?.baseElement;
     if (container is InstanceElement && live.contains(container) && _isCalledImplicitly(site, live)) return true;
@@ -458,15 +458,12 @@ class DeadCodeFinder {
     return _counterparts[element]?.any(used.contains) ?? false;
   }
 
-  /// Whether something outside the source calls [element], which nothing in
-  /// the package has to refer to then.
-  static bool _isEntryPoint(Element element, DeclarationSite site) {
+  /// Whether something outside the source calls [site]'s declaration, which
+  /// nothing in the package has to refer to then.
+  static bool _isEntryPoint(DeclarationSite site) {
     if (site.hasVmEntryPoint) return true;
     // The entry point of a program or a test is never unused.
-    if (site.kind == DeadCodeKind.functionKind && site.name == 'main') return true;
-    // A member waits for its container to exist, see [_isCalledImplicitly]. A
-    // top-level declaration has none to wait for.
-    return element.enclosingElement is! InstanceElement && implicitlyInvokedNames.contains(site.name);
+    return site.kind == DeadCodeKind.functionKind && site.name == 'main';
   }
 
   /// Whether [site]'s declaration, a member, is called without a reference in

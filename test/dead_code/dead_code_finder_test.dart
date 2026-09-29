@@ -198,6 +198,7 @@ void main() {
         'Holder.unreadField',
         'DocumentationCarrier',
         'Registers._registration',
+        'toJson',
         // Used by nothing but other dead code.
         'UsedOnlyByDeadGeneratedCode',
         'DeadCaller',

@@ -180,3 +180,7 @@ class Square extends Shape {
   @override
   int area() => 1;
 }
+
+/// Named like the method `jsonEncode` looks for, but a function is not one, and
+/// nothing calls it.
+Map<String, dynamic> toJson() => {};
