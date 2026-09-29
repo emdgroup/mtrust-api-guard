@@ -150,6 +150,10 @@ void main() {
       expect(allReported(), isNot(contains('Base.hook')));
     });
 
+    test('keeps an abstract member while an override of it is live', () {
+      expect(allReported(), isNot(contains('Shape.area')));
+    });
+
     test('skips declarations the language or core libraries invoke implicitly', () {
       expect(allReported(), isNot(contains('Serializable.toJson')));
     });

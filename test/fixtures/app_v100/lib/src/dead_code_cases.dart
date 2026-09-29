@@ -169,3 +169,14 @@ class Constants {
 
   static const answer = 42;
 }
+
+/// `area` is only ever called on a [Square], never through the contract the
+/// override is written against.
+abstract class Shape {
+  int area();
+}
+
+class Square extends Shape {
+  @override
+  int area() => 1;
+}

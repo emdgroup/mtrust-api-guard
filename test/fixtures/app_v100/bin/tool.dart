@@ -21,5 +21,5 @@ void main() {
 
   // ignore: avoid_print
   print('${UsedInternally().label} ${'x'.shouted} ${Holder(7).readField} '
-      '${sum.x} ${Serializable().hashCode} ${dial.level} ${Constants.answer}');
+      '${sum.x} ${Serializable().hashCode} ${dial.level} ${Constants.answer} ${Square().area()}');
 }

@@ -422,8 +422,27 @@ class DeadCodeFinder {
       for (final override in _overridesOf[element] ?? const <Element>[]) {
         if (_live.contains(override.enclosingElement?.baseElement)) _reach(override);
       }
+
+      // An abstract member is what its overrides are written against. It has
+      // no code to be dead, and deleting it leaves them overriding nothing.
+      for (final overridden in _declarations[element]?.overriddenElements ?? const <Element>[]) {
+        _accessorPair(overridden).where(_isAbstract).map(_adopt).forEach(_reach);
+      }
     }
   }
+
+  /// [element], and the getter and setter along with it when it is the
+  /// variable behind them. Either the variable or its accessors were declared,
+  /// and an override finds the variable whichever it was.
+  static List<Element> _accessorPair(Element element) => [
+    element,
+    if (element is PropertyInducingElement) ...[?element.getter?.baseElement, ?element.setter?.baseElement],
+  ];
+
+  static bool _isAbstract(Element element) => switch (element) {
+    ExecutableElement(:final isAbstract) || FieldElement(:final isAbstract) => isAbstract,
+    _ => false,
+  };
 
   /// Whether [element] counts as used although no live code refers to it.
   bool _isKept(Element element, DeclarationSite site, {required Set<Element> live, required Set<Element> used}) {
