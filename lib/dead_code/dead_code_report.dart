@@ -153,6 +153,15 @@ abstract class DeadCodeMarkdown {
 
   static String plural(int count, String singular, String plural) => count == 1 ? singular : plural;
 
+  /// `1 declaration`, `2 declarations`.
+  static String declarations(int count) => '$count ${plural(count, 'declaration', 'declarations')}';
+
+  /// What the dead [findings] listed below it have in common. A delta says in
+  /// [added] since when they are there.
+  String describeDead(List<DeadDeclaration> findings, {String added = ''}) =>
+      '${declarations(findings.length)} nothing live refers to, ${added}and outside the export closure '
+      'so no consumer can reach ${plural(findings.length, 'it', 'them')}.';
+
   /// Findings by file, files in path order and findings in line order.
   Map<String, List<DeadDeclaration>> groupByFile(List<DeadDeclaration> declarations) {
     final grouped = groupBy(declarations, (DeadDeclaration d) => d.filePath);
@@ -247,11 +256,7 @@ class DeadCodeFormatter extends DeadCodeMarkdown {
 
     if (report.dead.isNotEmpty) {
       buffer
-        ..writeln(
-          '${report.dead.length} ${DeadCodeMarkdown.plural(report.dead.length, 'declaration', 'declarations')} '
-          'nothing live refers to, and outside the export closure so no consumer can reach '
-          '${DeadCodeMarkdown.plural(report.dead.length, 'it', 'them')}.',
-        )
+        ..writeln(describeDead(report.dead))
         ..writeln();
       writeFindingsByFile(buffer, report.dead);
     }
@@ -270,8 +275,7 @@ class DeadCodeFormatter extends DeadCodeMarkdown {
   String _summaryLine() {
     final parts = [
       'Scanned ${report.filesScanned} ${DeadCodeMarkdown.plural(report.filesScanned, 'file', 'files')}',
-      'checked ${report.declarationsChecked} '
-          '${DeadCodeMarkdown.plural(report.declarationsChecked, 'declaration', 'declarations')}',
+      'checked ${DeadCodeMarkdown.declarations(report.declarationsChecked)}',
       '${report.dead.length} dead',
     ];
     if (report.apiSurface.isNotEmpty) {

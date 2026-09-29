@@ -194,25 +194,20 @@ class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
       buffer
         ..writeln('$heading ⚠️ Dead code added')
         ..writeln()
-        ..writeln(
-          '${delta.introduced.length} '
-          '${DeadCodeMarkdown.plural(delta.introduced.length, 'declaration', 'declarations')} '
-          'nothing live refers to, added since `${delta.baseRef ?? 'base'}`, and '
-          'outside the export closure so no consumer can reach '
-          '${DeadCodeMarkdown.plural(delta.introduced.length, 'it', 'them')}.',
-        )
+        ..writeln(describeDead(delta.introduced, added: 'added since `${delta.baseRef ?? 'base'}`, '))
         ..writeln();
       writeFindingsByFile(buffer, delta.introduced);
     }
 
     if (delta.deleted.isNotEmpty) {
-      writeDetails(buffer, '✅ ${delta.deleted.length} dead ${_declarations(delta.deleted)} deleted', [
+      final declarations = DeadCodeMarkdown.plural(delta.deleted.length, 'declaration', 'declarations');
+      writeDetails(buffer, '✅ ${delta.deleted.length} dead $declarations deleted', [
         for (final finding in delta.deleted) '- `${finding.qualifiedName}` — `${finding.filePath}`',
       ]);
     }
 
     if (delta.revived.isNotEmpty) {
-      writeDetails(buffer, '✅ ${delta.revived.length} ${_declarations(delta.revived)} no longer dead', [
+      writeDetails(buffer, '✅ ${DeadCodeMarkdown.declarations(delta.revived.length)} no longer dead', [
         for (final finding in delta.revived) '- `${finding.qualifiedName}` — `${finding.filePath}`',
       ]);
     }
@@ -229,7 +224,4 @@ class DeadCodeDeltaFormatter extends DeadCodeMarkdown {
     parts.add('${delta.preExisting.length} already there');
     return '${parts.join(', ')}.';
   }
-
-  static String _declarations(List<DeadDeclaration> findings) =>
-      DeadCodeMarkdown.plural(findings.length, 'declaration', 'declarations');
 }
