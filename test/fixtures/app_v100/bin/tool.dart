@@ -11,6 +11,9 @@ void main() {
   Registers();
   Ticker().tick();
 
+  final dial = Dial()..level = 3;
+  dial[0] = 1;
+
   if (const Point(1) case Point(:final doubled)) {
     // ignore: avoid_print
     print('$doubled ${Listed.values}');
@@ -18,5 +21,5 @@ void main() {
 
   // ignore: avoid_print
   print('${UsedInternally().label} ${'x'.shouted} ${Holder(7).readField} '
-      '${sum.x} ${Serializable().hashCode}');
+      '${sum.x} ${Serializable().hashCode} ${dial.level}');
 }

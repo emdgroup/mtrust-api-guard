@@ -100,6 +100,11 @@ void main() {
       expect(allReported(), isNot(contains('Ticker._ticks')));
     });
 
+    test('counts an assignment as a call of the setter or of []=', () {
+      expect(allReported(), isNot(contains('Dial.level')));
+      expect(allReported(), isNot(contains('Dial.[]=')));
+    });
+
     test('counts a getter read through a pattern as read', () {
       expect(allReported(), isNot(contains('Point.doubled')));
       expect(allReported(), isNot(contains('_twice')));

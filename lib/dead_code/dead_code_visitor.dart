@@ -132,6 +132,7 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitPrefixExpression(PrefixExpression node) {
     _record(node.element);
     _record(node.readElement);
+    _recordWrite(node.writeElement);
     super.visitPrefixExpression(node);
   }
 
@@ -139,6 +140,7 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitPostfixExpression(PostfixExpression node) {
     _record(node.element);
     _record(node.readElement);
+    _recordWrite(node.writeElement);
     super.visitPostfixExpression(node);
   }
 
@@ -152,6 +154,7 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   void visitAssignmentExpression(AssignmentExpression node) {
     _record(node.element);
     _record(node.readElement);
+    _recordWrite(node.writeElement);
     super.visitAssignmentExpression(node);
   }
 
@@ -428,6 +431,15 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
         _recordOne(constant.baseElement);
       }
     }
+  }
+
+  /// Records a call of the setter or the `[]=` that an assignment resolves
+  /// to, which no identifier names.
+  ///
+  /// The variable behind a setter is left out, unlike in [_record]: assigning
+  /// to a field calls nothing, and a field that is only ever written is dead.
+  void _recordWrite(Element? element) {
+    if (element != null) _recordOne(element.baseElement);
   }
 
   /// Records a reference to [element], from the innermost declaration around

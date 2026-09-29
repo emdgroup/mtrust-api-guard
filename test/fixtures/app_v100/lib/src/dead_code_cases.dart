@@ -150,3 +150,15 @@ class Ticker {
 
   bool tick() => ++_ticks > 3;
 }
+
+/// `level` is only ever assigned and `[]=` only ever applied, both in `bin/`.
+/// Neither names the declaration it calls.
+class Dial {
+  int _level = 0;
+
+  int get level => _level;
+
+  set level(int value) => _level = value;
+
+  void operator []=(int index, int value) => _level = index + value;
+}
