@@ -4,6 +4,7 @@ import 'platform.dart';
 /// Exported, and read by nothing in the package.
 const greeting = 'hello';
 
+/// Says [greeting], a link that does not make an export any less of one.
 class Api {
   String describe() => '${platformName()} ${Model.fromMap({'value': 1}).toMap()}';
 

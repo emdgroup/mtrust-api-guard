@@ -341,10 +341,11 @@ class DeadCodeFinder {
     final findings = <Element, ({DeclarationSite site, _Finding finding})>{};
     for (final MapEntry(key: element, value: site) in _declarations.entries) {
       if (!site.reportable || _isKept(element, site, live: live, used: used)) continue;
-      final finding = mentioned.contains(element)
-          ? _Finding.docOnly
-          : [element, ...?_counterparts[element]].any((candidate) => _isApiSurface(candidate, exported))
+      // An export stays one when a doc comment links to it as well.
+      final finding = [element, ...?_counterparts[element]].any((candidate) => _isApiSurface(candidate, exported))
           ? _Finding.apiSurface
+          : mentioned.contains(element)
+          ? _Finding.docOnly
           // Reached, but only through something the report lists rather than
           // uses, such as a declaration only a doc comment mentions.
           : _live.contains(element)
