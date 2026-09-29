@@ -1,3 +1,44 @@
+## 8.2.0
+Released on: 9/29/2026, changelog automatically generated.
+
+
+### Features
+
+- dead code detection ([#40](issues/40)) ([5209bb8](commit/5209bb8))
+
+### API Changes
+
+#### ✨ Minor changes
+
+**`class` DeadCodeFinder** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Class added: `DeadCodeFinder`
+
+**`enum` DeadCodeKind** ([lib/dead_code/dead_code_report.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-aab1ebb4f8963d5f97ccff283c26139b734850a8f51f6adc1efdbb2efcab5dc9))
+- ❇️ Enum added: `DeadCodeKind`
+
+**`class` DeadCodeReport** ([lib/dead_code/dead_code_report.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-aab1ebb4f8963d5f97ccff283c26139b734850a8f51f6adc1efdbb2efcab5dc9))
+- ❇️ Class added: `DeadCodeReport`
+
+**`class` DeadDeclaration** ([lib/dead_code/dead_code_report.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-aab1ebb4f8963d5f97ccff283c26139b734850a8f51f6adc1efdbb2efcab5dc9))
+- ❇️ Class added: `DeadDeclaration`
+
+**`function` unresolvedPackageWarning** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Function added: `unresolvedPackageWarning`
+
+#### 👀 Patch changes
+
+**`enum` _Finding** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Enum added: `_Finding`
+
+**`function` _isWorkspaceMember** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Function added: `_isWorkspaceMember`
+
+**`function` _missingPackages** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Function added: `_missingPackages`
+
+**`function` _packageConfigFor** ([lib/dead_code/dead_code_finder.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.1.6..v8.2.0#diff-6342270dce9559df8921fbdb2abb6aa5e4b3899a2d1dd5c3e1bb8dba751d14ef))
+- ❇️ Function added: `_packageConfigFor`
+
 ## 8.1.6
 Released on: 8/7/2026, changelog automatically generated.
 
