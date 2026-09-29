@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
 
 /// Scans for dead code and returns the renderer for what it found.
 ///

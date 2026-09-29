@@ -1,4 +1,4 @@
-import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
 import 'package:test/test.dart';
 
 import 'dead_code_fixtures.dart';

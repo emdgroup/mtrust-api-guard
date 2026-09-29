@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
-import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_scan.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';

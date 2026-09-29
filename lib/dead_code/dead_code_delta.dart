@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
+import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
 
