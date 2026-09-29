@@ -75,23 +75,28 @@ Future<DeadCodeDelta> compareDeadCode({
   required Directory gitRoot,
 }) async {
   final head = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot);
-  final base = await scanRevision(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot);
+  // As committed, or a base that is the current HEAD would have uncommitted
+  // changes compared against themselves.
+  final base = await scanRevision(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, committed: true);
 
   return diffDeadCode(base: base, head: head, baseRef: baseRef);
 }
 
 /// Scans [ref] in a worktree of its own, or the working tree when [ref] is
-/// null or already checked out.
+/// null or already checked out. With [committed], a checkout that has
+/// uncommitted changes does not stand in for [ref].
 Future<DeadCodeReport> scanRevision({
   required String? ref,
   required Directory dartRoot,
   required Directory gitRoot,
+  bool committed = false,
 }) async {
   if (ref == null) return DeadCodeFinder(root: dartRoot).run();
   return withRefWorktree(
     ref: ref,
     dartRoot: dartRoot,
     gitRoot: gitRoot,
+    committed: committed,
     body: (packageRoot) => DeadCodeFinder(root: packageRoot).run(),
   );
 }

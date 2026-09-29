@@ -66,11 +66,15 @@ void resolveDependencies(String packagePath) {
 /// stands, since checking out a second copy of it would only cost time. Any
 /// other ref is materialized as a git worktree under the cache directory, with
 /// its dependencies resolved, and removed again once [body] returns.
+///
+/// With [committed], a working tree that has uncommitted changes is not handed
+/// over either, since it is not what [ref] names.
 Future<T> withRefWorktree<T>({
   required String ref,
   required Directory dartRoot,
   required Directory gitRoot,
   required Future<T> Function(Directory packageRoot) body,
+  bool committed = false,
 }) async {
   if (!await GitUtils.isGitRepository(gitRoot.path)) {
     throw Exception('Not a git repository: ${gitRoot.path}');
@@ -80,7 +84,7 @@ Future<T> withRefWorktree<T>({
   final currentHead = await GitUtils.getCurrentRef(gitRoot.path);
   final resolved = ref == 'HEAD' ? currentHead : await GitUtils.resolveRef(ref, gitRoot.path);
 
-  if (resolved == currentHead) {
+  if (resolved == currentHead && !(committed && GitUtils.hasUncommittedChanges(gitRoot.path))) {
     logger.detail('$ref is the current HEAD, using the working tree');
     return body(dartRoot);
   }
@@ -89,7 +93,8 @@ Future<T> withRefWorktree<T>({
   final relativeDartRoot = GitUtils.getPathInRepository(dartRoot.path);
 
   logger.detail('Creating worktree for $ref ($resolved) at ${worktree.path}');
-  await GitUtils.createWorktree(repoPath, ref, worktree.path);
+  // By commit, since git refuses to check out a branch a second time.
+  await GitUtils.createWorktree(repoPath, resolved, worktree.path);
 
   try {
     final packageRoot = Directory(join(worktree.path, relativeDartRoot));

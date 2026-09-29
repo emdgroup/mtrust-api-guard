@@ -274,22 +274,19 @@ class OrphanedHelper {
       expect(output, contains('`OrphanedHelper`'));
     });
 
-    test('--base-ref reports only what the change added', () async {
+    test('--base-ref HEAD reports what an uncommitted change added', () async {
       await useFixture(testSetup.fixtures.appV110Dir);
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
-      await runProcess('git', ['tag', 'v${TestConstants.initialVersion}'], workingDir: testSetup.tempDir.path);
 
-      // app_v110 exports everything, so the base revision has nothing dead.
-      // Then a change orphans one declaration and leaves the rest alone.
+      // Left uncommitted, so the working tree is no longer what HEAD names.
       plantOrphan();
-      await testSetup.commitChanges('feat: add something nothing reaches');
 
-      final report = await runDeadCode(args: ['--base-ref', 'v${TestConstants.initialVersion}']);
+      final report = await runDeadCode(args: ['--base-ref', 'HEAD']);
 
-      expect(namesIn(report, 'introduced'), contains('OrphanedHelper'));
+      expect(namesIn(report, 'introduced'), ['OrphanedHelper']);
       expect(report['deleted'], isEmpty);
       expect(report['revived'], isEmpty);
-      expect(report['baseRef'], 'v${TestConstants.initialVersion}');
+      expect(report['baseRef'], 'HEAD');
     });
 
     test('--base-ref finds the package when run from below the repository root', () async {
