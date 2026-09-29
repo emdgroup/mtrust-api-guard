@@ -25,7 +25,7 @@ Future<PackageApi> getRef({
   if (cache) {
     final cacheInstance = Cache();
     final repoPath = GitUtils.getRepositoryRoot(gitRoot.path);
-    final dartRelativePath = GitUtils.getPathInRepository(dartRoot.path);
+    final dartRelativePath = GitUtils.getPathInRepository(dartRoot.path, gitRoot.path);
 
     if (cacheInstance.hasApiFileForRef(repoPath, ref, dartRelativePath)) {
       logger.success('Using cached API documentation for $ref');

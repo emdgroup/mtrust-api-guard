@@ -90,7 +90,7 @@ Future<T> withRefWorktree<T>({
   }
 
   final worktree = Cache().getWorktreeDir(repoPath, resolved);
-  final relativeDartRoot = GitUtils.getPathInRepository(dartRoot.path);
+  final relativeDartRoot = GitUtils.getPathInRepository(dartRoot.path, gitRoot.path);
 
   logger.detail('Creating worktree for $ref ($resolved) at ${worktree.path}');
   // By commit, since git refuses to check out a branch a second time.

@@ -55,7 +55,7 @@ Future<PackageApi> generateDocs({
   Directory? worktreeDir;
   bool worktreeCreated = false;
 
-  final dartRelativePath = GitUtils.getPathInRepository(dartRoot.path);
+  final dartRelativePath = GitUtils.getPathInRepository(dartRoot.path, gitRoot.path);
 
   if (isCurrentHead) {
     logger.info('Analyzing current HEAD ($effectiveRef), using current working directory');
