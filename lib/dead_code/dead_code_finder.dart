@@ -89,7 +89,7 @@ class DeadCodeFinder {
 
     if (analyzable.isEmpty) {
       logger.warn('No Dart files found to analyze.');
-      return const DeadCodeReport(dead: [], apiSurface: [], docOnly: [], filesScanned: 0, declarationsChecked: 0);
+      return const DeadCodeReport(dead: [], apiSurface: [], docOnly: [], filesScanned: 0);
     }
 
     final unresolved = unresolvedPackageWarning(_normalizedRoot);
@@ -390,7 +390,6 @@ class DeadCodeFinder {
       docOnly: docOnly..sort(byPosition),
       declarations: checked..sort(byPosition),
       filesScanned: filesScanned,
-      declarationsChecked: checked.length,
     );
   }
 

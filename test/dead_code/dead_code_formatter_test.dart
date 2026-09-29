@@ -55,10 +55,15 @@ void main() {
         report(
           dead: [declaration()],
           apiSurface: [declaration(name: 'Exported')],
+          declarations: [
+            declaration(),
+            declaration(name: 'Exported'),
+            declaration(name: 'Used'),
+          ],
         ),
       ).format();
       expect(output, contains('Scanned 4 files'));
-      expect(output, contains('checked 40 declarations'));
+      expect(output, contains('checked 3 declarations'));
       expect(output, contains('1 dead'));
       expect(output, contains('1 unreferenced but exported'));
     });
@@ -133,10 +138,14 @@ void main() {
       final json = report(
         dead: [declaration()],
         docOnly: [declaration(name: 'M')],
+        declarations: [
+          declaration(),
+          declaration(name: 'M'),
+        ],
       ).toJson();
       expect(json['summary'], {
         'filesScanned': 4,
-        'declarationsChecked': 40,
+        'declarationsChecked': 2,
         'deadCount': 1,
         'apiSurfaceCount': 0,
         'docOnlyCount': 1,

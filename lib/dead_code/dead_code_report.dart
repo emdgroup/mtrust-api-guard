@@ -80,7 +80,6 @@ class DeadCodeReport {
     required this.apiSurface,
     required this.docOnly,
     required this.filesScanned,
-    required this.declarationsChecked,
     this.declarations = const [],
   });
 
@@ -102,7 +101,7 @@ class DeadCodeReport {
   final int filesScanned;
 
   /// Number of declarations that were checked for references.
-  final int declarationsChecked;
+  int get declarationsChecked => declarations.length;
 
   /// Every declaration the scan checked, whichever bucket it landed in.
   ///

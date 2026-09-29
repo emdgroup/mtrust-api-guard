@@ -15,11 +15,4 @@ DeadCodeReport report({
   List<DeadDeclaration> apiSurface = const [],
   List<DeadDeclaration> docOnly = const [],
   List<DeadDeclaration> declarations = const [],
-}) => DeadCodeReport(
-  dead: dead,
-  apiSurface: apiSurface,
-  docOnly: docOnly,
-  declarations: declarations,
-  filesScanned: 4,
-  declarationsChecked: 40,
-);
+}) => DeadCodeReport(dead: dead, apiSurface: apiSurface, docOnly: docOnly, declarations: declarations, filesScanned: 4);
