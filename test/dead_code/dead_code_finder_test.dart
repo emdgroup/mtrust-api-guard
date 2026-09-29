@@ -25,151 +25,81 @@ void main() {
       if (packageDir.existsSync()) await packageDir.delete(recursive: true);
     });
 
-    Iterable<String> deadNames() => report.dead.map((d) => d.qualifiedName);
-    Iterable<String> apiSurfaceNames() => report.apiSurface.map((d) => d.qualifiedName);
-    Iterable<String> docOnlyNames() => report.docOnly.map((d) => d.qualifiedName);
-    Iterable<String> allReported() => [...deadNames(), ...apiSurfaceNames(), ...docOnlyNames()];
+    Set<String> names(List<DeadDeclaration> bucket) => {for (final finding in bucket) finding.qualifiedName};
 
-    test('reports an unreferenced internal class as dead', () {
-      expect(deadNames(), contains('DeadInternal'));
+    test('finds exactly the dead declarations the fixture plants', () {
+      expect(names(report.dead), {
+        // Not reachable from the entry point, `lib/src/api.dart`.
+        'Internal',
+        // In an exported file, but private, so no export namespace carries it.
+        '_PrivateClass',
+        // Planted in lib/src/dead_code_cases.dart. Its members are dead along
+        // with it, and only the class is listed.
+        'DeadInternal',
+        '_DeadPrivate',
+        // Calls itself and nothing else does.
+        '_recursivelyDead',
+        // Never applied.
+        'DeadExtension',
+        // Written by the constructor and never read.
+        'Holder.unreadField',
+        'DocumentationCarrier',
+        'Registers._registration',
+        // A function, so `jsonEncode` does not call it.
+        'toJson',
+        // Used by nothing but other dead code, generated or mutual.
+        'UsedOnlyByDeadGeneratedCode',
+        'DeadCaller',
+        'ChainedHelper',
+        'MutualA',
+        'MutualB',
+      });
     });
 
-    test('reports an unreferenced private class as dead', () {
-      expect(deadNames(), contains('_DeadPrivate'));
+    test('lists an unreferenced export as API surface', () {
+      expect(names(report.apiSurface), containsAll(['User', 'Product', 'Status']));
     });
 
-    test('does not let a function keep itself alive by recursing', () {
-      expect(deadNames(), contains('_recursivelyDead'));
+    test('lists what only a doc comment mentions on its own', () {
+      expect(names(report.docOnly), {'DocumentedOnly'});
     });
 
-    test('reports an exported but internally unreferenced declaration as API surface', () {
-      expect(apiSurfaceNames(), containsAll(['User', 'Product', 'Status']));
-      expect(deadNames(), isNot(contains('User')));
-      expect(deadNames(), isNot(contains('Product')));
-    });
-
-    test('reports a public class outside the entry points as dead', () {
-      // `lib/src/internal.dart` is not reachable from `lib/src/api.dart`.
-      expect(deadNames(), contains('Internal'));
-      expect(apiSurfaceNames(), isNot(contains('Internal')));
-    });
-
-    test('reports an unreferenced private class in an exported file as dead', () {
-      // Private, so the export namespace never carries it, entry point or not.
-      expect(deadNames(), contains('_PrivateClass'));
-    });
-
-    test('keeps a declaration referenced from lib alive', () {
-      expect(allReported(), isNot(contains('UsedInternally')));
-    });
-
-    test('keeps a declaration referenced only from test alive', () {
-      expect(allReported(), isNot(contains('UsedOnlyByTest')));
-    });
-
-    test('keeps a declaration referenced only from bin alive', () {
-      expect(allReported(), isNot(contains('UsedOnlyByBin')));
-    });
-
-    test('keeps a declaration that live generated code uses alive', () {
-      expect(allReported(), isNot(contains('UsedByGenerated')));
-    });
-
-    test('reports what only dead generated code uses as dead', () {
-      expect(deadNames(), contains('UsedOnlyByDeadGeneratedCode'));
-    });
-
-    test('reports what only dead code uses as dead', () {
-      expect(deadNames(), containsAll(['DeadCaller', 'ChainedHelper']));
-    });
-
-    test('does not let two declarations keep each other alive', () {
-      expect(deadNames(), containsAll(['MutualA', 'MutualB']));
-    });
-
-    test('keeps what an instance field initializer calls alive while its class is', () {
-      expect(allReported(), isNot(contains('_register')));
-    });
-
-    test('keeps every enum constant alive when values is read', () {
-      expect(allReported(), isNot(contains('Listed.first')));
-      expect(allReported(), isNot(contains('Listed.second')));
-    });
-
-    test('counts the read in an increment as a read', () {
-      expect(allReported(), isNot(contains('Ticker._ticks')));
-    });
-
-    test('counts an assignment as a call of the setter or of []=', () {
-      expect(allReported(), isNot(contains('Dial.level')));
-      expect(allReported(), isNot(contains('Dial.[]=')));
-    });
-
-    test('counts a getter read through a pattern as read', () {
-      expect(allReported(), isNot(contains('Point.doubled')));
-      expect(allReported(), isNot(contains('_twice')));
-    });
-
-    test('never reports declarations inside a generated file', () {
-      expect(allReported(), isNot(contains('GeneratedDead')));
-      expect(allReported(), isNot(contains('GeneratedHelper')));
-    });
-
-    test('reports only the dead container, not each of its members', () {
-      expect(deadNames(), contains('DeadInternal'));
-      expect(deadNames(), isNot(contains('DeadInternal.neverCalled')));
-      expect(deadNames(), isNot(contains('DeadInternal.neverRead')));
-    });
-
-    test('leaves the only constructor of a class alone', () {
-      expect(allReported(), isNot(contains('Constants._')));
-    });
-
-    test('reports a field that is written but never read', () {
-      expect(deadNames(), contains('Holder.unreadField'));
-      expect(allReported(), isNot(contains('Holder')));
-      expect(allReported(), isNot(contains('Holder.readField')));
-    });
-
-    test('keeps an extension alive through the members that are applied', () {
-      expect(allReported(), isNot(contains('StringShouting')));
-      expect(allReported(), isNot(contains('StringShouting.shouted')));
-    });
-
-    test('reports an extension that is never applied', () {
-      expect(deadNames(), contains('DeadExtension'));
-    });
-
-    test('resolves an applied operator back to its declaration', () {
-      // A name-based reference search cannot connect `a + b` to `operator +`.
-      expect(allReported(), isNot(contains('Vec.+')));
-    });
-
-    test('keeps an override alive when the supertype hook is called', () {
-      expect(allReported(), isNot(contains('Subclass.hook')));
-      expect(allReported(), isNot(contains('Base.hook')));
-    });
-
-    test('keeps an abstract member while an override of it is live', () {
-      expect(allReported(), isNot(contains('Shape.area')));
-    });
-
-    test('skips declarations the language or core libraries invoke implicitly', () {
-      expect(allReported(), isNot(contains('Serializable.toJson')));
-    });
-
-    test('skips a vm entry point', () {
-      expect(allReported(), isNot(contains('nativeCallback')));
-    });
-
-    test('skips main', () {
-      expect(allReported(), isNot(contains('main')));
-    });
-
-    test('separates a declaration referenced only from a doc comment', () {
-      expect(docOnlyNames(), contains('DocumentedOnly'));
-      expect(deadNames(), isNot(contains('DocumentedOnly')));
-    });
+    // The false positives, each with what keeps it out of the report.
+    const alive = {
+      'UsedInternally': 'bin/ refers to it',
+      'UsedOnlyByBin': 'bin/ refers to it',
+      'UsedOnlyByTest': 'test/ refers to it',
+      'UsedByGenerated': 'live generated code refers to it',
+      'GeneratedHelper': 'it is generated',
+      'GeneratedDead': 'it is generated',
+      '_register': 'an instance field initializer calls it',
+      'Listed.first': 'values is read',
+      'Listed.second': 'values is read',
+      'Ticker._ticks': 'an increment reads it',
+      'Dial.level': 'an assignment calls the setter',
+      'Dial.[]=': 'an assignment calls it',
+      'Point.doubled': 'a pattern reads it',
+      '_twice': 'a getter read through a pattern calls it',
+      'Vec.+': 'a + b resolves to it',
+      'StringShouting': 'a member of it is applied',
+      'Constants._': 'it is the only constructor of its class',
+      'Holder': 'it is constructed',
+      'Holder.readField': 'it is read',
+      'Base.hook': 'it is called',
+      'Subclass.hook': 'the member it overrides is called',
+      'Shape.area': 'it is abstract and an override of it is called',
+      'Serializable.toJson': 'jsonEncode calls it',
+      'nativeCallback': 'it is a vm entry point',
+      'main': 'it is main',
+    };
+    for (final MapEntry(key: name, value: reason) in alive.entries) {
+      test('does not report $name, because $reason', () {
+        expect(
+          [...report.dead, ...report.apiSurface, ...report.docOnly].map((d) => d.qualifiedName),
+          isNot(contains(name)),
+        );
+      });
+    }
 
     test('counts the files it scanned and the declarations it checked', () {
       expect(report.filesScanned, greaterThan(0));
@@ -182,30 +112,6 @@ void main() {
         expect(finding.filePath, startsWith('lib/'), reason: '${finding.qualifiedName} is outside lib/');
         expect(finding.filePath, isNot(contains(r'\')), reason: 'paths use forward slashes');
       }
-    });
-
-    test('finds exactly the dead declarations the fixture plants', () {
-      expect(deadNames().toSet(), {
-        // Outside the entry point closure.
-        'Internal',
-        // Private, so never in the export namespace.
-        '_PrivateClass',
-        // Planted in lib/src/dead_code_cases.dart, one per rule.
-        'DeadInternal',
-        '_DeadPrivate',
-        '_recursivelyDead',
-        'DeadExtension',
-        'Holder.unreadField',
-        'DocumentationCarrier',
-        'Registers._registration',
-        'toJson',
-        // Used by nothing but other dead code.
-        'UsedOnlyByDeadGeneratedCode',
-        'DeadCaller',
-        'ChainedHelper',
-        'MutualA',
-        'MutualB',
-      });
     });
   }, timeout: const Timeout(Duration(minutes: 5)));
 
@@ -224,41 +130,38 @@ void main() {
       if (packageDir.existsSync()) await packageDir.delete(recursive: true);
     });
 
-    Iterable<String> allReported() =>
-        [...report.dead, ...report.apiSurface, ...report.docOnly].map((d) => d.qualifiedName);
-
-    test('keeps a declaration used only by a nested example package alive', () {
-      expect(allReported(), isNot(contains('UsedOnlyByExample')));
-    });
-
-    test('keeps a field read only by a part that analyzer.exclude hides alive', () {
-      expect(allReported(), isNot(contains('Model.value')));
-    });
-
-    test('treats the branches of a conditional export as one declaration', () {
-      expect(allReported(), isNot(contains('platformName')));
-    });
-
-    test('reports a model only its own generated code refers to as dead', () {
-      expect(report.dead.map((d) => d.qualifiedName), contains('Draft'));
-    });
-
-    test('keeps an override of an exported member alive though nothing here calls it', () {
-      expect(allReported(), isNot(contains('_PoliteGreeter.greet')));
-    });
-
-    test('reports an exported top-level variable as API surface', () {
-      expect(report.apiSurface.map((d) => d.qualifiedName), contains('greeting'));
-    });
-
-    test('reports a dead private member of a class that is API surface', () {
-      expect(report.apiSurface.map((d) => d.qualifiedName), contains('Api'));
-      expect(report.dead.map((d) => d.qualifiedName), contains('Api._neverCalled'));
-    });
+    Set<String> names(List<DeadDeclaration> bucket) => {for (final finding in bucket) finding.qualifiedName};
 
     test('finds exactly the dead declarations the fixture plants', () {
-      expect(report.dead.map((d) => d.qualifiedName).toSet(), {'_ioHelperNobodyCalls', 'Api._neverCalled', 'Draft'});
+      expect(names(report.dead), {
+        '_ioHelperNobodyCalls',
+        // Private, so exporting `Api` does not make it reachable.
+        'Api._neverCalled',
+        // Only its own generated code refers to it.
+        'Draft',
+      });
     });
+
+    test('lists exactly the exports nothing in the package refers to as API surface', () {
+      // `greeting` is a top-level variable, exported as its getter, and a doc
+      // comment links to it as well.
+      expect(names(report.apiSurface), {'greeting', 'Api', 'Greeter.greet'});
+    });
+
+    const alive = {
+      'UsedOnlyByExample': 'a nested example package refers to it',
+      'Model.value': 'a part that analyzer.exclude hides reads it',
+      'platformName': 'it is a branch of a conditional export',
+      '_PoliteGreeter.greet': 'it overrides an exported member',
+    };
+    for (final MapEntry(key: name, value: reason) in alive.entries) {
+      test('does not report $name, because $reason', () {
+        expect(
+          [...report.dead, ...report.apiSurface, ...report.docOnly].map((d) => d.qualifiedName),
+          isNot(contains(name)),
+        );
+      });
+    }
   }, timeout: const Timeout(Duration(minutes: 5)));
 
   group('unresolvedPackageWarning', () {

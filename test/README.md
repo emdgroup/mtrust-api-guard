@@ -77,9 +77,11 @@ That constraint is the thing to respect when editing: anything added to
 `lib/src/api.dart` **does** land in those goldens, private declarations
 included, so the cases live beside it rather than in it.
 
-`test/dead_code/dead_code_finder_test.dart` asserts one rule per test against
-that fixture in process, and `test/commands/dead_code_command_test.dart` runs
-the command end to end against `app_v100`, `app_v101` and `app_v110`.
+`test/dead_code/dead_code_finder_test.dart` scans that fixture in process. It
+pins the dead findings as one exact set and has a test per declaration that must
+stay out of the report, named after the rule that keeps it out.
+`test/commands/dead_code_command_test.dart` runs the command end to end against
+`app_v100`, `app_v101` and `app_v110`.
 
 `test/fixtures/dead_code_layout` covers what a real package layout gets wrong
 and `app_v100` can't show: an `example/` with a pubspec of its own, a
