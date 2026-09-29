@@ -121,6 +121,10 @@ void main() {
       expect(deadNames(), isNot(contains('DeadInternal.neverRead')));
     });
 
+    test('leaves the only constructor of a class alone', () {
+      expect(allReported(), isNot(contains('Constants._')));
+    });
+
     test('reports a field that is written but never read', () {
       expect(deadNames(), contains('Holder.unreadField'));
       expect(allReported(), isNot(contains('Holder')));

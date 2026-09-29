@@ -314,13 +314,16 @@ class ReferenceVisitor extends RecursiveAstVisitor<void> {
   @override
   void visitConstructorDeclaration(ConstructorDeclaration node) {
     final name = node.name;
-    if (name == null) {
+    final element = node.declaredFragment?.element;
+    if (name == null || element?.enclosingElement.constructors.length == 1) {
       // An unnamed constructor is reached through its class, which is already
-      // reported when nothing constructs it.
+      // reported when nothing constructs it. So is the only constructor a
+      // class has, whatever its name: one that is never called is there to
+      // keep the class from being constructed.
       super.visitConstructorDeclaration(node);
       return;
     }
-    _declare(node.declaredFragment?.element, name, DeadCodeKind.constructorKind, node.metadata, () {
+    _declare(element, name, DeadCodeKind.constructorKind, node.metadata, () {
       super.visitConstructorDeclaration(node);
     });
   }

@@ -162,3 +162,10 @@ class Dial {
 
   void operator []=(int index, int value) => _level = index + value;
 }
+
+/// Never constructed, which is what its only constructor is there for.
+class Constants {
+  Constants._();
+
+  static const answer = 42;
+}
