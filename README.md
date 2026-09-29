@@ -435,13 +435,17 @@ a move reads as a deletion, because a finding names a declaration in a file.
 
 The base ref is materialized as a git worktree with its dependencies resolved,
 the same way `generate --ref` does it, so the second scan sees the same thing
-the first one does. `dead-code` scans the working tree as the other side of the
-comparison; `compare --dead-code` scans its `--new-ref`, and only falls back to
-the working tree when that ref is already the checkout. Run `pub get` before scanning: an unresolved package cannot
-follow its own `package:` imports, and anything reached only through one then
-looks dead. The scan warns when there is no package config, or when the one
-there lists packages that have since gone from the pub cache. A pub workspace
-member is resolved through the workspace root's config.
+the first one does. A base that is the current HEAD gets one as well while the
+working tree has uncommitted changes, so `dead-code --base-ref HEAD` reports
+what you have not committed yet. `dead-code` scans the working tree as the other
+side of the comparison; `compare --dead-code` scans its `--new-ref`, and only
+falls back to the working tree when that ref is already the checkout.
+
+Run `pub get` before scanning: an unresolved package cannot follow its own
+`package:` imports, and anything reached only through one then looks dead. The
+scan warns when there is no package config, or when the one there lists packages
+that have since gone from the pub cache. A pub workspace member is resolved
+through the workspace root's config.
 
 Unreferenced is not the same as dead. For a published package the whole exported
 API is unreferenced from the package's own point of view, which is why a plain
@@ -477,13 +481,17 @@ settle on their own.
 | The untaken branches of a conditional import or export | The analyzer resolves one branch, but another platform compiles the others. A declaration there counts as referenced, or exported, when its namesake in another branch is. |
 | Generated files | By filename (`.g.dart`, `.freezed.dart`, `.mocks.dart`, …) and by the `GENERATED CODE - DO NOT MODIFY BY HAND` banner. They are part of the graph all the same: what live generated code uses is live, and a class only its own `.g.dart` refers to is dead. |
 | `@pragma('vm:entry-point')` | Reachable from native code or reflection. |
-| `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference, once their class is live. |
+| Members named `==`, `hashCode`, `toString`, `noSuchMethod`, `call`, `toJson`, `fromJson` | Invoked by the language or by `jsonEncode` with no source-level reference, once their class is live. A top-level function of that name is reported like any other. |
+| The only constructor of a class | Reached through its class, named or not. A `Utils._()` that nothing calls is there to keep the class from being constructed. |
+| An abstract member with a live override | It has no code to be dead, and deleting it leaves the override overriding nothing. |
 | An override whose chain leaves the package | A framework may be the caller once the class is live. An override whose chain stays inside the package is live when its class is and a member it overrides is. |
 | Members of a declaration that is itself reported | Only the outermost one is reported, so the finding names the thing to delete. A dead private member of a class that is API surface is the exception. |
 | Local variables and functions, type parameters | The analyzer's own `unused_element` lint covers these. |
 
 Operators are reported like anything else, because `a + b` resolves back to the
-`operator +` declaration through the element model.
+`operator +` declaration through the element model. An assignment is a call of
+the setter or the `[]=` it resolves to. A field has neither, so one that is
+only ever assigned is dead.
 
 ### In a pull request
 
