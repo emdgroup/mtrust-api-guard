@@ -42,9 +42,6 @@ class DeadCodeDelta {
   /// The revision compared against, for the report to name.
   final String? baseRef;
 
-  /// Everything that left the report, however it left.
-  List<DeadDeclaration> get resolved => [...deleted, ...revived];
-
   bool get isEmpty => introduced.isEmpty && deleted.isEmpty && revived.isEmpty;
 
   Map<String, dynamic> toJson() => {

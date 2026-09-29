@@ -13,7 +13,8 @@ void main() {
       );
 
       expect(delta.introduced.map((d) => d.qualifiedName), ['Orphan']);
-      expect(delta.resolved, isEmpty);
+      expect(delta.deleted, isEmpty);
+      expect(delta.revived, isEmpty);
       expect(delta.preExisting, isEmpty);
     });
 
@@ -57,7 +58,8 @@ void main() {
 
       expect(delta.preExisting.map((d) => d.qualifiedName), ['Orphan']);
       expect(delta.introduced, isEmpty);
-      expect(delta.resolved, isEmpty);
+      expect(delta.deleted, isEmpty);
+      expect(delta.revived, isEmpty);
     });
 
     test('does not call a finding new just because it moved down the file', () {
