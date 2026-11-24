@@ -10,7 +10,11 @@ import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/version/version.dart';
 
 class VersionCommand extends Command
-    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithCache {
+    with
+        ApiGuardCommandMixinWithRoot,
+        ApiGuardCommandMixinWithBaseNew,
+        ApiGuardCommandMixinWithCache,
+        ApiGuardCommandMixinWithSdkOverrides {
   static final VersionCommand _instance = VersionCommand._internal();
 
   factory VersionCommand() => _instance;
@@ -120,6 +124,7 @@ class VersionCommand extends Command
       tagPrefix: tagPrefix,
       conventionalCommits: conventionalCommits,
       dartFile: dartFile,
+      sdkOptions: sdkOverrideOptions,
     );
 
     if (json != null) {

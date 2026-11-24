@@ -77,7 +77,15 @@ class TestSetup {
 
   /// Run the API Guard command and handle output, in [workingDirectory] when
   /// that is not the root of the test directory.
-  Future<void> runApiGuard(String command, List<String> args, {Directory? workingDirectory}) async {
+  ///
+  /// [environment] is added to the invocation's environment, which is how a
+  /// test points the SDK lookup at a fake FVM cache.
+  Future<void> runApiGuard(
+    String command,
+    List<String> args, {
+    Directory? workingDirectory,
+    Map<String, String>? environment,
+  }) async {
     final (executable, prefixArgs) = TestBootstrap.resolveApiGuardInvocation();
     final invocationArgs = [...prefixArgs, command, ...args];
 
@@ -85,19 +93,22 @@ class TestSetup {
     printOnFailure('$executable ${invocationArgs.join(' ')}');
 
     // Set the cache directory environment variable for this test
-    final environment = Map<String, String>.from(Platform.environment);
-    environment['MTRUST_API_GUARD_CACHE_DIR'] = cacheDir.path;
+    final env = Map<String, String>.from(Platform.environment);
+    env['MTRUST_API_GUARD_CACHE_DIR'] = cacheDir.path;
 
     final sdkPath = TestBootstrap.dartSdkPath;
     if (sdkPath != null) {
-      environment['DART_SDK'] = sdkPath;
+      env['DART_SDK'] = sdkPath;
+    }
+    if (environment != null) {
+      env.addAll(environment);
     }
 
     final result = await Process.run(
       executable,
       invocationArgs,
       workingDirectory: (workingDirectory ?? tempDir).path,
-      environment: environment,
+      environment: env,
     );
 
     final stdout = result.stdout.toString().trim();

@@ -7,6 +7,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change.dart';
 import 'package:mtrust_api_guard/doc_comparator/apply_overrides.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/calculate_next_version.dart';
@@ -46,6 +47,7 @@ Future<VersionResult> version({
   String? dartFile,
   String? packageName,
   WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
+  SdkOverrideOptions? sdkOptions,
 }) async {
   // For workspace packages, use package-specific tag methods
   final hasPreviousVersion = packageName != null
@@ -81,6 +83,7 @@ Future<VersionResult> version({
     dartRoot: dartRoot,
     gitRoot: gitRoot,
     cache: cache,
+    sdkOptions: sdkOptions,
   );
 
   final pubspecPath = packageName != null

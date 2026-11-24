@@ -12,7 +12,11 @@ import 'package:mtrust_api_guard/version/workspace_version.dart';
 import 'package:mtrust_api_guard/version/workspace_utils.dart';
 
 class VersionWorkspaceCommand extends Command
-    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithCache {
+    with
+        ApiGuardCommandMixinWithRoot,
+        ApiGuardCommandMixinWithBaseNew,
+        ApiGuardCommandMixinWithCache,
+        ApiGuardCommandMixinWithSdkOverrides {
   static final VersionWorkspaceCommand _instance = VersionWorkspaceCommand._internal();
 
   factory VersionWorkspaceCommand() => _instance;
@@ -142,6 +146,7 @@ class VersionWorkspaceCommand extends Command
       dartFile: dartFile,
       conventionalCommits: conventionalCommits,
       tagFormat: tagFormat,
+      sdkOptions: sdkOverrideOptions,
     );
 
     if (json != null) {

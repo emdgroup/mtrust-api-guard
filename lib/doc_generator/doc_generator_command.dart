@@ -7,7 +7,8 @@ import 'package:mtrust_api_guard/api_guard_command_mixin.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator.dart';
 import 'package:mtrust_api_guard/logger.dart';
 
-class DocGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithCache {
+class DocGeneratorCommand extends Command
+    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithCache, ApiGuardCommandMixinWithSdkOverrides {
   @override
   String get description => "Generate API documentation from Dart files";
 
@@ -54,6 +55,13 @@ class DocGeneratorCommand extends Command with ApiGuardCommandMixinWithRoot, Api
       logger.info(argParser.usage);
       return null;
     }
-    generateDocs(gitRef: ref, out: out, dartRoot: root, gitRoot: Directory.current, shouldCache: cache);
+    generateDocs(
+      gitRef: ref,
+      out: out,
+      dartRoot: root,
+      gitRoot: Directory.current,
+      shouldCache: cache,
+      sdkOptions: sdkOverrideOptions,
+    );
   }
 }

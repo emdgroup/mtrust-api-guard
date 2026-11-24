@@ -25,6 +25,7 @@ Future<PackageApi> generateDocs({
   required Directory dartRoot,
   required Directory gitRoot,
   required bool shouldCache,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   final cache = Cache();
 
@@ -76,7 +77,7 @@ Future<PackageApi> generateDocs({
       // The ref's pinned SDK, so an older tag is not resolved with the ambient
       // SDK that its dependency constraints may not support.
       final packagePath = join(worktreePath, dartRelativePath);
-      final sdk = resolveRefSdk(packagePath);
+      final sdk = resolveRefSdk(packagePath, options: sdkOptionsForRef(gitRef, packagePath, sdkOptions));
       resolveDependencies(packagePath, sdk: sdk);
     } catch (e) {
       logger.err('Failed to create worktree: $e');

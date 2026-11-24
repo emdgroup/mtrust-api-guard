@@ -84,6 +84,22 @@ String _describeSdk(ResolvedSdk sdk) {
   return '$version (${sdk.source})';
 }
 
+/// [options] with the `--ref-sdk` entry for [ref] re-keyed to [packageRoot].
+///
+/// The CLI names overrides by the git ref the user typed, while
+/// [resolveRefSdk] matches them against the worktree path it receives. This
+/// bridges the two without either side having to know about the other.
+SdkOverrideOptions sdkOptionsForRef(String ref, String packageRoot, [SdkOverrideOptions? options]) {
+  final resolved = options ?? const SdkOverrideOptions();
+  final version = resolved.refSdkOverrides[ref]?.trim();
+  if (version == null || version.isEmpty) return resolved;
+
+  return SdkOverrideOptions(
+    refSdkOverrides: {...resolved.refSdkOverrides, packageRoot: version},
+    autodetect: resolved.autodetect,
+  );
+}
+
 /// Runs [body] against a checkout of [ref] and cleans up after itself.
 ///
 /// When [ref] already is the current HEAD the working tree is handed over as it
@@ -123,7 +139,7 @@ Future<T> withRefWorktree<T>({
 
   try {
     final packageRoot = Directory(join(worktree.path, relativeDartRoot));
-    final sdk = resolveRefSdk(packageRoot.path, options: sdkOptions);
+    final sdk = resolveRefSdk(packageRoot.path, options: sdkOptionsForRef(ref, packageRoot.path, sdkOptions));
     logger.detail('$ref → ${_describeSdk(sdk)}');
     resolveDependencies(packageRoot.path, sdk: sdk);
     return await body(packageRoot);
