@@ -30,6 +30,19 @@ class ResolvedSdk {
   bool get isAmbient => source == ambientSource;
 }
 
+/// Thrown when the SDK pinned by a ref cannot be provided.
+///
+/// The message names the pinned version and the command that provides it, so
+/// the CLI surfaces an actionable error instead of a dependency-solving dump.
+class SdkResolutionException implements Exception {
+  const SdkResolutionException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 /// CLI escape hatches for [resolveRefSdk].
 class SdkOverrideOptions {
   const SdkOverrideOptions({this.refSdkOverrides = const {}, this.autodetect = true});
@@ -92,19 +105,20 @@ String? fvmCacheRootOverride;
 /// because a workspace's `.fvmrc` usually lives at the repository root while
 /// the analysed package sits further down.
 ///
-/// A pin that cannot be provided through FVM is logged and skipped, so the
-/// result is always usable.
+/// Explicit pins ([SdkOverrideOptions.refSdkOverrides], `.fvmrc` and
+/// `.fvm/fvm_config.json`) are mandatory: if the version is missing from the
+/// FVM cache it is installed through `fvm install`, and when that is impossible
+/// (no `fvm` CLI or a failed install) resolution throws
+/// [SdkResolutionException]. The `environment.flutter` lower bound of a
+/// pubspec is only a hint — if FVM cannot provide it the ambient SDK is used,
+/// so packages that never adopted FVM keep working.
 ResolvedSdk resolveRefSdk(String worktreePath, {SdkOverrideOptions? options}) {
   final resolvedOptions = options ?? const SdkOverrideOptions();
 
   final override = resolvedOptions.versionFor(worktreePath);
   if (override != null) {
-    final executable = findOrInstallFvmFlutter(override);
-    if (executable != null) {
-      return _resolved(executable, 'fvm (--ref-sdk)', worktreePath);
-    }
-    logger.warn('Flutter $override requested for $worktreePath is unavailable, using the ambient SDK');
-    return _ambient(worktreePath);
+    final executable = findOrInstallFvmFlutter(override, pinnedBy: '--ref-sdk');
+    return _resolved(executable, 'fvm (--ref-sdk)', worktreePath);
   }
 
   if (!resolvedOptions.autodetect) {
@@ -118,19 +132,31 @@ ResolvedSdk resolveRefSdk(String worktreePath, {SdkOverrideOptions? options}) {
   // beats any pubspec constraint. Within a source the nearest directory wins.
   for (final dir in dirs) {
     final version = _readJsonString(p.join(dir, '.fvmrc'), 'flutter');
-    final sdk = version == null ? null : _resolvePinned(version, 'fvm (.fvmrc)', worktreePath);
+    final sdk = version == null
+        ? null
+        : _resolvePinned(version, 'fvm (.fvmrc)', worktreePath, mandatory: true, pinnedBy: '.fvmrc');
     if (sdk != null) return sdk;
   }
 
   for (final dir in dirs) {
     final version = _readJsonString(p.join(dir, '.fvm', 'fvm_config.json'), 'flutterSdkVersion');
-    final sdk = version == null ? null : _resolvePinned(version, 'fvm (.fvm/fvm_config.json)', worktreePath);
+    final sdk = version == null
+        ? null
+        : _resolvePinned(
+            version,
+            'fvm (.fvm/fvm_config.json)',
+            worktreePath,
+            mandatory: true,
+            pinnedBy: '.fvm/fvm_config.json',
+          );
     if (sdk != null) return sdk;
   }
 
   for (final dir in dirs) {
     final version = _flutterLowerBound(p.join(dir, 'pubspec.yaml'));
-    final sdk = version == null ? null : _resolvePinned(version, 'fvm (pubspec.yaml)', worktreePath);
+    final sdk = version == null
+        ? null
+        : _resolvePinned(version, 'fvm (pubspec.yaml)', worktreePath, mandatory: false, pinnedBy: 'pubspec.yaml');
     if (sdk != null) return sdk;
   }
 
@@ -152,13 +178,17 @@ String? findFvmFlutterBinary(String version) {
 /// The Flutter binary of an FVM-managed [version], installing it through the
 /// `fvm` CLI first if necessary.
 ///
-/// Returns `null` when the version cannot be provided — it is not in the FVM
-/// cache and `fvm install` is missing or failed — so callers fall back to the
-/// ambient SDK.
-String? findOrInstallFvmFlutter(String version) {
+/// [pinnedBy] names where the version came from (`.fvmrc`, `--ref-sdk`, ...) so
+/// errors point at the pin. Throws [SdkResolutionException] when the version
+/// cannot be provided: it is missing from the FVM cache and `fvm install` is
+/// unavailable or fails.
+String findOrInstallFvmFlutter(String version, {String? pinnedBy}) {
+  final pin = pinnedBy == null ? 'Flutter $version' : 'Flutter $version (pinned by $pinnedBy)';
+
   if (!_isSafeVersion(version)) {
-    logger.warn('Refusing to resolve Flutter version "$version": not a plain SDK version');
-    return null;
+    throw SdkResolutionException(
+      'Cannot resolve $pin: "$version" is not a plain SDK version. Use a version such as 3.44.8.',
+    );
   }
 
   final installed = findFvmFlutterBinary(version);
@@ -171,25 +201,23 @@ String? findOrInstallFvmFlutter(String version) {
     final binary = findFvmFlutterBinary(version);
     if (binary != null) return binary;
 
-    logger.warn(
-      'fvm install $version reported success but no Flutter binary appeared in ${fvmCacheRoot()}, '
-      'using the ambient SDK',
+    throw SdkResolutionException(
+      '$pin was installed with fvm, but no Flutter binary appeared in ${fvmCacheRoot()}. '
+      'Re-run `fvm install $version` or set FVM_CACHE_PATH to the FVM versions directory.',
     );
-    return null;
   }
 
   if (_fvmMissing(result)) {
-    logger.warn(
-      'Flutter $version is pinned but neither installed nor installable: the fvm CLI is missing. '
-      'Run `fvm install $version` (https://fvm.app) or install the fvm CLI, or the ambient SDK is used',
-    );
-  } else {
-    logger.warn(
-      'fvm install $version failed (exit ${result.exitCode}): ${result.stderr.toString().trim()}. '
-      'Run `fvm install $version` manually, or the ambient SDK is used',
+    throw SdkResolutionException(
+      '$pin is not installed and the fvm CLI is not available. '
+      'Install FVM (https://fvm.app), then run `fvm install $version`.',
     );
   }
-  return null;
+
+  throw SdkResolutionException(
+    '$pin is not installed and `fvm install $version` failed (exit ${result.exitCode}): '
+    '${result.stderr.toString().trim()}. Run `fvm install $version` manually.',
+  );
 }
 
 /// The directory FVM installs SDKs into.
@@ -221,11 +249,24 @@ ProcessResult _runFvm(String executable, List<String> arguments) {
 /// Whether [result] means the `fvm` executable itself could not be found.
 bool _fvmMissing(ProcessResult result) => result.exitCode == 127 || result.exitCode == 9009;
 
-ResolvedSdk? _resolvePinned(String version, String source, String worktreePath) {
-  final executable = findOrInstallFvmFlutter(version);
-  if (executable == null) return null;
-
-  return _resolved(executable, source, worktreePath);
+/// Resolves [version] for [source].
+///
+/// A [mandatory] pin propagates [SdkResolutionException]; a hint logs the
+/// reason and returns `null` so resolution can fall back to the ambient SDK.
+ResolvedSdk? _resolvePinned(
+  String version,
+  String source,
+  String worktreePath, {
+  required bool mandatory,
+  required String pinnedBy,
+}) {
+  try {
+    return _resolved(findOrInstallFvmFlutter(version, pinnedBy: pinnedBy), source, worktreePath);
+  } on SdkResolutionException catch (e) {
+    if (mandatory) rethrow;
+    logger.warn('$e Using the ambient SDK instead.');
+    return null;
+  }
 }
 
 ResolvedSdk _resolved(String executable, String source, String worktreePath) {

@@ -212,7 +212,7 @@ environment:
         expect(sdk.source, 'fvm (--ref-sdk)');
       });
 
-      test('falls back to the ambient SDK when the pinned version cannot be provided', () {
+      test('fails when the .fvmrc version cannot be provided', () {
         writeFvmrc('3.24.0');
         fvmProcessRunner = (executable, arguments) {
           expect(executable, 'fvm');
@@ -220,10 +220,65 @@ environment:
           return ProcessResult(0, 127, '', 'fvm: command not found');
         };
 
+        expect(
+          () => resolveRefSdk(worktree.path),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('3.24.0'), contains('.fvmrc'), contains('fvm install 3.24.0')),
+            ),
+          ),
+        );
+      });
+
+      test('fails when the .fvm/fvm_config.json version cannot be provided', () {
+        writeFvmConfig('3.22.0');
+        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 1, '', 'network error');
+
+        expect(
+          () => resolveRefSdk(worktree.path),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('3.22.0'), contains('.fvm/fvm_config.json'), contains('network error')),
+            ),
+          ),
+        );
+      });
+
+      test('fails when an explicit --ref-sdk version cannot be provided', () {
+        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
+
+        expect(
+          () => resolveRefSdk(worktree.path, options: SdkOverrideOptions(refSdkOverrides: {worktree.path: '3.19.6'})),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('3.19.6'), contains('--ref-sdk'), contains('fvm install 3.19.6')),
+            ),
+          ),
+        );
+      });
+
+      test('falls back to the ambient SDK when only a pubspec constraint cannot be provided', () {
+        writePubspec('>=3.24.0 <4.0.0');
+        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
+
         final sdk = resolveRefSdk(worktree.path);
 
         expect(sdk.source, 'ambient');
         expect(sdk.executable, 'flutter');
+      });
+
+      test('does not need the fvm CLI when the pinned SDK is already cached', () {
+        final binary = installFlutter('3.24.0');
+        writeFvmrc('3.24.0');
+        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
+
+        expect(resolveRefSdk(worktree.path).executable, binary);
       });
     });
 
@@ -249,26 +304,63 @@ environment:
         ]);
       });
 
-      test('returns null when the fvm CLI is absent', () {
+      test('throws an actionable error when the fvm CLI is absent', () {
         fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
 
-        expect(findOrInstallFvmFlutter('3.24.0'), isNull);
+        expect(
+          () => findOrInstallFvmFlutter('3.24.0', pinnedBy: '.fvmrc'),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(
+                contains('3.24.0'),
+                contains('.fvmrc'),
+                contains('fvm CLI is not available'),
+                contains('fvm install 3.24.0'),
+              ),
+            ),
+          ),
+        );
       });
 
-      test('returns null when fvm install succeeds without producing a binary', () {
+      test('throws when fvm install succeeds without producing a binary', () {
         fvmProcessRunner = (executable, arguments) => ProcessResult(0, 0, '', '');
 
-        expect(findOrInstallFvmFlutter('3.24.0'), isNull);
+        expect(
+          () => findOrInstallFvmFlutter('3.24.0'),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('no Flutter binary appeared'), contains('fvm install 3.24.0')),
+            ),
+          ),
+        );
       });
 
-      test('returns null when fvm install fails', () {
+      test('throws when fvm install fails', () {
         fvmProcessRunner = (executable, arguments) => ProcessResult(0, 1, '', 'network error');
 
-        expect(findOrInstallFvmFlutter('3.24.0'), isNull);
+        expect(
+          () => findOrInstallFvmFlutter('3.24.0', pinnedBy: '.fvmrc'),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('failed'), contains('network error'), contains('fvm install 3.24.0')),
+            ),
+          ),
+        );
       });
 
       test('refuses a version that would escape the cache', () {
-        expect(findOrInstallFvmFlutter('../../outside'), isNull);
+        expect(
+          () => findOrInstallFvmFlutter('../../outside'),
+          throwsA(
+            isA<SdkResolutionException>().having((e) => e.message, 'message', contains('not a plain SDK version')),
+          ),
+        );
       });
     });
   });
