@@ -1,3 +1,6 @@
+## 8.2.1
+Released on: 11/24/2026, changelog automatically generated.
+
 ## 8.2.0
 Released on: 9/29/2026, changelog automatically generated.
 
