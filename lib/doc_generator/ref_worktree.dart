@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
@@ -42,22 +43,45 @@ bool isFlutterProject(String packagePath) {
 }
 
 /// Resolves the dependencies of the package at [packagePath].
-void resolveDependencies(String packagePath) {
+///
+/// With a non-ambient [sdk], its Flutter binary runs `pub get` even for a Dart
+/// package, and no probe for a Flutter on `PATH` is made because the SDK is
+/// already known to exist.
+void resolveDependencies(String packagePath, {ResolvedSdk? sdk}) {
   final flutterProject = isFlutterProject(packagePath);
+  final pinnedExecutable = sdk == null || sdk.isAmbient ? null : sdk.executable;
+
   // Only a Flutter package needs to know whether Flutter is there, and finding
   // out costs a subprocess.
-  final useFlutter = flutterProject && isFlutterAvailable();
+  final useFlutter = pinnedExecutable != null || (flutterProject && isFlutterAvailable());
   if (flutterProject && !useFlutter) {
     logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
   }
 
-  final command = useFlutter ? 'flutter' : 'dart';
+  final command = pinnedExecutable ?? (useFlutter ? 'flutter' : 'dart');
+  logger.detail('SDK for $packagePath: ${sdk?.source ?? ResolvedSdk.ambientSource}');
   logger.info('Detected ${flutterProject ? 'Flutter' : 'Dart'} project, running $command pub get in $packagePath');
 
   final result = Process.runSync(command, ['pub', 'get'], workingDirectory: packagePath);
   if (result.exitCode != 0) {
     throw Exception('Failed to run $command pub get in $packagePath (exit ${result.exitCode}): ${result.stderr}');
   }
+}
+
+/// A concise description of [sdk] for the per-ref log line, naming the version
+/// and where it came from.
+///
+/// FVM keeps every SDK at `<cache>/<version>/bin/flutter`, so the parent of the
+/// `bin` directory names the version.
+String _describeSdk(ResolvedSdk sdk) {
+  if (sdk.isAmbient) return sdk.source;
+
+  final version = basename(dirname(sdk.executable));
+  const prefix = 'fvm (';
+  if (sdk.source.startsWith(prefix) && sdk.source.endsWith(')')) {
+    return '$version (fvm: ${sdk.source.substring(prefix.length, sdk.source.length - 1)})';
+  }
+  return '$version (${sdk.source})';
 }
 
 /// Runs [body] against a checkout of [ref] and cleans up after itself.
@@ -75,6 +99,7 @@ Future<T> withRefWorktree<T>({
   required Directory gitRoot,
   required Future<T> Function(Directory packageRoot) body,
   bool committed = false,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   if (!await GitUtils.isGitRepository(gitRoot.path)) {
     throw Exception('Not a git repository: ${gitRoot.path}');
@@ -98,7 +123,9 @@ Future<T> withRefWorktree<T>({
 
   try {
     final packageRoot = Directory(join(worktree.path, relativeDartRoot));
-    resolveDependencies(packageRoot.path);
+    final sdk = resolveRefSdk(packageRoot.path, options: sdkOptions);
+    logger.detail('$ref → ${_describeSdk(sdk)}');
+    resolveDependencies(packageRoot.path, sdk: sdk);
     return await body(packageRoot);
   } finally {
     try {

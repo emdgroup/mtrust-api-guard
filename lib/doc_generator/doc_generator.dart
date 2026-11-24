@@ -13,6 +13,7 @@ import 'package:mtrust_api_guard/doc_generator/entry_points.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
@@ -72,7 +73,11 @@ Future<PackageApi> generateDocs({
       worktreeCreated = true;
       logger.info('Successfully created worktree at $worktreePath');
 
-      resolveDependencies(join(worktreePath, dartRelativePath));
+      // The ref's pinned SDK, so an older tag is not resolved with the ambient
+      // SDK that its dependency constraints may not support.
+      final packagePath = join(worktreePath, dartRelativePath);
+      final sdk = resolveRefSdk(packagePath);
+      resolveDependencies(packagePath, sdk: sdk);
     } catch (e) {
       logger.err('Failed to create worktree: $e');
       rethrow;
