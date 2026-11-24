@@ -18,6 +18,10 @@ on:
         type: boolean
         description: "Whether to scan for dead code the pull request introduces, which costs a second checkout and analysis"
         default: true
+      flutter_version:
+        type: string
+        description: "Flutter version to install, empty for the latest stable. The comparison also runs pub get on the previous tag, which a newer Flutter may fail to resolve, so pin this to the version the repo builds with"
+        default: ""
 
 jobs:
   compare_api_changes:
@@ -34,6 +38,8 @@ jobs:
           git config --global user.email "gh-actions@emdgroup.com"
       - name: Install Flutter
         uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ inputs.flutter_version }}
       - name: Install dependencies
         run: flutter pub get
       - name: Install mtrust_api_guard
