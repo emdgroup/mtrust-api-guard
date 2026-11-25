@@ -1,3 +1,25 @@
+## 8.3.0
+Released on: 11/25/2026, changelog automatically generated.
+
+
+### Features
+
+- Resolve the SDK pinned by each ref before pub get ([#46](issues/46)) ([389e98b](commit/389e98b))
+
+### API Changes
+
+#### ✨ Minor changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.2.1..v8.3.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Param added in method `regenerateFullChangelog`: `sdkOptions` (named, optional)
+- ❇️ Param added in method `regenerateChangelogFile`: `sdkOptions` (named, optional)
+
+#### 👀 Patch changes
+
+**`class` ChangelogGenerator** ([lib/changelog_generator/changelog_generator.dart](https://github.com/emdgroup/mtrust-api-guard/compare/v8.2.1..v8.3.0#diff-6af055ad1d50e44f94702f973834800bbcb02bee408a9a473ef3c9d36c8ea315))
+- ❇️ Param added in method `_analyzeRefsInParallel`: `sdkOptions` (named, optional)
+- ❇️ Param added in method `_tryAnalyzeRef`: `sdkOptions` (named, optional)
+
 ## 8.2.1
 Released on: 11/24/2026, changelog automatically generated.
 
