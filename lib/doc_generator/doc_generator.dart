@@ -13,6 +13,7 @@ import 'package:mtrust_api_guard/doc_generator/entry_points.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/doc_generator/get_sdk_path.dart';
 import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/doc_generator/pubspec_analyzer.dart';
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
@@ -24,6 +25,7 @@ Future<PackageApi> generateDocs({
   required Directory dartRoot,
   required Directory gitRoot,
   required bool shouldCache,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   final cache = Cache();
 
@@ -71,10 +73,23 @@ Future<PackageApi> generateDocs({
       await GitUtils.createWorktree(repoPath, gitRef, worktreePath);
       worktreeCreated = true;
       logger.info('Successfully created worktree at $worktreePath');
-
-      resolveDependencies(join(worktreePath, dartRelativePath));
     } catch (e) {
-      logger.err('Failed to create worktree: $e');
+      logger.err('Failed to create worktree for ref $gitRef: $e');
+      rethrow;
+    }
+
+    try {
+      // The ref's pinned SDK, so an older tag is not resolved with the ambient
+      // SDK that its dependency constraints may not support.
+      final packagePath = join(worktreePath, dartRelativePath);
+      final sdk = resolveRefSdk(packagePath, options: sdkOptionsForRef(gitRef, packagePath, sdkOptions));
+      logResolvedSdk(gitRef, sdk);
+      resolveDependencies(packagePath, sdk: sdk);
+    } catch (e) {
+      // The worktree exists by now; only the SDK or the dependency resolution
+      // failed, so name that and do not leave the checkout behind.
+      logger.err('Failed to prepare ref $gitRef: $e');
+      await _removeWorktreeQuietly(repoPath, worktreePath);
       rethrow;
     }
   }
@@ -90,12 +105,7 @@ Future<PackageApi> generateDocs({
 
         // Clean up worktree if it was created
         if (worktreeCreated && worktreePath != null) {
-          try {
-            await GitUtils.removeWorktree(repoPath, worktreePath);
-            logger.detail('Cleaned up worktree at $worktreePath');
-          } catch (e) {
-            logger.err('Warning: Failed to clean up worktree: $e');
-          }
+          await _removeWorktreeQuietly(repoPath, worktreePath);
         }
 
         // Write the cached content to file if requested
@@ -260,14 +270,20 @@ Future<PackageApi> generateDocs({
   } finally {
     // Clean up worktree if it was created
     if (worktreeCreated) {
-      try {
-        logger.detail('Cleaning up worktree at $worktreePath');
-        await GitUtils.removeWorktree(repoPath, worktreePath!);
-        logger.detail('Successfully cleaned up worktree');
-      } catch (e) {
-        logger.err('Warning: Failed to clean up worktree at $worktreePath: $e');
-        logger.err('You may need to manually remove the worktree');
-      }
+      await _removeWorktreeQuietly(repoPath, worktreePath!);
     }
+  }
+}
+
+/// Removes the worktree at [worktreePath], reporting a failure without
+/// replacing the error that made the caller clean up.
+Future<void> _removeWorktreeQuietly(String repoPath, String worktreePath) async {
+  try {
+    logger.detail('Cleaning up worktree at $worktreePath');
+    await GitUtils.removeWorktree(repoPath, worktreePath);
+    logger.detail('Successfully cleaned up worktree');
+  } catch (e) {
+    logger.err('Warning: Failed to clean up worktree at $worktreePath: $e');
+    logger.err('You may need to manually remove the worktree');
   }
 }

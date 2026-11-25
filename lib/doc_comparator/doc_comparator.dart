@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:mtrust_api_guard/doc_comparator/comparators/component_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/comparators/metadata_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/get_ref.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 
 import 'package:mtrust_api_guard/mtrust_api_guard.dart';
 
@@ -14,11 +15,18 @@ Future<List<ApiChange>> compare({
   required Directory dartRoot,
   required Directory gitRoot,
   required bool cache,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   // Load config and determine doc file path
 
-  final baseApi = await getRef(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
-  final newApi = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache);
+  final baseApi = await getRef(
+    ref: baseRef,
+    dartRoot: dartRoot,
+    gitRoot: gitRoot,
+    cache: cache,
+    sdkOptions: sdkOptions,
+  );
+  final newApi = await getRef(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, cache: cache, sdkOptions: sdkOptions);
 
   return compareApis(baseApi, newApi);
 }

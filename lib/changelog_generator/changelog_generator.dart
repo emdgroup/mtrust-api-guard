@@ -7,6 +7,7 @@ import 'package:mtrust_api_guard/doc_comparator/api_change_formatter.dart';
 import 'package:mtrust_api_guard/doc_comparator/doc_comparator.dart';
 import 'package:mtrust_api_guard/doc_comparator/get_ref.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/models/package_info.dart';
 import 'package:path/path.dart';
@@ -76,6 +77,7 @@ class ChangelogGenerator {
     String tagPrefix = 'v',
     String? packageName,
     int concurrency = 4,
+    SdkOverrideOptions? sdkOptions,
   }) async {
     final tags = packageName != null
         ? await GitUtils.getVersionsForPackage(gitRoot.path, packageName, tagPrefix: tagPrefix)
@@ -118,11 +120,12 @@ class ChangelogGenerator {
       gitRoot: gitRoot,
       cache: cache,
       concurrency: concurrency,
+      sdkOptions: sdkOptions,
     );
 
     PackageApi? headApi;
     if (hasUnreleased) {
-      headApi = await _tryAnalyzeRef('HEAD', gitRoot: gitRoot, cache: cache);
+      headApi = await _tryAnalyzeRef('HEAD', gitRoot: gitRoot, cache: cache, sdkOptions: sdkOptions);
     }
 
     final buffer = StringBuffer();
@@ -196,6 +199,7 @@ class ChangelogGenerator {
     required Directory gitRoot,
     required bool cache,
     required int concurrency,
+    SdkOverrideOptions? sdkOptions,
   }) async {
     // Deduplicate by resolved commit hash. Distinct refs that point at the same
     // commit must not be analyzed concurrently, since they would race on the
@@ -222,7 +226,7 @@ class ChangelogGenerator {
       final batch = uniqueRefs.skip(i).take(batchSize).toList();
       final results = await Future.wait(
         batch.map((ref) async {
-          final api = await _tryAnalyzeRef(ref, gitRoot: gitRoot, cache: cache);
+          final api = await _tryAnalyzeRef(ref, gitRoot: gitRoot, cache: cache, sdkOptions: sdkOptions);
           return MapEntry(refToHash[ref]!, api);
         }),
       );
@@ -238,9 +242,14 @@ class ChangelogGenerator {
     return result;
   }
 
-  Future<PackageApi?> _tryAnalyzeRef(String ref, {required Directory gitRoot, required bool cache}) async {
+  Future<PackageApi?> _tryAnalyzeRef(
+    String ref, {
+    required Directory gitRoot,
+    required bool cache,
+    SdkOverrideOptions? sdkOptions,
+  }) async {
     try {
-      return await getRef(ref: ref, dartRoot: projectRoot, gitRoot: gitRoot, cache: cache);
+      return await getRef(ref: ref, dartRoot: projectRoot, gitRoot: gitRoot, cache: cache, sdkOptions: sdkOptions);
     } catch (e) {
       logger.warn('Failed to analyze ref $ref: $e');
       return null;
@@ -284,6 +293,7 @@ class ChangelogGenerator {
     String tagPrefix = 'v',
     String? packageName,
     int concurrency = 4,
+    SdkOverrideOptions? sdkOptions,
   }) async {
     final changelogFile = File(join(projectRoot.path, 'CHANGELOG.md'));
     final archiveFile = File(join(projectRoot.path, changelogArchiveFileName));
@@ -293,6 +303,7 @@ class ChangelogGenerator {
       tagPrefix: tagPrefix,
       packageName: packageName,
       concurrency: concurrency,
+      sdkOptions: sdkOptions,
     );
     // Rebuild archive from overflow only; do not merge a stale prior archive.
     await _writeChangelogWithArchiveLimit(

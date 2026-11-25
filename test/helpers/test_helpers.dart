@@ -49,6 +49,23 @@ Future<String> runProcess(String cmd, List<String> args, {String? workingDir, bo
   return captureOutput ? stdout : '';
 }
 
+/// Installs a fake FVM-managed Flutter SDK for [version] under [fvmCache].
+///
+/// The generated binary appends its invocation to [log] and then executes
+/// [body], which defaults to succeeding. This lets a test point
+/// `FVM_CACHE_PATH` at a temporary directory and observe which SDK a ref was
+/// resolved with, without touching the real `~/.fvm`.
+void installFakeFvmSdk(Directory fvmCache, String version, File log, {String body = 'exit 0'}) {
+  final binary = File(p.join(fvmCache.path, version, 'bin', 'flutter'));
+  binary.createSync(recursive: true);
+  binary.writeAsStringSync(
+    '#!/bin/sh\n'
+    'printf \'%s %s\\n\' "\$0" "\$*" >> \'${log.path}\'\n'
+    '$body\n',
+  );
+  Process.runSync('chmod', ['+x', binary.path]);
+}
+
 /// Strip changelog content for comparison by removing dynamic content like commit hashes and dates.
 String stripChangelog(String changelog) {
   final commitLinkRegexp = RegExp(r'\(\[([a-z0-9]{7})\]\(commit/[a-z0-9]{7}\)\)');

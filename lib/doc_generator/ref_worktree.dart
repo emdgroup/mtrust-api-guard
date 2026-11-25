@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 import 'package:yaml/yaml.dart';
@@ -42,22 +43,72 @@ bool isFlutterProject(String packagePath) {
 }
 
 /// Resolves the dependencies of the package at [packagePath].
-void resolveDependencies(String packagePath) {
+///
+/// With a non-ambient [sdk], its Flutter binary runs `pub get` even for a Dart
+/// package, and no probe for a Flutter on `PATH` is made because the SDK is
+/// already known to exist.
+void resolveDependencies(String packagePath, {ResolvedSdk? sdk}) {
   final flutterProject = isFlutterProject(packagePath);
+  final pinnedExecutable = sdk == null || sdk.isAmbient ? null : sdk.executable;
+
   // Only a Flutter package needs to know whether Flutter is there, and finding
   // out costs a subprocess.
-  final useFlutter = flutterProject && isFlutterAvailable();
+  final useFlutter = pinnedExecutable != null || (flutterProject && isFlutterAvailable());
   if (flutterProject && !useFlutter) {
     logger.warn('Flutter project detected but Flutter is not available, falling back to dart pub get');
   }
 
-  final command = useFlutter ? 'flutter' : 'dart';
+  final command = pinnedExecutable ?? (useFlutter ? 'flutter' : 'dart');
+  logger.detail('SDK for $packagePath: ${sdk?.source ?? ResolvedSdk.ambientSource}');
   logger.info('Detected ${flutterProject ? 'Flutter' : 'Dart'} project, running $command pub get in $packagePath');
 
-  final result = Process.runSync(command, ['pub', 'get'], workingDirectory: packagePath);
+  // A pinned SDK is `flutter.bat` on Windows, which Process.runSync cannot
+  // execute without a shell.
+  final result = Process.runSync(
+    command,
+    ['pub', 'get'],
+    workingDirectory: packagePath,
+    runInShell: Platform.isWindows,
+  );
   if (result.exitCode != 0) {
     throw Exception('Failed to run $command pub get in $packagePath (exit ${result.exitCode}): ${result.stderr}');
   }
+}
+
+/// A concise description of [sdk] for the per-ref log line, naming the version
+/// and where it came from.
+///
+/// FVM keeps every SDK at `<cache>/<version>/bin/flutter`, so the parent of the
+/// `bin` directory names the version.
+String describeSdk(ResolvedSdk sdk) {
+  if (sdk.isAmbient) return sdk.source;
+
+  final version = basename(dirname(dirname(sdk.executable)));
+  const prefix = 'fvm (';
+  if (sdk.source.startsWith(prefix) && sdk.source.endsWith(')')) {
+    return '$version (fvm: ${sdk.source.substring(prefix.length, sdk.source.length - 1)})';
+  }
+  return '$version (${sdk.source})';
+}
+
+/// Logs the SDK resolved for [ref] at info level, so every command that creates
+/// a worktree shows which SDK the ref was built with.
+void logResolvedSdk(String ref, ResolvedSdk sdk) => logger.info('$ref → ${describeSdk(sdk)}');
+
+/// [options] with the `--ref-sdk` entry for [ref] re-keyed to [packageRoot].
+///
+/// The CLI names overrides by the git ref the user typed, while
+/// [resolveRefSdk] matches them against the worktree path it receives. This
+/// bridges the two without either side having to know about the other.
+SdkOverrideOptions sdkOptionsForRef(String ref, String packageRoot, [SdkOverrideOptions? options]) {
+  final resolved = options ?? const SdkOverrideOptions();
+  final version = resolved.refSdkOverrides[ref]?.trim();
+  if (version == null || version.isEmpty) return resolved;
+
+  return SdkOverrideOptions(
+    refSdkOverrides: {...resolved.refSdkOverrides, packageRoot: version},
+    autodetect: resolved.autodetect,
+  );
 }
 
 /// Runs [body] against a checkout of [ref] and cleans up after itself.
@@ -75,6 +126,7 @@ Future<T> withRefWorktree<T>({
   required Directory gitRoot,
   required Future<T> Function(Directory packageRoot) body,
   bool committed = false,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   if (!await GitUtils.isGitRepository(gitRoot.path)) {
     throw Exception('Not a git repository: ${gitRoot.path}');
@@ -98,7 +150,9 @@ Future<T> withRefWorktree<T>({
 
   try {
     final packageRoot = Directory(join(worktree.path, relativeDartRoot));
-    resolveDependencies(packageRoot.path);
+    final sdk = resolveRefSdk(packageRoot.path, options: sdkOptionsForRef(ref, packageRoot.path, sdkOptions));
+    logResolvedSdk(ref, sdk);
+    resolveDependencies(packageRoot.path, sdk: sdk);
     return await body(packageRoot);
   } finally {
     try {

@@ -4,6 +4,7 @@ import 'package:mtrust_api_guard/doc_comparator/parse_doc_file.dart';
 import 'package:mtrust_api_guard/doc_generator/cache.dart';
 import 'package:mtrust_api_guard/doc_generator/doc_generator.dart';
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/models/package_info.dart';
 
@@ -12,6 +13,7 @@ Future<PackageApi> getRef({
   required Directory dartRoot,
   required Directory gitRoot,
   required bool cache,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   // Check if ref is a local file path
   final file = File(ref);
@@ -41,5 +43,12 @@ Future<PackageApi> getRef({
   }
 
   // Generate the API documentation for the ref
-  return generateDocs(gitRef: ref, out: null, dartRoot: dartRoot, gitRoot: gitRoot, shouldCache: cache);
+  return generateDocs(
+    gitRef: ref,
+    out: null,
+    dartRoot: dartRoot,
+    gitRoot: gitRoot,
+    shouldCache: cache,
+    sdkOptions: sdkOptions,
+  );
 }

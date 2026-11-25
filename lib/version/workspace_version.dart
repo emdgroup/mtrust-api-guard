@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:mtrust_api_guard/pubspec_utils.dart';
 import 'package:mtrust_api_guard/version/version.dart';
@@ -35,6 +36,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
   String? dartFile,
   bool? conventionalCommits,
   WorkspaceTagFormat tagFormat = const WorkspaceTagFormat(),
+  SdkOverrideOptions? sdkOptions,
 }) async {
   final packages = getWorkspacePackages(workspace);
   final effectiveNewRef = newRef ?? 'HEAD';
@@ -102,6 +104,7 @@ Future<WorkspaceVersionResult> versionWorkspace({
         conventionalCommits: conventionalCommits,
         packageName: package.name,
         tagFormat: tagFormat,
+        sdkOptions: sdkOptions,
       );
 
       packageResults[package.name] = result;

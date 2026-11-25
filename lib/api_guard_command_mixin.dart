@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 
 // ignore: implementation_imports
 import 'package:args/src/arg_parser.dart';
@@ -92,5 +93,60 @@ mixin ApiGuardCommandMixinWithBaseNew on Command {
 
   String get newRef {
     return argResults?['new-ref'] as String;
+  }
+}
+
+/// Escape hatches for the SDK a git ref is resolved with.
+mixin ApiGuardCommandMixinWithSdkOverrides on Command {
+  @override
+  ArgParser get argParser {
+    final argParser = super.argParser;
+
+    if (!argParser.hasOptionWithKey('ref-sdk')) {
+      argParser.addMultiOption(
+        'ref-sdk',
+        help:
+            'Use this Flutter SDK version for a specific git ref instead of the '
+            'one pinned in that ref. Repeat the option for several refs.',
+        valueHelp: 'ref=version',
+        splitCommas: false,
+      );
+    }
+    if (!argParser.hasOptionWithKey('no-sdk-autodetect')) {
+      argParser.addFlag(
+        'no-sdk-autodetect',
+        help:
+            'Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM '
+            'config, workflow and pubspec SDK pins.',
+        defaultsTo: false,
+        negatable: false,
+      );
+    }
+    return argParser;
+  }
+
+  /// The SDK overrides configured on this command.
+  SdkOverrideOptions get sdkOverrideOptions {
+    final values = (argResults?['ref-sdk'] as List<String>?) ?? const <String>[];
+    final overrides = <String, String>{};
+
+    for (final value in values) {
+      final separator = value.indexOf('=');
+      final ref = separator < 0 ? '' : value.substring(0, separator).trim();
+      final version = separator < 0 ? '' : value.substring(separator + 1).trim();
+
+      if (ref.isEmpty || version.isEmpty) {
+        usageException(
+          'Invalid --ref-sdk value "$value": expected <ref>=<version>, '
+          'e.g. liquid_flutter/v23.0.0-16=3.44.8',
+        );
+      }
+      overrides[ref] = version;
+    }
+
+    return SdkOverrideOptions(
+      refSdkOverrides: overrides,
+      autodetect: !(argResults?['no-sdk-autodetect'] as bool? ?? false),
+    );
   }
 }

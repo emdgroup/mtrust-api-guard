@@ -34,7 +34,7 @@ void main() {
     }
 
     /// Helper method to set up initial version state with homepage for changelog links
-    Future<void> setupInitialVersion({bool plugin = false}) async {
+    Future<void> setupInitialVersion({bool plugin = false, String? sdkPin}) async {
       await testSetup.setupGitRepo();
       if (plugin) {
         await testSetup.setupFlutterPlugin();
@@ -48,6 +48,11 @@ void main() {
 
       // Set up initial version
       await copyDir(testSetup.fixtures.appV100Dir, testSetup.tempDir);
+
+      // Pin an SDK in the tagged commit, so the base ref's checkout carries it.
+      if (sdkPin != null) {
+        File(p.join(testSetup.tempDir.path, '.fvmrc')).writeAsStringSync('{"flutter": "$sdkPin"}');
+      }
 
       // Commit initial state and tag it
       await testSetup.commitChanges('chore!: Initial release v${TestConstants.initialVersion}');
@@ -431,5 +436,49 @@ void main() {
 
       expect(dartContent, equals(expectedContent));
     });
+    test('--ref-sdk resolves the base ref with the given SDK', () async {
+      await setupInitialVersion(sdkPin: '1.2.3');
+
+      final fvmCache = Directory.systemTemp.createTempSync('api_guard_fvm_');
+      addTearDown(() => fvmCache.deleteSync(recursive: true));
+      final log = File(p.join(fvmCache.path, 'sdk_invocations.log'));
+
+      // Only the override SDK exists, and it hands over to the ambient Flutter
+      // so the run can finish. The pin in .fvmrc is therefore unusable, which
+      // makes a successful run proof that the override won.
+      installFakeFvmSdk(fvmCache, '9.9.9', log, body: 'exec flutter "\$@"');
+
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product');
+
+      await testSetup.runApiGuard(
+        'version',
+        ['--ref-sdk', 'v${TestConstants.initialVersion}=9.9.9'],
+        environment: {'FVM_CACHE_PATH': fvmCache.path},
+      );
+
+      expect(log.readAsStringSync(), contains('9.9.9'));
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+    }, skip: Platform.isWindows ? 'the fake SDK binary is a POSIX shell script' : false);
+
+    test('--no-sdk-autodetect ignores the SDK pinned by the ref', () async {
+      await setupInitialVersion(sdkPin: '1.2.3');
+
+      final fvmCache = Directory.systemTemp.createTempSync('api_guard_fvm_');
+      addTearDown(() => fvmCache.deleteSync(recursive: true));
+      final log = File(p.join(fvmCache.path, 'sdk_invocations.log'));
+
+      // Resolving the pin would run this binary and fail the command, so
+      // success plus an empty log proves the pin was skipped.
+      installFakeFvmSdk(fvmCache, '1.2.3', log, body: 'exit 1');
+
+      await copyDir(testSetup.fixtures.appV101Dir, testSetup.tempDir);
+      await testSetup.commitChanges('fix: add _internalId to Product');
+
+      await testSetup.runApiGuard('version', ['--no-sdk-autodetect'], environment: {'FVM_CACHE_PATH': fvmCache.path});
+
+      expect(log.existsSync(), isFalse, reason: 'the pinned SDK should not have been resolved');
+      expect(testSetup.getCurrentVersion(), TestConstants.patchVersion);
+    }, skip: Platform.isWindows ? 'the fake SDK binary is a POSIX shell script' : false);
   }, timeout: const Timeout(Duration(minutes: 5)));
 }

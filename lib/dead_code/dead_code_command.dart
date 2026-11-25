@@ -9,7 +9,7 @@ import 'package:mtrust_api_guard/dead_code/dead_code_scan.dart';
 import 'package:mtrust_api_guard/logger.dart';
 import 'package:path/path.dart';
 
-class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
+class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithSdkOverrides {
   @override
   String get description => 'Report declarations nothing live refers to and no consumer can reach';
 
@@ -49,7 +49,13 @@ class DeadCodeCommand extends Command with ApiGuardCommandMixinWithRoot {
     // One scan, however many renderings of it are asked for. With --base-ref
     // that scan is two analyzer passes and a worktree, so asking for json and
     // markdown separately would pay for it twice.
-    final scan = await scanDeadCode(dartRoot: root, gitRoot: Directory.current, baseRef: baseRef, baseUrl: baseUrl);
+    final scan = await scanDeadCode(
+      dartRoot: root,
+      gitRoot: Directory.current,
+      baseRef: baseRef,
+      baseUrl: baseUrl,
+      sdkOptions: sdkOverrideOptions,
+    );
 
     if (out.isEmpty) {
       // ignore: avoid_print

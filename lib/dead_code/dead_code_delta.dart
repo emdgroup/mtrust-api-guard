@@ -4,6 +4,7 @@ import 'package:mtrust_api_guard/dead_code/dead_code_finder.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_report.dart';
 import 'package:mtrust_api_guard/doc_generator/ref_worktree.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 
 /// What identifies a finding across two revisions.
 ///
@@ -71,11 +72,18 @@ Future<DeadCodeDelta> compareDeadCode({
   String? newRef,
   required Directory dartRoot,
   required Directory gitRoot,
+  SdkOverrideOptions? sdkOptions,
 }) async {
-  final head = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot);
+  final head = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, sdkOptions: sdkOptions);
   // As committed, or a base that is the current HEAD would have uncommitted
   // changes compared against themselves.
-  final base = await scanRevision(ref: baseRef, dartRoot: dartRoot, gitRoot: gitRoot, committed: true);
+  final base = await scanRevision(
+    ref: baseRef,
+    dartRoot: dartRoot,
+    gitRoot: gitRoot,
+    committed: true,
+    sdkOptions: sdkOptions,
+  );
 
   return diffDeadCode(base: base, head: head, baseRef: baseRef);
 }
@@ -88,6 +96,7 @@ Future<DeadCodeReport> scanRevision({
   required Directory dartRoot,
   required Directory gitRoot,
   bool committed = false,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   if (ref == null) return DeadCodeFinder(root: dartRoot).run();
   return withRefWorktree(
@@ -95,6 +104,7 @@ Future<DeadCodeReport> scanRevision({
     dartRoot: dartRoot,
     gitRoot: gitRoot,
     committed: committed,
+    sdkOptions: sdkOptions,
     body: (packageRoot) => DeadCodeFinder(root: packageRoot).run(),
   );
 }

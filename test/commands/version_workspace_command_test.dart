@@ -81,11 +81,7 @@ workspace:
       final sharedLibDir = Directory(p.join(sharedDir.path, 'lib'));
 
       // 4. Create consumer package that depends on shared
-      await setupWorkspacePackage(
-        packageName: 'consumer',
-        version: '0.0.1',
-        dependencies: {'shared': '^0.0.1'},
-      );
+      await setupWorkspacePackage(packageName: 'consumer', version: '0.0.1', dependencies: {'shared': '^0.0.1'});
 
       // 5. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -285,18 +281,10 @@ workspace:
       final baseLibDir = Directory(p.join(baseDir.path, 'lib'));
 
       // 4. Create shared package (depends on base)
-      await setupWorkspacePackage(
-        packageName: 'shared',
-        version: '0.0.1',
-        dependencies: {'base': '^0.0.1'},
-      );
+      await setupWorkspacePackage(packageName: 'shared', version: '0.0.1', dependencies: {'base': '^0.0.1'});
 
       // 5. Create consumer package (depends on shared)
-      await setupWorkspacePackage(
-        packageName: 'consumer',
-        version: '0.0.1',
-        dependencies: {'shared': '^0.0.1'},
-      );
+      await setupWorkspacePackage(packageName: 'consumer', version: '0.0.1', dependencies: {'shared': '^0.0.1'});
 
       // 6. Commit initial state
       await testSetup.commitChanges('chore!: Initial workspace setup');
@@ -343,5 +331,94 @@ workspace:
         expect(sharedDepInConsumer, '^0.0.1'); // Should remain unchanged
       }
     });
+
+    /// Creates a one-package workspace whose root pins [sdkPin] in `.fvmrc`,
+    /// commits it and tags the package's initial version.
+    Future<Directory> setupPinnedWorkspace(String sdkPin) async {
+      await testSetup.setupGitRepo();
+
+      final rootPubspec = File(p.join(testSetup.tempDir.path, 'pubspec.yaml'));
+      await rootPubspec.writeAsString('''
+name: test_workspace
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+workspace:
+  - packages/shared
+''');
+
+      final sharedDir = await setupWorkspacePackage(packageName: 'shared', version: '0.0.1');
+      File(p.join(testSetup.tempDir.path, '.fvmrc')).writeAsStringSync('{"flutter": "$sdkPin"}');
+
+      await testSetup.commitChanges('chore!: Initial workspace setup');
+      await runProcess('git', ['tag', 'shared/v0.0.1'], workingDir: testSetup.tempDir.path);
+
+      return sharedDir;
+    }
+
+    /// Applies a patch-level change to [sharedDir] and commits it.
+    Future<void> commitSharedPatch(Directory sharedDir) async {
+      await copyDir(
+        Directory(p.join(testSetup.fixtures.appV101Dir.path, 'lib')),
+        Directory(p.join(sharedDir.path, 'lib')),
+      );
+      final v101AnalysisOptions = File(p.join(testSetup.fixtures.appV101Dir.path, 'analysis_options.yaml'));
+      if (v101AnalysisOptions.existsSync()) {
+        await v101AnalysisOptions.copy(p.join(sharedDir.path, 'analysis_options.yaml'));
+      }
+      await testSetup.commitChanges('fix: update shared package');
+    }
+
+    /// The version in the package's pubspec after the command ran.
+    String sharedVersion(Directory sharedDir) {
+      final pubspec = loadYaml(File(p.join(sharedDir.path, 'pubspec.yaml')).readAsStringSync()) as YamlMap;
+      return pubspec['version'] as String;
+    }
+
+    test('--ref-sdk resolves the base ref with the given SDK', () async {
+      final sharedDir = await setupPinnedWorkspace('1.2.3');
+
+      final fvmCache = Directory.systemTemp.createTempSync('api_guard_fvm_');
+      addTearDown(() => fvmCache.deleteSync(recursive: true));
+      final log = File(p.join(fvmCache.path, 'sdk_invocations.log'));
+
+      // Only the override SDK exists, and it hands over to the ambient Flutter
+      // so the run can finish. The pin in .fvmrc is therefore unusable, which
+      // makes a successful run proof that the override won.
+      installFakeFvmSdk(fvmCache, '9.9.9', log, body: 'exec flutter "\$@"');
+
+      await commitSharedPatch(sharedDir);
+
+      await testSetup.runApiGuard(
+        'version-workspace',
+        ['--ref-sdk', 'shared/v0.0.1=9.9.9'],
+        environment: {'FVM_CACHE_PATH': fvmCache.path},
+      );
+
+      expect(log.readAsStringSync(), contains('9.9.9'));
+      expect(sharedVersion(sharedDir), '0.0.2');
+    }, skip: Platform.isWindows ? 'the fake SDK binary is a POSIX shell script' : false);
+
+    test('--no-sdk-autodetect ignores the SDK pinned by the ref', () async {
+      final sharedDir = await setupPinnedWorkspace('1.2.3');
+
+      final fvmCache = Directory.systemTemp.createTempSync('api_guard_fvm_');
+      addTearDown(() => fvmCache.deleteSync(recursive: true));
+      final log = File(p.join(fvmCache.path, 'sdk_invocations.log'));
+
+      // Resolving the pin would run this binary and fail the command, so
+      // success plus an empty log proves the pin was skipped.
+      installFakeFvmSdk(fvmCache, '1.2.3', log, body: 'exit 1');
+
+      await commitSharedPatch(sharedDir);
+
+      await testSetup.runApiGuard(
+        'version-workspace',
+        ['--no-sdk-autodetect'],
+        environment: {'FVM_CACHE_PATH': fvmCache.path},
+      );
+
+      expect(log.existsSync(), isFalse, reason: 'the pinned SDK should not have been resolved');
+      expect(sharedVersion(sharedDir), '0.0.2');
+    }, skip: Platform.isWindows ? 'the fake SDK binary is a POSIX shell script' : false);
   }, timeout: const Timeout(Duration(minutes: 10)));
 }
