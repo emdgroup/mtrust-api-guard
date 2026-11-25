@@ -11,6 +11,8 @@ void main() {
     late Directory cache;
     String? previousCacheRoot;
     late FvmProcessRunner previousRunner;
+    Map<String, String>? previousEnvironment;
+    late AmbientFlutterVersionReader previousAmbientReader;
 
     setUp(() {
       worktree = Directory.systemTemp.createTempSync('api_guard_sdk_');
@@ -21,7 +23,16 @@ void main() {
 
       previousCacheRoot = fvmCacheRootOverride;
       previousRunner = fvmProcessRunner;
+      previousEnvironment = environmentOverride;
+      previousAmbientReader = ambientFlutterVersionReader;
       fvmCacheRootOverride = cache.path;
+      // Keep the default cache probes inside the temp checkout instead of the
+      // developer's real home directory.
+      environmentOverride = {'HOME': worktree.path};
+      // The ambient SDK is unknown unless a test says otherwise, so cached SDKs
+      // are chosen deterministically.
+      ambientFlutterVersionReader = () => null;
+      resetAmbientFlutterVersion();
       fvmProcessRunner = (executable, arguments) {
         throw StateError('Unexpected fvm invocation: $executable ${arguments.join(' ')}');
       };
@@ -30,6 +41,9 @@ void main() {
     tearDown(() {
       fvmCacheRootOverride = previousCacheRoot;
       fvmProcessRunner = previousRunner;
+      environmentOverride = previousEnvironment;
+      ambientFlutterVersionReader = previousAmbientReader;
+      resetAmbientFlutterVersion();
       worktree.deleteSync(recursive: true);
       cache.deleteSync(recursive: true);
     });
@@ -63,6 +77,12 @@ environment:
 ''');
     }
 
+    void writeWorkflow(String contents, {String name = 'pr_validation.yaml'}) {
+      final file = File(p.join(worktree.path, '.github', 'workflows', name));
+      file.createSync(recursive: true);
+      file.writeAsStringSync(contents);
+    }
+
     group('findFvmFlutterBinary', () {
       test('finds an installed SDK in the FVM cache', () {
         final binary = installFlutter('3.24.0');
@@ -85,6 +105,55 @@ environment:
 
         expect(findFvmFlutterBinary('3.19.6'), binary);
         expect(fvmCacheRoot(), cache.path);
+      });
+
+      test('defaults to the FVM 3/4 cache under the home directory', () {
+        // No cache-root override: the default has to be the path current FVM
+        // releases use, not the legacy ~/.fvm/versions.
+        fvmCacheRootOverride = null;
+        final binary = File(p.join(worktree.path, 'fvm', 'versions', '3.24.0', 'bin', 'flutter'))
+          ..createSync(recursive: true);
+
+        expect(findFvmFlutterBinary('3.24.0'), binary.path);
+        expect(fvmCacheRoot(), p.join(worktree.path, 'fvm', 'versions'));
+      });
+
+      test('also probes the legacy ~/.fvm/versions cache', () {
+        fvmCacheRootOverride = null;
+        final binary = File(p.join(worktree.path, '.fvm', 'versions', '3.22.0', 'bin', 'flutter'))
+          ..createSync(recursive: true);
+
+        expect(findFvmFlutterBinary('3.22.0'), binary.path);
+      });
+
+      test('honours FVM_CACHE_PATH', () {
+        fvmCacheRootOverride = null;
+        final configured = Directory(p.join(worktree.path, 'configured-cache'))..createSync();
+        environmentOverride = {'HOME': worktree.path, 'FVM_CACHE_PATH': configured.path};
+        final binary = File(p.join(configured.path, '3.24.0', 'bin', 'flutter'))..createSync(recursive: true);
+
+        expect(findFvmFlutterBinary('3.24.0'), binary.path);
+        expect(fvmCacheRoot(), configured.path);
+      });
+
+      test('honours the legacy FVM_HOME', () {
+        fvmCacheRootOverride = null;
+        final fvmHome = Directory(p.join(worktree.path, 'fvm-home'))..createSync();
+        environmentOverride = {'HOME': worktree.path, 'FVM_HOME': fvmHome.path};
+        final binary = File(p.join(fvmHome.path, 'versions', '3.22.0', 'bin', 'flutter'))..createSync(recursive: true);
+
+        expect(findFvmFlutterBinary('3.22.0'), binary.path);
+      });
+
+      test('honours a project .fvmrc cachePath', () {
+        fvmCacheRootOverride = null;
+        final custom = Directory(p.join(worktree.path, 'custom-cache'))..createSync();
+        File(
+          p.join(worktree.path, '.fvmrc'),
+        ).writeAsStringSync(jsonEncode({'flutter': '3.24.0', 'cachePath': custom.path}));
+        final binary = File(p.join(custom.path, '3.24.0', 'bin', 'flutter'))..createSync(recursive: true);
+
+        expect(findFvmFlutterBinary('3.24.0', projectDir: worktree.path), binary.path);
       });
     });
 
@@ -162,6 +231,99 @@ environment:
 
         expect(sdk.executable, binary);
         expect(sdk.source, 'fvm (.fvmrc)');
+      });
+
+      test('resolves a legacy tag from flutter-version in its workflow', () {
+        // The layout of the reported repro: a nested package with no .fvmrc,
+        // no FVM config and no pubspec constraint, pinned only in CI.
+        final binary = installFlutter('3.44.8');
+        final package = Directory(packagePath(p.join('packages', 'liquid_flutter')))..createSync(recursive: true);
+        File(p.join(package.path, 'pubspec.yaml')).writeAsStringSync('name: liquid_flutter\n');
+        writeWorkflow('''
+name: PR validation
+jobs:
+  test:
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+''');
+
+        final sdk = resolveRefSdk(package.path);
+
+        expect(sdk.executable, binary);
+        expect(sdk.source, 'fvm (workflow)');
+      });
+
+      test('reads flutter-version-file from a workflow', () {
+        final binary = installFlutter('3.44.8');
+        File(p.join(worktree.path, '.tool-versions')).writeAsStringSync('dart 3.9.0\nflutter 3.44.8\n');
+        writeWorkflow('''
+jobs:
+  test:
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: .tool-versions
+''');
+
+        final sdk = resolveRefSdk(worktree.path);
+
+        expect(sdk.executable, binary);
+        expect(sdk.source, 'fvm (workflow)');
+      });
+
+      test('ignores a workflow channel instead of treating it as a version', () {
+        writeWorkflow('''
+jobs:
+  test:
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: stable
+''');
+
+        expect(resolveRefSdk(worktree.path).source, 'ambient');
+      });
+
+      test('prefers .fvmrc over a workflow pin', () {
+        final fvmrc = installFlutter('3.24.0');
+        installFlutter('3.44.8');
+        writeFvmrc('3.24.0');
+        writeWorkflow('''
+jobs:
+  test:
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+''');
+
+        expect(resolveRefSdk(worktree.path).executable, fvmrc);
+      });
+
+      test('fails with the workflow path when its pin cannot be provided', () {
+        writeWorkflow('''
+jobs:
+  test:
+    steps:
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.8
+''');
+        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
+
+        expect(
+          () => resolveRefSdk(worktree.path),
+          throwsA(
+            isA<SdkResolutionException>().having(
+              (e) => e.message,
+              'message',
+              allOf(contains('3.44.8'), contains('pr_validation.yaml'), contains('fvm install 3.44.8')),
+            ),
+          ),
+        );
       });
 
       test('falls back to the ambient SDK when nothing is pinned', () {
@@ -265,12 +427,34 @@ environment:
 
       test('falls back to the ambient SDK when only a pubspec constraint cannot be provided', () {
         writePubspec('>=3.24.0 <4.0.0');
-        fvmProcessRunner = (executable, arguments) => ProcessResult(0, 127, '', 'fvm: command not found');
+        // A hint must never install an SDK, so any fvm invocation fails the
+        // test instead of returning a missing-CLI result.
+        fvmProcessRunner = (executable, arguments) {
+          throw StateError('a pubspec hint must not run $executable ${arguments.join(' ')}');
+        };
 
         final sdk = resolveRefSdk(worktree.path);
 
         expect(sdk.source, 'ambient');
         expect(sdk.executable, 'flutter');
+      });
+
+      test('does not use an exclusive pubspec lower bound as a version', () {
+        // `>3.24.0` does not allow 3.24.0 itself, so there is no concrete
+        // version to look for.
+        installFlutter('3.24.0');
+        writePubspec('>3.24.0 <4.0.0');
+
+        expect(resolveRefSdk(worktree.path).source, 'ambient');
+      });
+
+      test('prefers an ambient SDK that satisfies the pubspec constraint', () {
+        installFlutter('3.24.0');
+        writePubspec('>=3.24.0 <4.0.0');
+        ambientFlutterVersionReader = () => '3.50.0';
+        resetAmbientFlutterVersion();
+
+        expect(resolveRefSdk(worktree.path).source, 'ambient');
       });
 
       test('does not need the fvm CLI when the pinned SDK is already cached', () {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:mtrust_api_guard/dead_code/dead_code_delta.dart';
 import 'package:mtrust_api_guard/dead_code/dead_code_formatter.dart';
+import 'package:mtrust_api_guard/doc_generator/resolve_ref_sdk.dart';
 
 /// Scans for dead code and returns the renderer for what it found.
 ///
@@ -20,14 +21,21 @@ Future<DeadCodeMarkdown> scanDeadCode({
   String? newRef,
   String? baseUrl,
   int markdownHeaderLevel = 1,
+  SdkOverrideOptions? sdkOptions,
 }) async {
   final fileUrlBuilder = baseUrl == null ? null : (String path) => '$baseUrl/$path';
 
   if (baseRef == null) {
-    final report = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot);
+    final report = await scanRevision(ref: newRef, dartRoot: dartRoot, gitRoot: gitRoot, sdkOptions: sdkOptions);
     return DeadCodeFormatter(report, fileUrlBuilder: fileUrlBuilder, markdownHeaderLevel: markdownHeaderLevel);
   }
 
-  final delta = await compareDeadCode(baseRef: baseRef, newRef: newRef, dartRoot: dartRoot, gitRoot: gitRoot);
+  final delta = await compareDeadCode(
+    baseRef: baseRef,
+    newRef: newRef,
+    dartRoot: dartRoot,
+    gitRoot: gitRoot,
+    sdkOptions: sdkOptions,
+  );
   return DeadCodeDeltaFormatter(delta, fileUrlBuilder: fileUrlBuilder, markdownHeaderLevel: markdownHeaderLevel);
 }

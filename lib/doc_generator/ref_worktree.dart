@@ -62,7 +62,14 @@ void resolveDependencies(String packagePath, {ResolvedSdk? sdk}) {
   logger.detail('SDK for $packagePath: ${sdk?.source ?? ResolvedSdk.ambientSource}');
   logger.info('Detected ${flutterProject ? 'Flutter' : 'Dart'} project, running $command pub get in $packagePath');
 
-  final result = Process.runSync(command, ['pub', 'get'], workingDirectory: packagePath);
+  // A pinned SDK is `flutter.bat` on Windows, which Process.runSync cannot
+  // execute without a shell.
+  final result = Process.runSync(
+    command,
+    ['pub', 'get'],
+    workingDirectory: packagePath,
+    runInShell: Platform.isWindows,
+  );
   if (result.exitCode != 0) {
     throw Exception('Failed to run $command pub get in $packagePath (exit ${result.exitCode}): ${result.stderr}');
   }
@@ -73,16 +80,20 @@ void resolveDependencies(String packagePath, {ResolvedSdk? sdk}) {
 ///
 /// FVM keeps every SDK at `<cache>/<version>/bin/flutter`, so the parent of the
 /// `bin` directory names the version.
-String _describeSdk(ResolvedSdk sdk) {
+String describeSdk(ResolvedSdk sdk) {
   if (sdk.isAmbient) return sdk.source;
 
-  final version = basename(dirname(sdk.executable));
+  final version = basename(dirname(dirname(sdk.executable)));
   const prefix = 'fvm (';
   if (sdk.source.startsWith(prefix) && sdk.source.endsWith(')')) {
     return '$version (fvm: ${sdk.source.substring(prefix.length, sdk.source.length - 1)})';
   }
   return '$version (${sdk.source})';
 }
+
+/// Logs the SDK resolved for [ref] at info level, so every command that creates
+/// a worktree shows which SDK the ref was built with.
+void logResolvedSdk(String ref, ResolvedSdk sdk) => logger.info('$ref → ${describeSdk(sdk)}');
 
 /// [options] with the `--ref-sdk` entry for [ref] re-keyed to [packageRoot].
 ///
@@ -140,7 +151,7 @@ Future<T> withRefWorktree<T>({
   try {
     final packageRoot = Directory(join(worktree.path, relativeDartRoot));
     final sdk = resolveRefSdk(packageRoot.path, options: sdkOptionsForRef(ref, packageRoot.path, sdkOptions));
-    logger.detail('$ref → ${_describeSdk(sdk)}');
+    logResolvedSdk(ref, sdk);
     resolveDependencies(packageRoot.path, sdk: sdk);
     return await body(packageRoot);
   } finally {

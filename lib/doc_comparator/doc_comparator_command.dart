@@ -14,7 +14,11 @@ import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 
 class DocComparatorCommand extends Command
-    with ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithCache {
+    with
+        ApiGuardCommandMixinWithBaseNew,
+        ApiGuardCommandMixinWithRoot,
+        ApiGuardCommandMixinWithCache,
+        ApiGuardCommandMixinWithSdkOverrides {
   @override
   String get description => "Compare two API documentation files";
 
@@ -74,6 +78,7 @@ class DocComparatorCommand extends Command
       dartRoot: root,
       gitRoot: Directory.current,
       cache: cache,
+      sdkOptions: sdkOverrideOptions,
     );
 
     // Load config
@@ -132,6 +137,7 @@ class DocComparatorCommand extends Command
         baseRef: scannableBase,
         newRef: scannableNew,
         baseUrl: baseUrl,
+        sdkOptions: sdkOverrideOptions,
       );
       return scan.formatMarkdown();
     } catch (e) {

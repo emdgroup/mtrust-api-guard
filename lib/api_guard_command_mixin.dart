@@ -108,7 +108,7 @@ mixin ApiGuardCommandMixinWithSdkOverrides on Command {
         help:
             'Use this Flutter SDK version for a specific git ref instead of the '
             'one pinned in that ref. Repeat the option for several refs.',
-        valueHelp: '<ref>=<version>',
+        valueHelp: 'ref=version',
         splitCommas: false,
       );
     }
@@ -117,7 +117,7 @@ mixin ApiGuardCommandMixinWithSdkOverrides on Command {
         'no-sdk-autodetect',
         help:
             'Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM '
-            'config and pubspec SDK pins.',
+            'config, workflow and pubspec SDK pins.',
         defaultsTo: false,
         negatable: false,
       );

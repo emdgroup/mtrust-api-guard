@@ -108,4 +108,16 @@ ${flutter ? 'dependencies:\n  flutter:\n    sdk: flutter' : ''}
       expect(invocation.existsSync(), isTrue, reason: 'the pinned SDK was not run');
     });
   }, skip: Platform.isWindows ? 'the fake SDK binary is a POSIX shell script' : false);
+
+  group('describeSdk', () {
+    test('names the FVM version, not the bin directory', () {
+      final sdk = ResolvedSdk(executable: p.join('/fvm', '3.44.8', 'bin', 'flutter'), source: 'fvm (.fvmrc)');
+
+      expect(describeSdk(sdk), '3.44.8 (fvm: .fvmrc)');
+    });
+
+    test('describes the ambient SDK', () {
+      expect(describeSdk(const ResolvedSdk(executable: 'flutter', source: ResolvedSdk.ambientSource)), 'ambient');
+    });
+  });
 }

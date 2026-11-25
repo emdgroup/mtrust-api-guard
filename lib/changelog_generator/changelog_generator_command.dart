@@ -12,7 +12,11 @@ import 'package:mtrust_api_guard/doc_generator/git_utils.dart';
 import 'package:mtrust_api_guard/logger.dart';
 
 class ChangelogGeneratorCommand extends Command
-    with ApiGuardCommandMixinWithRoot, ApiGuardCommandMixinWithBaseNew, ApiGuardCommandMixinWithCache {
+    with
+        ApiGuardCommandMixinWithRoot,
+        ApiGuardCommandMixinWithBaseNew,
+        ApiGuardCommandMixinWithCache,
+        ApiGuardCommandMixinWithSdkOverrides {
   @override
   String get description => "Generate a changelog entry based on API changes";
 
@@ -42,11 +46,7 @@ class ChangelogGeneratorCommand extends Command
         defaultsTo: 'v',
         valueHelp: 'prefix',
       )
-      ..addOption(
-        'package',
-        help: 'Package name for workspace tags in the format package/vX.Y.Z',
-        valueHelp: 'name',
-      )
+      ..addOption('package', help: 'Package name for workspace tags in the format package/vX.Y.Z', valueHelp: 'name')
       ..addOption(
         'concurrency',
         help: 'Number of refs to analyze in parallel when regenerating',
@@ -80,10 +80,7 @@ class ChangelogGeneratorCommand extends Command
     final gitRoot = Directory.current;
 
     if (regenerate) {
-      final changelogGenerator = ChangelogGenerator(
-        apiChanges: const [],
-        projectRoot: root,
-      );
+      final changelogGenerator = ChangelogGenerator(apiChanges: const [], projectRoot: root);
 
       if (update) {
         logger.info('Regenerating CHANGELOG.md from version tags');
@@ -93,6 +90,7 @@ class ChangelogGeneratorCommand extends Command
           tagPrefix: tagPrefix,
           packageName: packageName,
           concurrency: concurrency,
+          sdkOptions: sdkOverrideOptions,
         );
       } else {
         final changelog = await changelogGenerator.regenerateFullChangelog(
@@ -101,6 +99,7 @@ class ChangelogGeneratorCommand extends Command
           tagPrefix: tagPrefix,
           packageName: packageName,
           concurrency: concurrency,
+          sdkOptions: sdkOverrideOptions,
         );
         print('\n$changelog');
       }
@@ -114,6 +113,7 @@ class ChangelogGeneratorCommand extends Command
       dartRoot: root,
       gitRoot: gitRoot,
       cache: cache,
+      sdkOptions: sdkOverrideOptions,
     );
 
     // Generate changelog

@@ -191,6 +191,50 @@ ls ~/.mtrust_api_guard/cache/$(basename $(git rev-parse --show-toplevel))/
 rm -rf ~/.mtrust_api_guard/cache/$(basename $(git rev-parse --show-toplevel))/
 ```
 
+### SDK resolution for a ref
+
+Every command that checks out a ref (`generate`, `compare`, `changelog`,
+`version`, `version-workspace` and `dead-code --base-ref`) resolves the Flutter
+SDK that ref was built with before it runs `pub get`. In order:
+
+1. `--ref-sdk <ref>=<version>` for that ref.
+2. `.fvmrc` (`flutter`) in the checkout, or an ancestor up to the repository
+   root.
+3. `.fvm/fvm_config.json` (`flutterSdkVersion`).
+4. `flutter-version:` / `flutter-version-file:` in
+   `.github/workflows/*.y(a)ml`, which is where tags created before FVM
+   adoption usually pin their SDK. Only an exact version counts; channels such
+   as `stable` and expressions such as `${{ ... }}` are ignored.
+5. The `environment.flutter` constraint of a pubspec, but only when the ambient
+   SDK does not satisfy it and the lower bound is already in the FVM cache. A
+   constraint is a hint: it never downloads an SDK, so repos without an
+   explicit pin keep behaving as before.
+6. The ambient `flutter` on `PATH`.
+
+The resolved SDK is logged per ref, for example:
+
+```text
+liquid_flutter/v23.0.0-16 → 3.44.8 (fvm: .github/workflows/pr_validation.yaml)
+HEAD → ambient
+```
+
+The FVM cache is located the way FVM locates it: a project `.fvmrc`
+`cachePath`, `FVM_CACHE_PATH`, the legacy `FVM_HOME`, `~/fvm/versions` (FVM 3/4)
+and `~/.fvm/versions` are all probed. A pinned version that is missing is
+installed with `fvm install <version>`. When FVM is unavailable and the pin is
+explicit (`.fvmrc`, FVM config, a workflow or `--ref-sdk`), the command fails
+with a message naming the version and that command instead of a dependency
+solving dump.
+
+Only `pub get` uses the pinned SDK: the in-process analyzer still runs on the
+ambient Dart SDK. That is sufficient because the worktree's
+`package_config.json` supplies its package URIs and only the `dart:` libraries
+come from the ambient SDK.
+
+Use `--no-sdk-autodetect` to ignore every pin and use the ambient Flutter, and
+`--ref-sdk <ref>=<version>` to override one ref. Both flags are available on
+every command that checks out a ref.
+
 ## Generate
 
 Generates the api description of a specific `--ref` the output is a json file based on analyzer. See an example [here](./test/fixtures/apiV100.json).
@@ -201,13 +245,15 @@ mtrust_api_guard generate
 
 ```
 Usage: mtrust_api_guard generate [arguments]
--r, --root          Root directory of the Dart project. Defaults to auto-detect from the current directory.
--c, --[no-]cache    Cache the generated documentation for the specified ref
-                    (defaults to on)
-    --ref           Git reference (commit hash, branch, or tag) to generate documentation for. If not provided, uses current HEAD.
-                    (defaults to "HEAD")
-    --out           Write the generated documentation to a file
--h, --help          Print this usage information.
+-r, --root                     Root directory of the Dart project. Defaults to auto-detect from the current directory.
+-c, --[no-]cache               Cache the generated documentation for the specified ref
+                               (defaults to on)
+    --ref-sdk=<ref=version>    Use this Flutter SDK version for a specific git ref instead of the one pinned in that ref. Repeat the option for several refs.
+    --no-sdk-autodetect        Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM config, workflow and pubspec SDK pins.
+    --ref                      Git reference (commit hash, branch, or tag) to generate documentation for. If not provided, uses current HEAD.
+                               (defaults to "HEAD")
+    --out                      Write the generated documentation to a file
+-h, --help                     Print this usage information.
 ```
 
 ## Compare
@@ -226,6 +272,12 @@ Usage: mtrust_api_guard compare [arguments]
 -r, --root          Root directory of the Dart project. Defaults to auto-detect from the current directory.
 -c, --[no-]cache    Cache the generated documentation for the specified ref
                     (defaults to on)
+    --ref-sdk=<ref=version>
+                    Use this Flutter SDK version for a specific git ref instead of
+                    the one pinned in that ref. Repeat the option for several refs.
+    --no-sdk-autodetect
+                    Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM
+                    config, workflow and pubspec SDK pins.
 -h, --help          Print this usage information.
 -m, --magnitudes    Show only changes with the specified magnitudes
                     [major (default), minor (default), patch (default)]
@@ -265,6 +317,12 @@ mtrust_api_guard changelog --regenerate
                      (defaults to "HEAD")
 -c, --[no-]cache     Cache the generated documentation for the specified ref
                      (defaults to on)
+    --ref-sdk=<ref=version>
+                     Use this Flutter SDK version for a specific git ref instead of
+                     the one pinned in that ref. Repeat the option for several refs.
+    --no-sdk-autodetect
+                     Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM
+                     config, workflow and pubspec SDK pins.
 -h, --help           Print this usage information.
 -u, --[no-]update    Update the CHANGELOG.md file
                      (defaults to on)
@@ -298,6 +356,10 @@ mtrust_api_guard version
                                  (defaults to "HEAD")
 -c, --[no-]cache                 Cache the generated documentation for the specified ref
                                  (defaults to on)
+    --ref-sdk=<ref=version>      Use this Flutter SDK version for a specific git ref instead of the
+                                 one pinned in that ref. Repeat the option for several refs.
+    --no-sdk-autodetect          Use the ambient Flutter SDK for every ref, ignoring .fvmrc,
+                                 FVM config, workflow and pubspec SDK pins.
 -h, --help                       Print this usage information.
 -g, --[no-]badge                 Generate a badge for the version
     --[no-]commit                Commit the version to git
@@ -370,6 +432,9 @@ mtrust_api_guard version-workspace --tag-format "{package}-v{version}"
 
 The format must contain `{package}` and end with `{version}`.
 
+`version-workspace` accepts the same `--ref-sdk` and `--no-sdk-autodetect`
+flags as `version`; the refs it checks out are the per-package base tags.
+
 ## Dead Code
 
 Reports declarations that nothing in the package reaches. Every library under
@@ -393,6 +458,12 @@ mtrust_api_guard dead-code
 ```
 -r, --root        Root directory of the Dart project. Defaults to auto-detect from the current directory.
 -h, --help        Print this usage information.
+    --ref-sdk=<ref=version>
+                  Use this Flutter SDK version for a specific git ref instead of
+                  the one pinned in that ref. Repeat the option for several refs.
+    --no-sdk-autodetect
+                  Use the ambient Flutter SDK for every ref, ignoring .fvmrc, FVM
+                  config, workflow and pubspec SDK pins.
 -f, --format      Output format
                   [text (default), markdown, json]
     --out         Write the report to a file. Repeat it to write several formats
