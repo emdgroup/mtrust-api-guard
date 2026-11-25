@@ -1,1 +1,1 @@
-const String mtrustApiGuardVersion = '3.0.0';
+const String mtrustApiGuardVersion = '8.1.6';

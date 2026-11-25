@@ -435,6 +435,15 @@ void main() {
       final expectedContent = "const String $expectedConstantName = '${TestConstants.patchVersion}';\n";
 
       expect(dartContent, equals(expectedContent));
+
+      // 5. Verify the Dart file was included in the version bump commit
+      final committedFiles = await runProcess(
+        'git',
+        ['show', '--name-only', '--pretty=format:', 'HEAD'],
+        workingDir: testSetup.tempDir.path,
+        captureOutput: true,
+      );
+      expect(committedFiles, contains('lib/version_info.dart'));
     });
     test('--ref-sdk resolves the base ref with the given SDK', () async {
       await setupInitialVersion(sdkPin: '1.2.3');
