@@ -1,0 +1,25 @@
+# A .pubignore replaces .gitignore when publishing, so the patterns that keep
+# local build and test artifacts out of the archive are repeated here.
+.dart_tool/
+**/doc/api/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+reports/
+coverage/
+.test_scaffolds/
+pubspec.lock
+*.iml
+*.log
+.DS_Store
+.idea/
+.vscode/
+AGENTS.md
+
+# Development-only sources. Consumers do not need them, and some test fixtures
+# import packages that are intentionally not dependencies of this package.
+.github/
+test/
+tool/
+build.yaml
+dart_test.yaml
